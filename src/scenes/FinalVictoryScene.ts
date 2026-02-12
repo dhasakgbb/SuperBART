@@ -13,6 +13,7 @@ export class FinalVictoryScene extends Phaser.Scene {
     const audio = AudioEngine.shared();
     audio.configureFromSettings(runtimeStore.save.settings);
     audio.stopMusic();
+    audio.playSfx('goal_clear');
     const p = runtimeStore.save.progression;
     const timeSec = Math.floor(p.timeMs / 1000);
 

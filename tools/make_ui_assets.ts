@@ -25,13 +25,20 @@ const repoRoot = path.resolve(__dirname, '..');
 const COLORS = {
   inkDark: parseHex('#1D1D1D'),
   inkSoft: parseHex('#2B2824'),
+  inkDeep: parseHex('#111114'),
   grassTop: parseHex('#46BA4C'),
   grassMid: parseHex('#20A36D'),
   mossDark: parseHex('#0A582C'),
+  hillFarDark: parseHex('#1B5B59'),
+  hillFarLight: parseHex('#248773'),
+  hillNearDark: parseHex('#2E8E6B'),
+  hillNearLight: parseHex('#4AC16E'),
   groundShadow: parseHex('#742B01'),
   groundMid: parseHex('#B6560E'),
   groundWarm: parseHex('#DC7C1D'),
   sand: parseHex('#DED256'),
+  hudBlue: parseHex('#1E4EA3'),
+  hudBlueLight: parseHex('#5FA2F2'),
   cloudLight: parseHex('#F2FDFD'),
   cloudShade: parseHex('#D9E7EB'),
   steel: parseHex('#9FA8B3'),
@@ -39,6 +46,12 @@ const COLORS = {
   checkpointBlue: parseHex('#3CA4E8'),
   checkpointGold: parseHex('#F1C55F'),
   checkpointRed: parseHex('#D0644A'),
+  mapLockedDark: parseHex('#4E545E'),
+  mapLockedLight: parseHex('#7B8591'),
+  mapDoneDark: parseHex('#1D7E44'),
+  mapDoneLight: parseHex('#59C66F'),
+  mapOpenDark: parseHex('#1B4D95'),
+  mapOpenLight: parseHex('#77B7FA'),
 };
 
 const TILE_SIZE = 16;
@@ -370,8 +383,8 @@ function drawWordHighlights(image: PixelImage, text: string, x: number, y: numbe
 function makeTitleLogo(): void {
   const logo = createImage(512, 160, [0, 0, 0, 0]);
 
-  drawDisk(logo, 256, 36, 80, [246, 213, 139, 32]);
-  drawDisk(logo, 256, 42, 110, [246, 213, 139, 16]);
+  drawDisk(logo, 256, 36, 82, [246, 213, 139, 48]);
+  drawDisk(logo, 256, 42, 114, [246, 213, 139, 22]);
 
   const line1 = { text: 'SUPER', y: 20, scale: 7 };
   const line2 = { text: 'BART', y: 86, scale: 8 };
@@ -379,31 +392,127 @@ function makeTitleLogo(): void {
   const drawLine = (line: { text: string; y: number; scale: number }): void => {
     const width = measureWordWidth(line.text, line.scale);
     const x = Math.floor((logo.width - width) / 2);
-    const outlineOffsets = [
-      [-2, 0],
-      [2, 0],
-      [0, -2],
-      [0, 2],
-      [-2, -2],
-      [2, -2],
-      [-2, 2],
+    const dropOffsets = [
+      [0, 3],
+      [1, 3],
+      [2, 4],
+      [3, 4],
       [2, 2],
+    ];
+    for (const [dx, dy] of dropOffsets) {
+      drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDeep);
+    }
+
+    const outlineOffsets = [
+      [-2, 0], [2, 0], [0, -2], [0, 2],
+      [-2, -2], [2, -2], [-2, 2], [2, 2],
+      [-3, 0], [3, 0], [0, -3], [0, 3],
     ];
     for (const [dx, dy] of outlineOffsets) {
       drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDark);
     }
+
+    drawWordLayer(logo, line.text, x, line.y + 1, line.scale, COLORS.groundMid);
     drawWordLayer(logo, line.text, x, line.y, line.scale, COLORS.checkpointGold);
+    drawWordLayer(logo, line.text, x, line.y - 1, line.scale, COLORS.sand);
     drawWordHighlights(logo, line.text, x, line.y, line.scale);
   };
 
   drawLine(line1);
   drawLine(line2);
 
-  strokeRect(logo, 0, 0, logo.width, logo.height, [29, 29, 29, 90]);
+  strokeRect(logo, 0, 0, logo.width, logo.height, [29, 29, 29, 120]);
 
   const output = path.join(repoRoot, 'public/assets/sprites/title_logo.png');
   writePng(output, logo);
   console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function makeMapNodes(): void {
+  const makeNode = (center: Rgba, edge: Rgba, rim: Rgba, detail?: (img: PixelImage) => void): PixelImage => {
+    const node = createImage(16, 16, [0, 0, 0, 0]);
+    drawDisk(node, 8, 8, 6, edge);
+    drawDisk(node, 8, 8, 4, center);
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        const px = getPixel(node, x, y);
+        if (px[3] === 0) {
+          continue;
+        }
+        if (y < 8) {
+          setPixel(node, x, y, rim);
+        }
+      }
+    }
+    outlineOpaquePixels(node, COLORS.inkDark);
+    if (detail) {
+      detail(node);
+    }
+    return node;
+  };
+
+  const open = makeNode(COLORS.mapOpenLight, COLORS.mapOpenDark, COLORS.hudBlueLight);
+  const done = makeNode(COLORS.mapDoneLight, COLORS.mapDoneDark, COLORS.grassTop, (node) => {
+    drawLine(node, 5, 8, 7, 10, COLORS.sand);
+    drawLine(node, 7, 10, 11, 6, COLORS.sand);
+    drawLine(node, 5, 9, 7, 11, COLORS.inkDark);
+    drawLine(node, 7, 11, 11, 7, COLORS.inkDark);
+  });
+  const locked = makeNode(COLORS.mapLockedLight, COLORS.mapLockedDark, COLORS.steel, (node) => {
+    fillRect(node, 6, 8, 4, 3, COLORS.inkDark);
+    fillRect(node, 5, 7, 6, 1, COLORS.inkDark);
+    fillRect(node, 6, 5, 1, 2, COLORS.inkDark);
+    fillRect(node, 9, 5, 1, 2, COLORS.inkDark);
+  });
+  const selected = makeNode(COLORS.checkpointGold, COLORS.groundWarm, COLORS.sand, (node) => {
+    drawDisk(node, 8, 8, 2, COLORS.inkDark);
+    drawDisk(node, 8, 8, 1, COLORS.sand);
+  });
+
+  const pathDot = createImage(8, 8, [0, 0, 0, 0]);
+  drawDisk(pathDot, 4, 4, 2, COLORS.checkpointGold);
+  drawDisk(pathDot, 4, 4, 1, COLORS.sand);
+  outlineOpaquePixels(pathDot, COLORS.inkDark);
+
+  const outputDir = path.join(repoRoot, 'public/assets/sprites');
+  const outputs: Array<{ file: string; image: PixelImage }> = [
+    { file: 'map_node_open.png', image: open },
+    { file: 'map_node_done.png', image: done },
+    { file: 'map_node_locked.png', image: locked },
+    { file: 'map_node_selected.png', image: selected },
+    { file: 'map_path_dot.png', image: pathDot },
+  ];
+
+  for (const output of outputs) {
+    const outputPath = path.join(outputDir, output.file);
+    writePng(outputPath, output.image);
+    console.log(`Wrote ${path.relative(repoRoot, outputPath)}`);
+  }
+}
+
+function makeHills(): void {
+  const far = createImage(80, 44, [0, 0, 0, 0]);
+  drawDisk(far, 22, 32, 24, COLORS.hillFarDark);
+  drawDisk(far, 50, 28, 26, COLORS.hillFarDark);
+  drawDisk(far, 62, 30, 18, COLORS.hillFarDark);
+  drawDisk(far, 48, 20, 12, COLORS.hillFarLight);
+  drawDisk(far, 24, 24, 10, COLORS.hillFarLight);
+  outlineOpaquePixels(far, COLORS.inkDark);
+
+  const near = createImage(88, 46, [0, 0, 0, 0]);
+  drawDisk(near, 26, 34, 24, COLORS.hillNearDark);
+  drawDisk(near, 56, 30, 28, COLORS.hillNearDark);
+  drawDisk(near, 72, 33, 16, COLORS.hillNearDark);
+  drawDisk(near, 52, 22, 14, COLORS.hillNearLight);
+  drawDisk(near, 28, 26, 12, COLORS.hillNearLight);
+  outlineOpaquePixels(near, COLORS.inkDark);
+
+  const outFar = path.join(repoRoot, 'public/assets/sprites/hill_far.png');
+  const outNear = path.join(repoRoot, 'public/assets/sprites/hill_near.png');
+  writePng(outFar, far);
+  writePng(outNear, near);
+  console.log(`Wrote ${path.relative(repoRoot, outFar)}`);
+  console.log(`Wrote ${path.relative(repoRoot, outNear)}`);
 }
 
 const FONT_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-!?., ';
@@ -481,6 +590,8 @@ function main(): number {
   makeCoin();
   makeQuestionBlock();
   makeClouds();
+  makeHills();
+  makeMapNodes();
   makeTitleLogo();
   makeBitmapFont();
   return 0;

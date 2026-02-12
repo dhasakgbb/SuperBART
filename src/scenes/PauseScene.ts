@@ -11,6 +11,7 @@ export class PauseScene extends Phaser.Scene {
     runtimeStore.mode = 'paused';
     const audio = AudioEngine.shared();
     audio.configureFromSettings(runtimeStore.save.settings);
+    audio.playSfx('pause');
     this.add.rectangle(0, 0, 960, 540, 0x000000, 0.65).setOrigin(0, 0);
     this.add.text(350, 170, 'PAUSED', { fontSize: '58px', color: '#ffe082', fontFamily: 'monospace' });
     this.add.text(230, 290, 'ESC / P: Resume\nL: Level Select\nT: Title', {

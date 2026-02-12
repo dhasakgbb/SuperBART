@@ -2,80 +2,195 @@ import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { CAMPAIGN_WORLD_LAYOUT, TOTAL_CAMPAIGN_LEVELS } from '../core/constants';
 import { runtimeStore } from '../core/runtime';
+import { renderGameplayBackground } from '../rendering/parallax';
+import styleConfig, { stylePalette } from '../style/styleConfig';
 import { campaignOrdinal, campaignRefFromOrdinal, levelKey } from '../systems/progression';
 import { isLevelUnlocked, persistSave, setCurrentLevel } from '../systems/save';
 
+interface MapNode {
+  key: string;
+  x: number;
+  y: number;
+}
+
+function color(name: string): number {
+  return Phaser.Display.Color.HexStringToColor(stylePalette[name] ?? '#ffffff').color;
+}
+
+function keyToRef(key: string): { world: number; levelIndex: number } {
+  const [worldRaw, levelRaw] = key.split('-');
+  return {
+    world: Number(worldRaw),
+    levelIndex: Number(levelRaw),
+  };
+}
+
 export class WorldMapScene extends Phaser.Scene {
   private selectedOrdinal = 1;
-  private levelTextByKey = new Map<string, Phaser.GameObjects.Text>();
+  private nodeSprites = new Map<string, Phaser.GameObjects.Image>();
+  private nodeLabels = new Map<string, Phaser.GameObjects.BitmapText>();
+  private selectedBobTween: Phaser.Tweens.Tween | null = null;
 
   constructor() {
     super('WorldMapScene');
   }
 
-  private drawLevelGrid(): void {
-    this.levelTextByKey.clear();
-    const completed = new Set(runtimeStore.save.campaign.completedLevelKeys);
-
-    let y = 108;
+  private orderedNodes(): MapNode[] {
+    const byKey = new Map(styleConfig.worldMapLayout.nodes.map((node) => [node.key, node]));
+    const ordered: MapNode[] = [];
     for (let world = 1; world <= CAMPAIGN_WORLD_LAYOUT.length; world += 1) {
       const levels = CAMPAIGN_WORLD_LAYOUT[world - 1] ?? 0;
-      this.add.text(96, y, `WORLD ${world}`, {
-        fontFamily: 'monospace',
-        fontSize: '22px',
-        color: '#f2fdfd'
-      });
-
       for (let levelIndex = 1; levelIndex <= levels; levelIndex += 1) {
         const key = levelKey(world, levelIndex);
-        const unlocked = isLevelUnlocked(runtimeStore.save, world, levelIndex);
-        const done = completed.has(key);
-        const ordinal = campaignOrdinal(world, levelIndex);
-        const selected = ordinal === this.selectedOrdinal;
-
-        const color = selected
-          ? '#ffe082'
-          : done
-            ? '#9be564'
-            : unlocked
-              ? '#ffffff'
-              : '#5b6473';
-        const marker = selected ? '>' : ' ';
-        const label = `${marker} ${key.padEnd(4, ' ')} ${done ? '[DONE]' : unlocked ? '[OPEN]' : '[LOCK]'}`;
-        const row = this.add.text(252 + ((levelIndex - 1) % 3) * 220, y + Math.floor((levelIndex - 1) / 3) * 28, label, {
-          fontFamily: 'monospace',
-          fontSize: '18px',
-          color
-        });
-        this.levelTextByKey.set(key, row);
+        const node = byKey.get(key);
+        if (node) {
+          ordered.push(node);
+        }
       }
+    }
+    return ordered;
+  }
 
-      y += 84;
+  private renderHeaderAndHints(): void {
+    const layout = styleConfig.worldMapLayout;
+    const font = styleConfig.typography.fontKey;
+
+    const title = this.add
+      .bitmapText(layout.title.x, layout.title.y, font, layout.title.text, layout.title.fontSizePx)
+      .setOrigin(0.5, 0)
+      .setTint(color('hudAccent'))
+      .setDepth(70);
+    title.setLetterSpacing(layout.title.letterSpacingPx);
+
+    const subtitle = this.add
+      .bitmapText(layout.subtitle.x, layout.subtitle.y, font, layout.subtitle.text, layout.subtitle.fontSizePx)
+      .setOrigin(0.5, 0)
+      .setTint(color('hudText'))
+      .setDepth(70);
+    subtitle.setLetterSpacing(layout.subtitle.letterSpacingPx);
+
+    const hints = this.add
+      .bitmapText(layout.hints.x, layout.hints.y, font, layout.hints.text, layout.hints.fontSizePx)
+      .setOrigin(0.5, 0)
+      .setTint(color('hudText'))
+      .setDepth(70);
+    hints.setLetterSpacing(layout.hints.letterSpacingPx);
+  }
+
+  private renderWorldLabels(): void {
+    const font = styleConfig.typography.fontKey;
+    for (const row of styleConfig.worldMapLayout.worldLabels) {
+      this.add
+        .bitmapText(row.x, row.y, font, `WORLD ${row.world}`, 14)
+        .setOrigin(0, 0)
+        .setTint(color('hudText'))
+        .setDepth(55);
     }
   }
 
-  private rerender(): void {
-    this.children.removeAll();
+  private renderPathDots(): void {
+    const layout = styleConfig.worldMapLayout.mapPath;
+    const ordered = this.orderedNodes();
+    for (let i = 0; i < ordered.length - 1; i += 1) {
+      const from = ordered[i]!;
+      const to = ordered[i + 1]!;
+      const distance = Phaser.Math.Distance.Between(from.x, from.y, to.x, to.y);
+      const steps = Math.max(2, Math.floor(distance / layout.spacingPx));
+      for (let step = 0; step <= steps; step += 1) {
+        const t = step / steps;
+        const x = Phaser.Math.Linear(from.x, to.x, t);
+        const y = Phaser.Math.Linear(from.y, to.y, t);
+        this.add
+          .image(x, y, layout.textureKey)
+          .setScale(layout.scale)
+          .setAlpha(layout.alpha)
+          .setDepth(40);
+      }
+    }
+  }
 
-    this.add.text(252, 26, 'LEVEL SELECT', {
-      fontFamily: 'monospace',
-      fontSize: '48px',
-      color: '#ffd54f'
-    });
+  private renderNodes(): void {
+    this.nodeSprites.clear();
+    this.nodeLabels.clear();
 
-    this.add.text(
-      92,
-      492,
-      'UP/DOWN: SELECT LEVEL   ENTER: PLAY   ESC: TITLE   S: SETTINGS',
-      { fontFamily: 'monospace', fontSize: '16px', color: '#f2fdfd' }
-    );
+    const layout = styleConfig.worldMapLayout;
+    const font = styleConfig.typography.fontKey;
+    for (const node of layout.nodes) {
+      const sprite = this.add
+        .image(node.x, node.y, layout.nodeSpriteKeys.locked)
+        .setScale(layout.nodeScale.base)
+        .setDepth(64);
+      sprite.setData('baseY', node.y);
+      this.nodeSprites.set(node.key, sprite);
 
-    this.drawLevelGrid();
+      const label = this.add
+        .bitmapText(node.x, node.y + 14, font, node.key, 10)
+        .setOrigin(0.5, 0)
+        .setDepth(65);
+      this.nodeLabels.set(node.key, label);
+    }
+  }
+
+  private updateSelectionVisuals(): void {
+    const layout = styleConfig.worldMapLayout;
+    const completed = new Set(runtimeStore.save.campaign.completedLevelKeys);
+    let selectedSprite: Phaser.GameObjects.Image | null = null;
+
+    for (const node of layout.nodes) {
+      const ref = keyToRef(node.key);
+      const ordinal = campaignOrdinal(ref.world, ref.levelIndex);
+      const selected = ordinal === this.selectedOrdinal;
+      const unlocked = isLevelUnlocked(runtimeStore.save, ref.world, ref.levelIndex);
+      const done = completed.has(node.key);
+
+      const sprite = this.nodeSprites.get(node.key);
+      const label = this.nodeLabels.get(node.key);
+      if (!sprite || !label) {
+        continue;
+      }
+
+      const textureKey = selected
+        ? layout.nodeSpriteKeys.selected
+        : done
+          ? layout.nodeSpriteKeys.done
+          : unlocked
+            ? layout.nodeSpriteKeys.open
+            : layout.nodeSpriteKeys.locked;
+      sprite.setTexture(textureKey);
+      sprite.setScale(selected ? layout.nodeScale.selected : layout.nodeScale.base);
+      sprite.y = Number(sprite.getData('baseY'));
+
+      const labelTint = selected
+        ? color('hudAccent')
+        : done
+          ? color('grassTop')
+          : unlocked
+            ? color('hudText')
+            : color('inkSoft');
+      label.setTint(labelTint);
+
+      if (selected) {
+        selectedSprite = sprite;
+      }
+    }
+
+    this.selectedBobTween?.remove();
+    this.selectedBobTween = null;
+    if (selectedSprite) {
+      this.selectedBobTween = this.tweens.add({
+        targets: selectedSprite,
+        y: Number(selectedSprite.getData('baseY')) - layout.selectionBob.distancePx,
+        duration: layout.selectionBob.durationMs,
+        ease: 'Sine.easeInOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    }
   }
 
   private moveSelection(delta: number): void {
     this.selectedOrdinal = Math.min(TOTAL_CAMPAIGN_LEVELS, Math.max(1, this.selectedOrdinal + delta));
-    this.rerender();
+    this.updateSelectionVisuals();
   }
 
   create(): void {
@@ -86,7 +201,20 @@ export class WorldMapScene extends Phaser.Scene {
 
     const { world, levelIndex } = runtimeStore.save.campaign;
     this.selectedOrdinal = campaignOrdinal(world, levelIndex);
-    this.rerender();
+
+    this.cameras.main.setBackgroundColor(color('skyDeep'));
+    this.cameras.main.setBounds(0, 0, styleConfig.worldMapLayout.viewport.width, styleConfig.worldMapLayout.viewport.height);
+    renderGameplayBackground(
+      this,
+      styleConfig.worldMapLayout.viewport.width,
+      styleConfig.worldMapLayout.viewport.height,
+      styleConfig.gameplayLayout,
+    );
+    this.renderHeaderAndHints();
+    this.renderWorldLabels();
+    this.renderPathDots();
+    this.renderNodes();
+    this.updateSelectionVisuals();
 
     this.input.keyboard?.on('keydown-UP', () => {
       this.moveSelection(-1);
@@ -112,7 +240,6 @@ export class WorldMapScene extends Phaser.Scene {
       audio.playSfx('menu_confirm');
       this.scene.start('SettingsScene', { backScene: 'WorldMapScene' });
     });
-
     this.input.keyboard?.on('keydown-ENTER', () => {
       const selected = campaignRefFromOrdinal(this.selectedOrdinal);
       if (!isLevelUnlocked(runtimeStore.save, selected.world, selected.levelIndex)) {
@@ -123,6 +250,11 @@ export class WorldMapScene extends Phaser.Scene {
       runtimeStore.save = setCurrentLevel(runtimeStore.save, selected.world, selected.levelIndex);
       persistSave(runtimeStore.save);
       this.scene.start('PlayScene', { bonus: false });
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.selectedBobTween?.remove();
+      this.selectedBobTween = null;
     });
   }
 }

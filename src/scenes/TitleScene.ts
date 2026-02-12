@@ -55,6 +55,7 @@ export class TitleScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0)
       .setTint(palette('hudText'))
+      .setScrollFactor(0)
       .setDepth(45);
     subtitle.setLetterSpacing(titleLayout.subtitle.letterSpacingPx);
 
@@ -68,6 +69,7 @@ export class TitleScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0)
       .setTint(palette('hudAccent'))
+      .setScrollFactor(0)
       .setDepth(45);
     prompt.setLetterSpacing(titleLayout.prompt.letterSpacingPx);
     prompt.setName('titlePrompt');
@@ -82,6 +84,7 @@ export class TitleScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0)
       .setTint(palette('hudText'))
+      .setScrollFactor(0)
       .setDepth(45);
     hints.setLetterSpacing(titleLayout.hints.letterSpacingPx);
 
@@ -137,6 +140,7 @@ export class TitleScene extends Phaser.Scene {
     const logoGlow = this.add
       .image(titleLayout.wordmark.x, titleLayout.wordmark.y + 4, 'title_logo')
       .setOrigin(0.5, 0)
+      .setScrollFactor(0)
       .setTint(palette('bloomWarm'))
       .setAlpha(styleConfig.bloom.strength * 0.46)
       .setBlendMode(Phaser.BlendModes.ADD)
@@ -146,6 +150,7 @@ export class TitleScene extends Phaser.Scene {
     const logo = this.add
       .image(titleLayout.wordmark.x, titleLayout.wordmark.y, 'title_logo')
       .setOrigin(0.5, 0)
+      .setScrollFactor(0)
       .setDepth(40);
     logo.setScale(titleLayout.wordmark.scale);
 
@@ -153,6 +158,7 @@ export class TitleScene extends Phaser.Scene {
       .image(titleLayout.portrait.x, titleLayout.portrait.y, titleLayout.portrait.textureKey)
       .setOrigin(0, 0)
       .setScale(titleLayout.portrait.scale)
+      .setScrollFactor(0)
       .setDepth(44);
   }
 

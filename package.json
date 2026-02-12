@@ -21,6 +21,8 @@
     "lint:assets": "tsx tools/asset_validate.ts",
     "lint:audio": "tsx tools/audio_validate.ts",
     "lint:visual": "tsx tools/visual_regress.ts",
+    "visual:capture": "tsx tools/capture_visual_baselines.ts",
+    "visual:update-golden": "tsx tools/capture_visual_baselines.ts --update-golden",
     "gen:assets": "tsx tools/make_ui_assets.ts",
     "gen:all": "npm run gen:assets && npm run gen:avatars"
   },

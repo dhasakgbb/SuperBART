@@ -13,6 +13,7 @@ export class GameOverScene extends Phaser.Scene {
     const audio = AudioEngine.shared();
     audio.configureFromSettings(runtimeStore.save.settings);
     audio.stopMusic();
+    audio.playSfx('game_over');
     this.add.text(300, 170, 'GAME OVER', { fontSize: '58px', color: '#ff5252', fontFamily: 'monospace' });
     this.add.text(250, 290, 'R: Restart Campaign\nEsc: Title', { fontSize: '24px', color: '#ffffff' });
 

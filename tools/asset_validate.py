@@ -40,6 +40,15 @@ REQUIRED_PNG_DIMENSIONS = {
     'public/assets/sprites/bart_head_64.png': (64, 64),
     'public/assets/sprites/bart_portrait_96.png': (96, 96),
     'public/assets/sprites/title_logo.png': (512, 160),
+    'public/assets/sprites/cloud_1.png': (24, 16),
+    'public/assets/sprites/cloud_2.png': (32, 18),
+    'public/assets/sprites/hill_far.png': (80, 44),
+    'public/assets/sprites/hill_near.png': (88, 46),
+    'public/assets/sprites/map_node_open.png': (16, 16),
+    'public/assets/sprites/map_node_done.png': (16, 16),
+    'public/assets/sprites/map_node_locked.png': (16, 16),
+    'public/assets/sprites/map_node_selected.png': (16, 16),
+    'public/assets/sprites/map_path_dot.png': (8, 8),
 }
 
 

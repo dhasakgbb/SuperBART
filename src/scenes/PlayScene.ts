@@ -7,7 +7,7 @@ import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
 import { resolvePlayerDamage } from '../player/powerup';
 import { createFeelState, stepMovement } from '../player/movement';
-import { renderThemedBackground } from '../rendering/parallax';
+import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig from '../style/styleConfig';
 import { computeSeed } from '../systems/progression';
 import { persistSave } from '../systems/save';
@@ -80,17 +80,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.difficultyTier = level.metadata.difficultyTier;
     runtimeStore.chunksUsed = [...level.metadata.chunksUsed];
 
-    const worldRules = level.metadata.theme;
-    const palette = {
-      grass: { top: 0x6ec6ff, bot: 0xb3ecff },
-      desert: { top: 0xf9d976, bot: 0xf39f86 },
-      ice: { top: 0x89cff0, bot: 0xe0f7ff },
-      factory: { top: 0x101423, bot: 0x2b2d42 },
-      castle: { top: 0x221122, bot: 0x3b1f2b },
-      bonus: { top: 0x4f79d8, bot: 0x8db2ff }
-    }[worldRules] ?? { top: 0x6ec6ff, bot: 0xb3ecff };
-
-    renderThemedBackground(this, level.width * TILE_SIZE, VIEW_HEIGHT, palette.top, palette.bot);
+    renderGameplayBackground(this, level.width * TILE_SIZE, VIEW_HEIGHT, styleConfig.gameplayLayout);
 
     this.physics.world.setBounds(0, 0, level.width * TILE_SIZE, level.height * TILE_SIZE);
 

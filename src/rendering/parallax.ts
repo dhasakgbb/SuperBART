@@ -1,44 +1,90 @@
 import Phaser from 'phaser';
+import { stylePalette, type StyleConfig } from '../style/styleConfig';
 
-export function renderThemedBackground(
+function toColor(swatch: string): number {
+  return Phaser.Display.Color.HexStringToColor(stylePalette[swatch] ?? '#ffffff').color;
+}
+
+function renderSky(
   scene: Phaser.Scene,
   width: number,
   height: number,
-  skyTop: number,
-  skyBottom: number
+  layout: StyleConfig['gameplayLayout'],
 ): void {
-  const g = scene.add.graphics();
-  g.fillGradientStyle(skyTop, skyTop, skyBottom, skyBottom, 1);
-  g.fillRect(0, 0, width, height);
+  const sky = scene.add.graphics().setDepth(-1400).setScrollFactor(0);
+  sky.fillGradientStyle(
+    toColor(layout.sky.topSwatch),
+    toColor(layout.sky.topSwatch),
+    toColor(layout.sky.bottomSwatch),
+    toColor(layout.sky.bottomSwatch),
+    1,
+  );
+  sky.fillRect(0, 0, width, height);
 
-  const haze = scene.add.graphics().setDepth(-998);
-  haze.fillStyle(0xf6d58b, 0.08);
-  haze.fillEllipse(width * 0.5, 40, width * 0.95, 120);
+  const haze = scene.add.graphics().setDepth(-1399).setScrollFactor(0);
+  haze.fillStyle(toColor('bloomWarm'), layout.haze.alpha);
+  haze.fillEllipse(width * 0.5, layout.haze.y, width * layout.haze.widthFactor, layout.haze.heightPx);
+}
 
-  for (let i = 0; i < Math.ceil(width / 260); i += 1) {
-    const x = 70 + i * 260;
-    const y = 70 + (i % 2) * 24;
-    const cloudKey = i % 2 === 0 ? 'cloud_1' : 'cloud_2';
-    const cloud = scene.add.image(x, y, cloudKey).setDepth(-997).setAlpha(0.42).setScale(1.7);
-    const cloudGlow = scene.add.image(x + 2, y + 2, cloudKey).setDepth(-998).setAlpha(0.1).setScale(1.95);
-    cloudGlow.setBlendMode(Phaser.BlendModes.ADD);
-    cloud.setScrollFactor(0.06);
-    cloudGlow.setScrollFactor(0.04);
+function renderClouds(
+  scene: Phaser.Scene,
+  width: number,
+  layout: StyleConfig['gameplayLayout'],
+): void {
+  for (const cloudDef of layout.clouds) {
+    for (let x = cloudDef.x; x < width + cloudDef.spacingPx; x += cloudDef.spacingPx) {
+      const cloud = scene.add
+        .image(x, cloudDef.y, cloudDef.key)
+        .setScale(cloudDef.scale)
+        .setAlpha(cloudDef.alpha)
+        .setDepth(-1388)
+        .setScrollFactor(cloudDef.scrollFactor);
+
+      const glow = scene.add
+        .image(x + 4, cloudDef.y + 4, cloudDef.key)
+        .setScale(cloudDef.scale + 0.12)
+        .setAlpha(cloudDef.alpha * 0.22)
+        .setTint(toColor('bloomWarm'))
+        .setDepth(-1389)
+        .setScrollFactor(Math.max(0.02, cloudDef.scrollFactor - 0.02))
+        .setBlendMode(Phaser.BlendModes.ADD);
+
+      scene.tweens.add({
+        targets: [cloud, glow],
+        x: x + cloudDef.driftPx,
+        duration: cloudDef.driftMs,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+      });
+    }
   }
+}
 
-  const mountain = scene.add.graphics().setDepth(-996);
-  for (let i = 0; i < Math.ceil(width / 140); i += 1) {
-    mountain.fillStyle(0x000000, 0.12 + (i % 3) * 0.03);
-    mountain.fillTriangle(
-      i * 140 - 20,
-      height - 24,
-      i * 140 + 72,
-      height - 156 - (i % 2) * 22,
-      i * 140 + 164,
-      height - 24
-    );
+function renderHillLayer(
+  scene: Phaser.Scene,
+  width: number,
+  layer: StyleConfig['gameplayLayout']['hills']['far'],
+  depth: number,
+): void {
+  for (let x = layer.startX; x < width + layer.spacingPx; x += layer.spacingPx) {
+    scene.add
+      .image(x, layer.y, layer.key)
+      .setDepth(depth)
+      .setAlpha(layer.alpha)
+      .setScale(layer.scale)
+      .setScrollFactor(layer.scrollFactor);
   }
+}
 
-  g.setDepth(-999);
-  g.setScrollFactor(0);
+export function renderGameplayBackground(
+  scene: Phaser.Scene,
+  width: number,
+  height: number,
+  layout: StyleConfig['gameplayLayout'],
+): void {
+  renderSky(scene, width, height, layout);
+  renderClouds(scene, width, layout);
+  renderHillLayer(scene, width, layout.hills.far, -1376);
+  renderHillLayer(scene, width, layout.hills.near, -1372);
 }
