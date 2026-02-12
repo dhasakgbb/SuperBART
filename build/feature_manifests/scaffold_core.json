@@ -1,0 +1,13 @@
+{
+  "feature_id": "scaffold_core",
+  "code_paths": [
+    "src/main.js",
+    "src/scenes/BootScene.js",
+    "src/scenes/PlayScene.js",
+    "package.json",
+    "vite.config.js"
+  ],
+  "test_paths": [
+    "tests/boot_level_load.test.js"
+  ]
+}

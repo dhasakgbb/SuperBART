@@ -1,0 +1,11 @@
+{
+  "feature_id": "coins_score",
+  "code_paths": [
+    "src/scenes/PlayScene.js",
+    "src/game/stateMachine.js",
+    "src/ui/hud.js"
+  ],
+  "test_paths": [
+    "tests/boot_level_load.test.js"
+  ]
+}

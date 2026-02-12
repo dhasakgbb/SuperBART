@@ -1,0 +1,36 @@
+# Node / package artifacts
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build artifacts
+dist/
+coverage/
+.vite/
+
+# Runtime/generated local outputs
+build/build_metadata.json
+output/
+playwright-report/
+test-results/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment and local settings
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Optional local-only agent progress tracking
+progress.md

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "events": {
+    "session_start": {
+      "required": ["session_id", "platform", "build_version"],
+      "optional": ["locale"]
+    },
+    "mission_complete": {
+      "required": ["session_id", "mission_id", "duration_seconds", "result"],
+      "optional": ["difficulty"]
+    }
+  }
+}

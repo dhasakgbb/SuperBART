@@ -1,0 +1,11 @@
+{
+  "feature_id": "level_camera_collision",
+  "code_paths": [
+    "src/scenes/PlayScene.js",
+    "src/level/levelParser.js",
+    "public/assets/maps/level1.json"
+  ],
+  "test_paths": [
+    "tests/boot_level_load.test.js"
+  ]
+}

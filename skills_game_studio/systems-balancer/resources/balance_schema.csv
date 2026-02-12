@@ -1,0 +1,5 @@
+stat_name,unit,baseline,min,max,curve_type,notes
+player_dps,damage_per_second,25,10,250,exponential,main combat throughput
+enemy_hp,hit_points,100,50,2500,exponential,scales by encounter tier
+currency_income,credits_per_minute,40,20,220,logarithmic,controls shop pacing
+ability_cooldown,seconds,8,2,20,linear,prevents spam and downtime

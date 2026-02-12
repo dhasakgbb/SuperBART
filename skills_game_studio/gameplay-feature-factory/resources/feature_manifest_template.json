@@ -1,0 +1,10 @@
+{
+  "feature_id": "sample_feature",
+  "code_paths": [
+    "src/features/sample_feature.py"
+  ],
+  "test_paths": [
+    "tests/test_sample_feature.py"
+  ],
+  "notes": "Replace with real files from implementation"
+}

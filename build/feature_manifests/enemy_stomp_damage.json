@@ -1,0 +1,10 @@
+{
+  "feature_id": "enemy_stomp_damage",
+  "code_paths": [
+    "src/scenes/PlayScene.js",
+    "src/logic/combatRules.js"
+  ],
+  "test_paths": [
+    "tests/repro_scenes/repro_enemy_side_hit.md"
+  ]
+}

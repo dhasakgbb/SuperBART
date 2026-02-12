@@ -1,0 +1,3 @@
+asset_id,category,source_path,target_path,format,max_size_kb,owner,tags
+hero_idle_anim,animation,raw/hero_idle.fbx,assets/characters/hero/idle.anim,anim,2048,anim_team,hero core
+ui_click_sfx,audio,raw/ui_click.wav,assets/audio/ui/click.ogg,ogg,256,audio_team,ui feedback

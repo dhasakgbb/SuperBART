@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import sys
+
+SHARED = Path(__file__).resolve().parents[2] / "_shared" / "SCRIPTS"
+sys.path.insert(0, str(SHARED))
+
+from artifact_check import run_spec
+
+SPEC = {
+    "required_files": [
+        "docs/architecture.md",
+        "docs/dependency_rules.md",
+        "tools/check_dependency_rules.py",
+    ],
+    "contains": [
+        {
+            "file": "docs/architecture.md",
+            "needles": ["## Module Boundaries", "## Ownership", "## Integration Points"],
+        },
+        {
+            "file": "docs/dependency_rules.md",
+            "needles": ["## Allowed", "## Forbidden", "## Enforcement"],
+        },
+        {
+            "file": "tools/check_dependency_rules.py",
+            "needles": ["def main", "raise SystemExit"],
+        },
+    ],
+}
+
+if __name__ == "__main__":
+    raise SystemExit(
+        run_spec(
+            SPEC,
+            default_root=Path(__file__).resolve().parents[3],
+            description="Validate artifacts produced by engine-architecture-boundaries.",
+        )
+    )

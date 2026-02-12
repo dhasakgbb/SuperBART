@@ -1,0 +1,23 @@
+{
+  "name": "super-bart",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "assets:generate": "python3 tools/generate_assets.py",
+    "assets:validate": "python3 tools/asset_validate.py",
+    "validate": "python3 tools/validate_repo.py"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
+  }
+}
