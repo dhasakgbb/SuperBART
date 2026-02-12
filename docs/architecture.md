@@ -1,25 +1,26 @@
-# Super BART Architecture
-
-## Description
-Describes code module boundaries, ownership, and runtime integration points for maintainable development.
-
+# Super BART V2 Architecture
 
 ## Module Boundaries
-- `src/scenes/`: Phaser scene orchestration (boot/loading and gameplay lifecycle).
-- `src/game/`: global configuration and state-machine transitions.
-- `src/logic/`: deterministic, testable gameplay rules (physics helpers, collision resolution).
-- `src/level/`: level parsing/contract validation from tilemap JSON.
-- `src/ui/`: HUD rendering and state presentation.
+- `src/core`: constants, game config, runtime store, asset manifest.
+- `src/scenes`: Phaser scene orchestration and state transitions.
+- `src/player`: movement feel model and power-up transitions.
+- `src/enemies`: enemy behavior registry and collision outcomes.
+- `src/hazards`: thwomp and moving-platform update systems.
+- `src/levelgen`: deterministic world rules + chunk assembly + validation.
+- `src/audio`: WebAudio synth for SFX/music.
+- `src/rendering`: theme/parallax background helpers.
+- `src/systems`: save/persistence and progression utilities.
+- `src/types`: shared data contracts.
 
-## Ownership
-- Scene orchestration owner: gameplay runtime layer (`src/scenes`).
-- Deterministic gameplay logic owner: logic layer (`src/logic`).
-- State transition owner: game state layer (`src/game`).
-- Data contract owner: level layer (`src/level`).
-- HUD/UX owner: UI layer (`src/ui`).
+## Data Flow
+1. `PlayScene` computes seed from campaign state.
+2. `levelgen/generator` emits `GeneratedLevel`.
+3. Scene instantiates tile solids, platforms, entities.
+4. `player/movement` runs deterministic feel-step each frame.
+5. Combat and hazard overlaps resolve into progression state updates.
+6. Runtime state is exposed through debug APIs for tests and automation.
 
-## Integration Points
-- Boot flow: `src/scenes/BootScene.js` preloads assets and transitions to `PlayScene`.
-- Runtime flow: `PlayScene` queries `src/level/levelParser.js`, applies rules from `src/logic/*`, and transitions state via `src/game/stateMachine.js`.
-- Debug API flow: scene exposes `window.render_game_to_text`, `window.advanceTime`, and `window.__SUPER_BART__.getState`.
-- External integration: Vite serves static files from `public/assets/` and bundles runtime from `src/`.
+## Deterministic Interfaces
+- `window.__SUPER_BART__.getState()`
+- `window.render_game_to_text()`
+- `window.advanceTime(ms)`

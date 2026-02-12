@@ -1,0 +1,31 @@
+export const ASSET_MANIFEST = {
+  images: {
+    player_small: '/assets/sprites/player_small.svg',
+    player_big: '/assets/sprites/player_big.svg',
+    bart_head_32: '/assets/sprites/bart_head_32.png',
+    bart_head_48: '/assets/sprites/bart_head_48.png',
+    bart_head_64: '/assets/sprites/bart_head_64.png',
+    bart_portrait_96: '/assets/sprites/bart_portrait_96.png',
+    enemy_walker: '/assets/sprites/enemy_walker.svg',
+    enemy_shell: '/assets/sprites/enemy_shell.svg',
+    enemy_shell_retracted: '/assets/sprites/enemy_shell_retracted.svg',
+    enemy_flying: '/assets/sprites/enemy_flying.svg',
+    enemy_spitter: '/assets/sprites/enemy_spitter.svg',
+    projectile: '/assets/sprites/projectile.svg',
+    coin: '/assets/sprites/coin.png',
+    question_block: '/assets/sprites/question_block.png',
+    cloud_1: '/assets/sprites/cloud_1.png',
+    cloud_2: '/assets/sprites/cloud_2.png',
+    star: '/assets/sprites/star.svg',
+    flag: '/assets/sprites/flag.svg',
+    checkpoint: '/assets/sprites/checkpoint.svg',
+    spring: '/assets/sprites/spring.svg',
+    spike: '/assets/sprites/spike.svg',
+    thwomp: '/assets/sprites/thwomp.svg',
+    moving_platform: '/assets/sprites/moving_platform.svg',
+    tileset: '/assets/tiles/tileset.png',
+    bitmap_font: '/assets/fonts/bitmap_font.png',
+    tile_ground: '/assets/tiles/tile_ground.svg',
+    tile_oneway: '/assets/tiles/tile_oneway.svg'
+  }
+};

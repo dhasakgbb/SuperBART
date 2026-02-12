@@ -1,0 +1,394 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  blit,
+  createImage,
+  drawDisk,
+  drawLine,
+  ensureDir,
+  fillRect,
+  getPixel,
+  parseHex,
+  setPixel,
+  strokeRect,
+  type PixelImage,
+  type Rgba,
+  writePng,
+} from './lib/pixel';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '..');
+
+const COLORS = {
+  inkDark: parseHex('#1D1D1D'),
+  inkSoft: parseHex('#2B2824'),
+  grassTop: parseHex('#46BA4C'),
+  grassMid: parseHex('#20A36D'),
+  mossDark: parseHex('#0A582C'),
+  groundShadow: parseHex('#742B01'),
+  groundMid: parseHex('#B6560E'),
+  groundWarm: parseHex('#DC7C1D'),
+  sand: parseHex('#DED256'),
+  cloudLight: parseHex('#F2FDFD'),
+  cloudShade: parseHex('#D9E7EB'),
+  steel: parseHex('#9FA8B3'),
+  steelDark: parseHex('#66707C'),
+  checkpointBlue: parseHex('#3CA4E8'),
+  checkpointGold: parseHex('#F1C55F'),
+  checkpointRed: parseHex('#D0644A'),
+};
+
+const TILE_SIZE = 16;
+
+function isTransparent(pixel: Rgba): boolean {
+  return pixel[3] === 0;
+}
+
+function drawGroundTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundMid);
+  for (let y = 4; y < TILE_SIZE; y += 1) {
+    for (let x = 0; x < TILE_SIZE; x += 1) {
+      const tone = (x + y) % 3;
+      setPixel(tile, x, y, tone === 0 ? COLORS.groundWarm : tone === 1 ? COLORS.groundMid : COLORS.groundShadow);
+    }
+  }
+
+  fillRect(tile, 0, 0, TILE_SIZE, 2, COLORS.grassTop);
+  fillRect(tile, 0, 2, TILE_SIZE, 2, COLORS.grassMid);
+  for (let x = 0; x < TILE_SIZE; x += 2) {
+    setPixel(tile, x, 3, COLORS.mossDark);
+  }
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawBrickTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundWarm);
+  for (let y = 0; y < TILE_SIZE; y += 4) {
+    fillRect(tile, 0, y, TILE_SIZE, 1, COLORS.groundShadow);
+  }
+  for (let x = 0; x < TILE_SIZE; x += 8) {
+    fillRect(tile, x, 4, 1, 4, COLORS.groundShadow);
+    fillRect(tile, x + 4, 8, 1, 4, COLORS.groundShadow);
+    fillRect(tile, x, 12, 1, 4, COLORS.groundShadow);
+  }
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawPlatformTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.steelDark);
+  fillRect(tile, 0, 0, TILE_SIZE, 3, COLORS.steel);
+  for (let y = 3; y < TILE_SIZE; y += 1) {
+    for (let x = 0; x < TILE_SIZE; x += 2) {
+      setPixel(tile, x, y, COLORS.steel);
+    }
+  }
+  fillRect(tile, 3, 6, 10, 2, COLORS.inkSoft);
+  fillRect(tile, 4, 7, 8, 1, COLORS.sand);
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawOneWayTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+  fillRect(tile, 1, 6, 14, 3, COLORS.groundWarm);
+  fillRect(tile, 1, 9, 14, 2, COLORS.groundShadow);
+  for (let x = 2; x < TILE_SIZE - 2; x += 4) {
+    fillRect(tile, x, 6, 1, 5, COLORS.inkSoft);
+  }
+  strokeRect(tile, 1, 6, 14, 5, COLORS.inkDark);
+}
+
+function drawSpikeTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+  fillRect(tile, 0, 13, TILE_SIZE, 3, COLORS.groundShadow);
+  for (let peak = 0; peak < 4; peak += 1) {
+    const baseX = peak * 4;
+    drawLine(tile, baseX, 13, baseX + 2, 6, COLORS.steel);
+    drawLine(tile, baseX + 4, 13, baseX + 2, 6, COLORS.steel);
+    fillRect(tile, baseX + 1, 10, 3, 3, COLORS.cloudShade);
+  }
+  for (let x = 0; x < TILE_SIZE; x += 1) {
+    setPixel(tile, x, 13, COLORS.inkDark);
+  }
+  strokeRect(tile, 0, 13, TILE_SIZE, 3, COLORS.inkDark);
+}
+
+function drawCheckpointTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+  fillRect(tile, 7, 2, 2, 12, COLORS.steel);
+  fillRect(tile, 9, 4, 5, 3, COLORS.checkpointBlue);
+  fillRect(tile, 9, 7, 4, 2, COLORS.checkpointGold);
+  fillRect(tile, 4, 13, 8, 2, COLORS.groundShadow);
+  strokeRect(tile, 4, 13, 8, 2, COLORS.inkDark);
+  strokeRect(tile, 9, 4, 5, 5, COLORS.inkDark);
+  for (let y = 3; y < 14; y += 2) {
+    setPixel(tile, 7, y, COLORS.inkDark);
+    setPixel(tile, 8, y, COLORS.inkDark);
+  }
+}
+
+function drawGoalTile(tile: PixelImage): void {
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+  fillRect(tile, 2, 12, 12, 3, COLORS.groundShadow);
+  strokeRect(tile, 2, 12, 12, 3, COLORS.inkDark);
+  fillRect(tile, 5, 3, 6, 9, COLORS.checkpointRed);
+  fillRect(tile, 6, 4, 4, 7, COLORS.checkpointGold);
+  strokeRect(tile, 5, 3, 6, 9, COLORS.inkDark);
+  drawDisk(tile, 8, 8, 2, COLORS.sand);
+}
+
+function makeTileset(): void {
+  const tileBuilders = [
+    drawGroundTile,
+    drawBrickTile,
+    drawPlatformTile,
+    drawOneWayTile,
+    drawSpikeTile,
+    drawCheckpointTile,
+    drawGoalTile,
+  ];
+
+  const tileset = createImage(TILE_SIZE, TILE_SIZE * tileBuilders.length, [0, 0, 0, 0]);
+  tileBuilders.forEach((builder, index) => {
+    const tile = createImage(TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+    builder(tile);
+    blit(tileset, tile, 0, index * TILE_SIZE);
+  });
+
+  const output = path.join(repoRoot, 'public/assets/tiles/tileset.png');
+  writePng(output, tileset);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function makeCoin(): void {
+  const coin = createImage(16, 16, [0, 0, 0, 0]);
+  drawDisk(coin, 8, 8, 6, COLORS.checkpointGold);
+  drawDisk(coin, 8, 8, 4, COLORS.sand);
+  fillRect(coin, 7, 4, 2, 8, COLORS.groundWarm);
+
+  for (let y = 0; y < 16; y += 1) {
+    for (let x = 0; x < 16; x += 1) {
+      const [r, g, b, a] = getPixel(coin, x, y);
+      if (a === 0) {
+        continue;
+      }
+      const isEdge = isTransparent(getPixel(coin, x - 1, y)) || isTransparent(getPixel(coin, x + 1, y)) || isTransparent(getPixel(coin, x, y - 1)) || isTransparent(getPixel(coin, x, y + 1));
+      if (isEdge) {
+        setPixel(coin, x, y, COLORS.inkDark);
+      } else if (x < 8 && y < 7) {
+        setPixel(coin, x, y, [Math.min(r + 18, 255), Math.min(g + 18, 255), Math.min(b + 12, 255), a]);
+      }
+    }
+  }
+
+  const output = path.join(repoRoot, 'public/assets/sprites/coin.png');
+  writePng(output, coin);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function makeQuestionBlock(): void {
+  const block = createImage(16, 16, [0, 0, 0, 0]);
+  fillRect(block, 0, 0, 16, 16, COLORS.groundWarm);
+  fillRect(block, 1, 1, 14, 14, COLORS.checkpointGold);
+  fillRect(block, 2, 2, 12, 4, COLORS.sand);
+
+  const dark = COLORS.groundShadow;
+  const q = [
+    [6, 5], [7, 5], [8, 5],
+    [9, 6],
+    [8, 7],
+    [7, 8],
+    [7, 10],
+  ];
+  q.forEach(([x, y]) => setPixel(block, x, y, dark));
+
+  fillRect(block, 6, 12, 4, 2, COLORS.groundMid);
+  strokeRect(block, 0, 0, 16, 16, COLORS.inkDark);
+
+  const output = path.join(repoRoot, 'public/assets/sprites/question_block.png');
+  writePng(output, block);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function outlineOpaquePixels(image: PixelImage, outline: Rgba): void {
+  const snapshot = createImage(image.width, image.height, [0, 0, 0, 0]);
+  blit(snapshot, image, 0, 0);
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      const px = getPixel(snapshot, x, y);
+      if (px[3] !== 0) {
+        continue;
+      }
+      const neighbors = [
+        getPixel(snapshot, x - 1, y),
+        getPixel(snapshot, x + 1, y),
+        getPixel(snapshot, x, y - 1),
+        getPixel(snapshot, x, y + 1),
+      ];
+      if (neighbors.some((neighbor) => neighbor[3] > 0)) {
+        setPixel(image, x, y, outline);
+      }
+    }
+  }
+}
+
+function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): PixelImage {
+  const cloud = createImage(baseWidth, baseHeight, [0, 0, 0, 0]);
+  const puffs = variant === 1
+    ? [[6, 9, 5], [12, 7, 6], [18, 9, 5]]
+    : [[7, 10, 5], [13, 7, 7], [20, 7, 6], [26, 10, 5]];
+
+  for (const [cx, cy, radius] of puffs) {
+    drawDisk(cloud, cx, cy, radius, COLORS.cloudLight);
+    drawDisk(cloud, cx, cy + 1, Math.max(2, radius - 1), COLORS.cloudShade);
+  }
+
+  for (let y = 0; y < cloud.height; y += 1) {
+    for (let x = 0; x < cloud.width; x += 1) {
+      const pixel = getPixel(cloud, x, y);
+      if (pixel[3] === 0) {
+        continue;
+      }
+      if (y < cloud.height / 2) {
+        setPixel(cloud, x, y, COLORS.cloudLight);
+      }
+    }
+  }
+
+  outlineOpaquePixels(cloud, COLORS.inkDark);
+  return cloud;
+}
+
+function makeClouds(): void {
+  const cloud1 = drawCloud(24, 16, 1);
+  const cloud2 = drawCloud(32, 18, 2);
+
+  const out1 = path.join(repoRoot, 'public/assets/sprites/cloud_1.png');
+  const out2 = path.join(repoRoot, 'public/assets/sprites/cloud_2.png');
+  writePng(out1, cloud1);
+  writePng(out2, cloud2);
+  console.log(`Wrote ${path.relative(repoRoot, out1)}`);
+  console.log(`Wrote ${path.relative(repoRoot, out2)}`);
+}
+
+type Glyph = string[];
+
+const GLYPHS: Record<string, Glyph> = {
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+  C: ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+  D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+  G: ['01111', '10000', '10000', '10011', '10001', '10001', '01111'],
+  H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+  I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
+  J: ['00001', '00001', '00001', '00001', '10001', '10001', '01110'],
+  K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+  L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+  M: ['10001', '11011', '10101', '10001', '10001', '10001', '10001'],
+  N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+  Q: ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+  S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+  T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+  U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+  V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+  W: ['10001', '10001', '10001', '10001', '10101', '11011', '10001'],
+  X: ['10001', '01010', '00100', '00100', '00100', '01010', '10001'],
+  Y: ['10001', '01010', '00100', '00100', '00100', '00100', '00100'],
+  Z: ['11111', '00010', '00100', '00100', '01000', '10000', '11111'],
+  0: ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+  1: ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+  2: ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+  3: ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+  4: ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+  5: ['11111', '10000', '10000', '11110', '00001', '00001', '11110'],
+  6: ['01110', '10000', '10000', '11110', '10001', '10001', '01110'],
+  7: ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+  8: ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+  9: ['01110', '10001', '10001', '01111', '00001', '00001', '01110'],
+  ':': ['00000', '00100', '00100', '00000', '00100', '00100', '00000'],
+  '-': ['00000', '00000', '00000', '01110', '00000', '00000', '00000'],
+  '!': ['00100', '00100', '00100', '00100', '00100', '00000', '00100'],
+  '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100'],
+  '.': ['00000', '00000', '00000', '00000', '00000', '00000', '00100'],
+  ',': ['00000', '00000', '00000', '00000', '00110', '00100', '01000'],
+  ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
+};
+
+const FONT_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-!?., ';
+
+function makeBitmapFont(): void {
+  const cellWidth = 8;
+  const cellHeight = 8;
+  const columns = 16;
+  const rows = Math.ceil(FONT_CHARSET.length / columns);
+  const atlas = createImage(columns * cellWidth, rows * cellHeight, [0, 0, 0, 0]);
+
+  FONT_CHARSET.split('').forEach((char, idx) => {
+    const glyph = GLYPHS[char] ?? GLYPHS[' '];
+    const col = idx % columns;
+    const row = Math.floor(idx / columns);
+    const ox = col * cellWidth + 1;
+    const oy = row * cellHeight;
+
+    glyph.forEach((line, gy) => {
+      for (let gx = 0; gx < line.length; gx += 1) {
+        if (line[gx] === '1') {
+          setPixel(atlas, ox + gx, oy + gy, COLORS.cloudLight);
+          if (gy > 0) {
+            const above = getPixel(atlas, ox + gx, oy + gy - 1);
+            if (above[3] === 0) {
+              setPixel(atlas, ox + gx, oy + gy - 1, [18, 18, 18, 128]);
+            }
+          }
+        }
+      }
+    });
+  });
+
+  const fontDir = path.join(repoRoot, 'public/assets/fonts');
+  ensureDir(fontDir);
+
+  const pngPath = path.join(fontDir, 'bitmap_font.png');
+  writePng(pngPath, atlas);
+  console.log(`Wrote ${path.relative(repoRoot, pngPath)}`);
+
+  const fntLines = [
+    'info face="SuperBARTBitmap" size=8 bold=0 italic=0 charset="" unicode=0 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=1,1',
+    `common lineHeight=8 base=7 scaleW=${atlas.width} scaleH=${atlas.height} pages=1 packed=0`,
+    'page id=0 file="bitmap_font.png"',
+    `chars count=${FONT_CHARSET.length}`,
+  ];
+
+  FONT_CHARSET.split('').forEach((char, idx) => {
+    const col = idx % columns;
+    const row = Math.floor(idx / columns);
+    const x = col * cellWidth;
+    const y = row * cellHeight;
+    const code = char.charCodeAt(0);
+    fntLines.push(
+      `char id=${code} x=${x} y=${y} width=6 height=8 xoffset=0 yoffset=0 xadvance=7 page=0 chnl=0`,
+    );
+  });
+
+  const fntPath = path.join(fontDir, 'bitmap_font.fnt');
+  fs.writeFileSync(fntPath, `${fntLines.join('\n')}\n`, 'utf-8');
+  console.log(`Wrote ${path.relative(repoRoot, fntPath)}`);
+}
+
+function main(): number {
+  makeTileset();
+  makeCoin();
+  makeQuestionBlock();
+  makeClouds();
+  makeBitmapFont();
+  return 0;
+}
+
+process.exitCode = main();

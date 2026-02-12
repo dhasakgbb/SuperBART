@@ -1,62 +1,44 @@
-# Super BART - Game Design Document
+# Super BART V2 GDD
 
-## Description
-Defines the gameplay vision, MVP scope, risks, milestones, and acceptance criteria for Super BART.
+## Pillars
+1. Tight platformer feel: acceleration curves, coyote time, jump buffer, variable jump.
+2. Deterministic progression: 25 campaign levels generated from world/level/seed.
+3. Readable challenge growth: enemy/hazard variety and world-themed parameters.
+4. Fast iteration: deterministic tools, runtime debug hooks, automation-friendly tests.
 
+## Scope
+- Engine: Phaser 3 Arcade Physics.
+- Worlds: 5 campaign worlds x 5 levels each.
+- Bonus: 3 micro-levels unlocked via stars.
+- Power states: `small`, `big`.
+- No slopes, no multiplayer, no world-map overworld simulation.
 
-## Goal
-Build a single-level, playable Mario-style side-scrolling platformer in the browser using Phaser 3 Arcade Physics.
+## Core Mechanics
+- Run, jump, variable jump cut, coyote (100ms), jump buffer (100ms).
+- Damage with knockback + invulnerability frames.
+- Death + respawn at active checkpoint.
+- Collect coins (score) and stars (unlock progression).
+- Goal flag ends level with summary transition.
 
-## Core Loop
-1. Move right through a tile-based level.
-2. Jump across platforms and hazards.
-3. Collect coins for score.
-4. Stomp patrolling enemies while avoiding side damage.
-5. Reach the goal flag to finish the level.
+## Enemy and Hazard Matrix
+- Walker patrol enemy.
+- Shell enemy with retract + kick.
+- Flying sine enemy.
+- Spitter enemy with tile-colliding projectiles.
+- Spike hazard.
+- Thwomp-lite hazard.
+- Moving platform + pit + springboard hazard combination.
 
-## MVP Scope
-- In scope:
-  - One side-scrolling level.
-  - Run + jump + variable jump height.
-  - Tile collisions and camera follow.
-  - Coins, score, one enemy type (patrol), stomp kill, side damage.
-  - Death + respawn + lives + game over.
-  - Goal/flag win condition.
-- Out of scope:
-  - Slopes, advanced power-ups, multiple levels, world map, multiplayer.
-
-## Systems
-- Player Controller: horizontal movement, jump, jump-cut behavior.
-- Physics & Collision: Arcade Physics against tile layer and entity overlaps.
-- Combat: stomp vs side-hit enemy resolution.
-- Progression: score, lives, win/lose modes.
-- UI/HUD: score, lives, mode messaging.
-
-## Level Design
-- One tilemap (`level1.json`) with ground and floating platforms.
-- Entity object layer includes `spawn`, `coin`, `enemy`, and `goal` objects.
-- Camera follows player and clamps to map bounds.
-
-## Risks
-- Risk: variable jump can feel inconsistent.
-  - Mitigation: implement deterministic jump-cut constant and test held vs tap apex.
-- Risk: enemy collision false positives.
-  - Mitigation: use explicit stomp predicate (vertical velocity + relative Y).
-- Risk: asset reference drift.
-  - Mitigation: add asset validation script used by `npm run validate`.
-
-## Milestones
-1. Scaffold app + architecture boundaries.
-2. Implement movement/collision/camera.
-3. Add coins, enemy, stomp/damage, respawn, goal.
-4. Add generated placeholder assets + validators.
-5. Add tests, perf checklist, release notes, and validation pipeline.
+## Content System
+- Runtime procedural generator: `generateLevel({world, levelIndex, seed})`.
+- Chunk grammar: start, mid_flat, vertical_climb, coin_arc, enemy_gauntlet, moving_platform, checkpoint, end.
+- World rules tune gap rates, enemy density, projectile cadence, moving platforms, palette, and tempo.
 
 ## Acceptance Criteria
-1. Game runs via `npm run dev` and is playable from spawn to goal.
-2. Player supports run, jump, variable jump height, and tile collisions.
-3. Collecting a coin increments score by 10 and removes coin.
-4. Stomping enemy kills it and adds 100 score; side-hit damages player.
-5. Death triggers respawn unless lives reach zero, then Game Over.
-6. Goal flag sets Win state and ends active play.
-7. `npm run test`, `npm run validate`, and `npm run build` succeed.
+- Title screen -> world map -> playable level loop.
+- Campaign progression supports 25 levels.
+- At least 6 enemy/hazard behaviors active.
+- Power-up loop `small <-> big` works.
+- Checkpoints and deterministic respawns work.
+- Audio synthesis with settings toggles works.
+- `npm run dev`, `npm run test`, `npm run validate`, `npm run build` pass.

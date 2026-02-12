@@ -1,86 +1,84 @@
 #!/usr/bin/env python3
-"""Validate asset and level references for Super BART."""
+"""Validate required generated assets for Super BART V2."""
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
+import re
 
-REQUIRED_FILES = [
-    "public/assets/tiles/terrain.svg",
-    "public/assets/sprites/player.svg",
-    "public/assets/sprites/enemy.svg",
-    "public/assets/sprites/coin.svg",
-    "public/assets/sprites/flag.svg",
-    "public/assets/maps/level1.json",
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover
+    print('ERROR: Pillow is required. Run: python3 -m pip install -r tools/requirements.txt')
+    raise SystemExit(1)
+
+REQUIRED_SVG = [
+    'public/assets/sprites/player_small.svg',
+    'public/assets/sprites/player_big.svg',
+    'public/assets/sprites/enemy_walker.svg',
+    'public/assets/sprites/enemy_shell.svg',
+    'public/assets/sprites/enemy_shell_retracted.svg',
+    'public/assets/sprites/enemy_flying.svg',
+    'public/assets/sprites/enemy_spitter.svg',
+    'public/assets/sprites/projectile.svg',
+    'public/assets/sprites/coin.svg',
+    'public/assets/sprites/star.svg',
+    'public/assets/sprites/flag.svg',
+    'public/assets/sprites/checkpoint.svg',
+    'public/assets/sprites/spring.svg',
+    'public/assets/sprites/spike.svg',
+    'public/assets/sprites/thwomp.svg',
+    'public/assets/sprites/moving_platform.svg',
+    'public/assets/tiles/tile_ground.svg',
+    'public/assets/tiles/tile_oneway.svg',
 ]
+
+REQUIRED_PNG_DIMENSIONS = {
+    'public/assets/bart_source.png': None,
+    'public/assets/sprites/bart_head_32.png': (32, 32),
+    'public/assets/sprites/bart_head_48.png': (48, 48),
+    'public/assets/sprites/bart_head_64.png': (64, 64),
+    'public/assets/sprites/bart_portrait_96.png': (96, 96),
+}
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo = Path(__file__).resolve().parents[1]
     errors: list[str] = []
 
-    for rel in REQUIRED_FILES:
-        if not (repo_root / rel).is_file():
-            errors.append(f"Missing required asset file: {rel}")
+    for rel in REQUIRED_SVG:
+        path = repo / rel
+        if not path.exists():
+            errors.append(f'missing: {rel}')
+            continue
+        txt = path.read_text(encoding='utf-8')
+        if '<svg' not in txt:
+            errors.append(f'not svg: {rel}')
+        if re.search(r'TODO|coming soon', txt, flags=re.IGNORECASE):
+            errors.append(f'placeholder text in: {rel}')
 
-    map_path = repo_root / "public/assets/maps/level1.json"
-    if map_path.is_file():
+    for rel, expected_dim in REQUIRED_PNG_DIMENSIONS.items():
+        path = repo / rel
+        if not path.exists():
+            errors.append(f'missing: {rel}')
+            continue
         try:
-            level_data = json.loads(map_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            errors.append(f"Invalid JSON in level1.json: {exc}")
-            level_data = None
-
-        if level_data is not None:
-            ground = next((l for l in level_data.get("layers", []) if l.get("name") == "ground"), None)
-            entities = next(
-                (
-                    l
-                    for l in level_data.get("layers", [])
-                    if l.get("name") == "entities" and l.get("type") == "objectgroup"
-                ),
-                None,
-            )
-
-            if ground is None:
-                errors.append('Map must include tile layer named "ground".')
-            if entities is None:
-                errors.append('Map must include object layer named "entities".')
-
-            if ground is not None:
-                expected_len = level_data.get("width", 0) * level_data.get("height", 0)
-                actual_len = len(ground.get("data", []))
-                if actual_len != expected_len:
-                    errors.append(
-                        f"Ground tile data size mismatch: expected {expected_len}, got {actual_len}"
-                    )
-
-            if entities is not None:
-                types = {obj.get("type") for obj in entities.get("objects", [])}
-                for required_type in ("spawn", "coin", "enemy", "goal"):
-                    if required_type not in types:
-                        errors.append(f"Missing required entity type: {required_type}")
-
-            for tileset in level_data.get("tilesets", []):
-                image = tileset.get("image", "")
-                if image.startswith("http://") or image.startswith("https://"):
-                    errors.append("Tileset image must be local, external URL found.")
-                tileset_file = (map_path.parent / image).resolve()
-                if not tileset_file.is_file():
-                    errors.append(
-                        f"Tileset image path not found from map reference: {image}"
-                    )
+            with Image.open(path) as img:
+                img.load()
+                if expected_dim and img.size != expected_dim:
+                    errors.append(f'wrong dimensions for {rel}: expected {expected_dim}, got {img.size}')
+        except Exception as exc:
+            errors.append(f'invalid png {rel}: {exc}')
 
     if errors:
-        print("FAIL")
-        for error in errors:
-            print(f"- {error}")
+        print('Asset validation failed:')
+        for e in errors:
+            print(f'- {e}')
         return 1
 
-    print("PASS")
+    print('Asset validation passed.')
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())
