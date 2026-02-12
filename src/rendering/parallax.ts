@@ -24,6 +24,17 @@ function renderSky(
   const haze = scene.add.graphics().setDepth(-1399).setScrollFactor(0);
   haze.fillStyle(toColor('bloomWarm'), layout.haze.alpha);
   haze.fillEllipse(width * 0.5, layout.haze.y, width * layout.haze.widthFactor, layout.haze.heightPx);
+
+  const hazeOrbs: Array<{ xFactor: number; y: number; r: number; color: string; alpha: number }> = [
+    { xFactor: 0.34, y: 206, r: 64, color: 'grassMid', alpha: 0.06 },
+    { xFactor: 0.52, y: 186, r: 86, color: 'bloomWarm', alpha: 0.05 },
+    { xFactor: 0.68, y: 214, r: 72, color: 'grassTop', alpha: 0.045 },
+  ];
+  for (const orb of hazeOrbs) {
+    const layer = scene.add.graphics().setDepth(-1398).setScrollFactor(0);
+    layer.fillStyle(toColor(orb.color), orb.alpha);
+    layer.fillCircle(width * orb.xFactor, orb.y, orb.r);
+  }
 }
 
 function renderClouds(

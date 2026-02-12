@@ -63,15 +63,30 @@ export const styleConfig = {
   },
   gameplayLayout: {
     viewport: { width: 960, height: 540 },
+    cameraZoom: 1.34,
+    actorScale: {
+      player: 1.9,
+      enemy: 1.9,
+      coin: 1.8,
+      star: 1.8,
+      questionBlock: 2.6,
+    },
+    showcase: {
+      world: 1,
+      level: 1,
+      questionBlockOffset: { x: 184, y: -56 },
+      coinLine: { startX: 84, yOffset: -120, spacingPx: 34, count: 3 },
+      extraWalkerOffsetX: 250,
+    },
     sky: {
       topSwatch: 'skyDeep',
       bottomSwatch: 'skyMid',
     },
     haze: {
-      y: 128,
-      widthFactor: 0.95,
-      heightPx: 174,
-      alpha: 0.12,
+      y: 240,
+      widthFactor: 0.48,
+      heightPx: 96,
+      alpha: 0.06,
     },
     clouds: [
       {
@@ -267,6 +282,21 @@ export const styleConfig = {
     radius: 3,
     downsample: 2,
     tint: '#F6D58B',
+  },
+  playerAnimation: {
+    idleThreshold: 10,
+    runThreshold: 160,
+    skidThreshold: 120,
+    walkFps: 8,
+    runFps: 12,
+    landDurationMs: 80,
+    hurtDurationMs: 400,
+    headScaleSmall: 0.33,
+    headScaleBig: 0.25,
+    dustPuffAlpha: 0.6,
+    dustPuffScale: 1.5,
+    dustPuffLifeMs: 220,
+    dustPuffCount: 3,
   },
 } as const;
 

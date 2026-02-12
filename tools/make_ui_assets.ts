@@ -585,6 +585,25 @@ function makeBitmapFont(): void {
   console.log(`Wrote ${path.relative(repoRoot, fntPath)}`);
 }
 
+function makeDustPuff(): void {
+  const puff = createImage(8, 8, [0, 0, 0, 0] as Rgba);
+  drawDisk(puff, 4, 4, 3, COLORS.cloudShade);
+  drawDisk(puff, 4, 4, 2, COLORS.cloudLight);
+  for (let y = 0; y < 8; y += 1) {
+    for (let x = 0; x < 8; x += 1) {
+      const [r, g, b, a] = getPixel(puff, x, y);
+      if (a > 0) {
+        const dist = Math.sqrt((x - 4) ** 2 + (y - 4) ** 2);
+        const fade = Math.max(0, 1 - dist / 3.5);
+        setPixel(puff, x, y, [r, g, b, Math.round(a * fade)] as Rgba);
+      }
+    }
+  }
+  const output = path.join(repoRoot, 'public/assets/sprites/dust_puff.png');
+  writePng(output, puff);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
 function main(): number {
   makeTileset();
   makeCoin();
@@ -594,6 +613,7 @@ function main(): number {
   makeMapNodes();
   makeTitleLogo();
   makeBitmapFont();
+  makeDustPuff();
   return 0;
 }
 

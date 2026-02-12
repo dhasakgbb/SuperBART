@@ -28,6 +28,9 @@ const REQUIRED_FILES: Array<{ file: string; dimensions?: [number, number] }> = [
   { file: 'public/assets/sprites/bart_head_48.png', dimensions: [48, 48] },
   { file: 'public/assets/sprites/bart_head_64.png', dimensions: [64, 64] },
   { file: 'public/assets/sprites/bart_portrait_96.png', dimensions: [96, 96] },
+  { file: 'public/assets/sprites/bart_body_small.png', dimensions: [224, 24] },
+  { file: 'public/assets/sprites/bart_body_big.png', dimensions: [224, 32] },
+  { file: 'public/assets/sprites/dust_puff.png', dimensions: [8, 8] },
 ];
 
 function main(): number {

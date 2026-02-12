@@ -2,156 +2,83 @@
 
 Source reference: `public/assets/target_look.png`
 
-This document defines the locked art-direction contract enforced by `tools/style_validate.ts`.
+This style kit is the source-of-truth contract enforced by `tools/style_validate.ts`.
 
 ## Palette (Approximate Hex)
 
 | Name | Hex | Usage |
 | --- | --- | --- |
-| inkDark | `#1D1D1D` | Primary 1-2px outlines and silhouette anchors |
-| inkSoft | `#2B2824` | Secondary contour lines |
-| skyDeep | `#0A121C` | Deep sky gradient |
-| skyMid | `#212826` | Mid sky gradient |
-| grassTop | `#46BA4C` | Terrain top highlight |
-| grassMid | `#20A36D` | Terrain mids and moss |
+| inkDark | `#1D1D1D` | Primary sprite/UI outlines |
+| inkSoft | `#2B2824` | Secondary contours |
+| skyDeep | `#0A121C` | Gameplay/title upper sky |
+| skyMid | `#212826` | Gameplay/title lower sky |
+| grassTop | `#46BA4C` | Terrain highlight + map completion accents |
+| grassMid | `#20A36D` | Terrain mids |
 | groundShadow | `#742B01` | Terrain low values |
 | groundMid | `#B6560E` | Terrain mids |
-| groundWarm | `#DC7C1D` | Terrain warm highlight |
-| coinCore | `#DED256` | Coin interior highlight |
-| coinEdge | `#DC7C1D` | Coin edge and warm UI accents |
-| hudText | `#F2FDFD` | Primary HUD labels |
-| hudAccent | `#DED256` | HUD counters and WORLD/TIME emphasis |
-| hudPanel | `#1F1F20` | HUD panel fill |
+| groundWarm | `#DC7C1D` | Terrain warmth + title depth |
+| coinCore | `#DED256` | Coin/light interior |
+| coinEdge | `#DC7C1D` | Coin edge |
+| hudText | `#F2FDFD` | Primary HUD/map text |
+| hudAccent | `#DED256` | Counters, title accents, selected state |
 | bloomWarm | `#F6D58B` | Additive glow tint |
 
-## Outline Thickness Rules
+## Pixel Rules
 
-- World sprites: `2px` target outline.
-- UI outline: `2px`.
-- Maximum outline thickness: `3px`.
-- Preserve clear dark silhouette edges on gameplay-critical objects.
+- Base tile grid: `16x16`.
+- World rendering uses nearest-neighbor only.
+- Outline target is `2px` and max allowed is `3px`.
+- Preserve dark silhouette readability for player, enemies, nodes, and blocks.
 
-## Sprite Scale Rules
+## HUD Layout (960x540)
 
-- Base tile size: `16x16`.
-- World scale: `1x` source pixel scale (nearest-neighbor only).
-- HUD portrait source: `96x96`, rendered at `0.66` scale.
-- No smoothing or runtime interpolation.
+- `portrait`: `x=14`, `y=8`, scale `0.66`.
+- `leftGroup`: `x=84`, `y=11`, font `14`.
+- `rightGroup`: `x=948`, `y=11`, font `14`, right-aligned.
+- Locked text format:
+  - `BART  LIVES NN  STAR NNN  COIN NNN`
+  - `WORLD W-L  TIME TTT`
+- `TIME` is always 3 digits (`TTT`).
 
-## HUD Layout Spec (960x540 viewport)
+## Title Screen Contract
 
-### Top-left group (portrait + BART + counters)
+- Wordmark uses generated `title_logo.png` and copy must be `SUPER BART`.
+- All title UI elements are camera-fixed (`setScrollFactor(0)`), including:
+  - logo glow, logo, portrait, subtitle, prompt, hints.
+- Title attract-mode keeps gameplay visual language:
+  - dark sky gradient + haze,
+  - drifting clouds,
+  - tiled ground strip,
+  - bobbing question block,
+  - coin shimmer line,
+  - slow horizontal camera pan.
 
-- `portrait`
-  - Anchor: `top-left`
-  - Position: `x=14`, `y=8`
-  - Texture size: `96`
-  - Render scale: `0.66`
-- `topText`
-  - Anchor: `top-left`
-  - Position: `x=84`, `y=11`
-  - Font size: `14`
-  - Content format: `BART  LIVES NN  STAR NNN  COIN NNN`
+## Gameplay Background Contract
 
-### Top-right group (world + time)
+- `renderGameplayBackground(...)` is the only allowed play-scene renderer.
+- Layers:
+  - fixed sky + haze,
+  - drifting clouds (`scrollFactor` locked within `0.05-0.12`),
+  - far hill layer (`hill_far`, `scrollFactor 0.10`),
+  - near hill layer (`hill_near`, `scrollFactor 0.22`).
+- Keep warm glow only on highlights; avoid broad washed-out bloom.
 
-- `rightText`
-  - Anchor: `top-right`
-  - Position: `x=948`, `y=11`
-  - Font size: `14`
-  - Content format: `WORLD W-L  TIME TTT`
+## World Map Contract
 
-## Title Screen Spec
-
-### Composition (960x540 viewport)
-
-- `wordmark`
-  - Asset: `title_logo.png`
-  - Anchor: `top-center`
-  - Position: `x=480`, `y=52`
-  - Scale: `1.0`
-  - Treatment: chunky pixel letters with dark outline + warm highlight + subtle warm glow layer.
-- `portrait`
-  - Asset: `bart_portrait_96.png`
-  - Anchor: `top-left`
-  - Position: `x=760`, `y=98`
-  - Scale: `0.58`
-- `subtitle`
-  - Anchor: `top-center`
-  - Position: `x=480`, `y=228`
-  - Font: bitmap (`hud`)
-  - Font size: `20`
-  - Letter spacing: `2`
-  - Text: `4 WORLDS X 6 LEVELS + FINAL CASTLE`
-- `prompt`
-  - Anchor: `top-center`
-  - Position: `x=480`, `y=398`
-  - Font: bitmap (`hud`)
-  - Font size: `28`
-  - Letter spacing: `2`
-  - Text: `PRESS ENTER`
-  - Blink timing: `420ms`
-- `hints`
-  - Anchor: `top-center`
-  - Position: `x=480`, `y=446`
-  - Font size: `14`
-  - Letter spacing: `1`
-  - Text: `N: NEW GAME   L: LEVEL SELECT   S: SETTINGS`
-
-### Background Composition Checklist
-
-- Live attract background must reuse gameplay-style elements:
-  - sky gradient + haze + silhouettes (same family as gameplay parallax),
-  - drifting cloud sprites,
-  - chunked ground tiles (tile crop from generated tileset),
-  - animated question block bob,
-  - coin shimmer line.
-- Slow camera pan on X axis for attract-mode energy (`~9.8s` yoyo cycle).
-- Use the same bloom tint family (`#F6D58B`) for title glow accents and collectibles.
-- Do not use plain system-font text-on-flat-background composition.
-
-## Typography Rules
-
-- Style: bitmap/pixel font.
-- Font key: `hud` bitmap font from generated asset pack.
-- Casing: uppercase.
-- Tracking: `1px` equivalent letter spacing.
-- Line height target: `16px`.
-
-## Bloom/Glow Parameters
-
-- `enabled: true`
-- `threshold: 0.73`
-- `strength: 0.46`
-- `radius: 3`
-- `downsample: 2`
-- `tint: #F6D58B`
-
-Implementation policy: if post-processing pipeline is unavailable, use additive layered sprite glows on bright collectibles and HUD accents with these numeric controls.
-
-## Spacing and Composition Rules
-
-- Keep gameplay readable by reserving the top HUD band and leaving world action unobstructed.
-- Maintain chunky cloud silhouettes and warm/cool terrain separation.
-- Keep coin rendering high-contrast against sky and terrain.
-
-## Do / Don't
-
-### Do
-- Preserve dark outlines around all interactive sprites.
-- Keep HUD within locked anchor/coordinate windows.
-- Use generated bitmap font and nearest-neighbor scaling.
-- Keep bloom subtle and warm.
-
-### Don't
-- Don't move portrait to the right side.
-- Don't replace bitmap HUD text with anti-aliased vector text.
-- Don't introduce new core palette colors without adding them to `styleConfig`.
-- Don't exceed bloom constraints or wash out silhouettes.
+- `WorldMapScene` uses bitmap text and sprite-kit visuals only (no system fonts).
+- Node states use generated sprites:
+  - `map_node_open`, `map_node_done`, `map_node_locked`, `map_node_selected`.
+- Path uses generated `map_path_dot`.
+- Layout is style-config driven with explicit coordinates for all 25 campaign nodes.
+- Selected node has bob animation; unlock logic remains save-system controlled.
 
 ## Visual Regression Gate
 
-- Visual lock is enforced by `tools/visual_regress.ts`.
-- Golden comparison source: `docs/screenshots/golden/title_scene_golden.png`.
-- Target reference: `public/assets/target_look.png`.
-- Required command: `npm run lint:visual` (also included in `npm test`).
+- Runtime capture script: `tools/capture_visual_baselines.ts`.
+- Goldens:
+  - `docs/screenshots/golden/title_scene_golden.png`
+  - `docs/screenshots/golden/map_scene_golden.png`
+  - `docs/screenshots/golden/play_scene_golden.png`
+- Required commands:
+  - `npm run lint:style`
+  - `npm run lint:visual`

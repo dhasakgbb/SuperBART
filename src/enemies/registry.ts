@@ -18,8 +18,11 @@ export interface EnemyContext {
 export function spawnEnemy(kind: EnemyKind, scene: Phaser.Scene, x: number, y: number, ctx: EnemyContext, data: Record<string, unknown> = {}): EnemyHandle {
   const sprite = scene.physics.add.sprite(x, y, `enemy_${kind}`);
   sprite.setCollideWorldBounds(true);
+  sprite.setDepth(34);
+  sprite.setScale(1.9);
 
   if (kind === 'walker') {
+    sprite.body.setSize(12, 10).setOffset(2, 6);
     const speed = 45;
     sprite.setVelocityX(speed);
     return {
@@ -39,6 +42,8 @@ export function spawnEnemy(kind: EnemyKind, scene: Phaser.Scene, x: number, y: n
   }
 
   if (kind === 'shell') {
+    sprite.setScale(1.85);
+    sprite.body.setSize(12, 10).setOffset(2, 6);
     let retracted = false;
     let safeMs = 0;
     return {
@@ -57,6 +62,7 @@ export function spawnEnemy(kind: EnemyKind, scene: Phaser.Scene, x: number, y: n
           safeMs = 350;
           sprite.setVelocityX(0);
           sprite.setTexture('enemy_shell_retracted');
+          sprite.setScale(1.85);
           return 'stomp';
         }
         if (stomp && retracted) {
@@ -73,6 +79,8 @@ export function spawnEnemy(kind: EnemyKind, scene: Phaser.Scene, x: number, y: n
   }
 
   if (kind === 'flying') {
+    sprite.setScale(1.8);
+    sprite.body.setSize(10, 10).setOffset(3, 3);
     const baseY = y;
     let t = 0;
     return {
@@ -96,6 +104,8 @@ export function spawnEnemy(kind: EnemyKind, scene: Phaser.Scene, x: number, y: n
 
   let fireTimer = 0;
   const cadence = Number(data.cadenceMs ?? 2100);
+  sprite.setScale(1.8);
+  sprite.body.setSize(10, 10).setOffset(3, 3);
   sprite.setImmovable(true);
   sprite.body.allowGravity = false;
   return {

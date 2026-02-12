@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import fs from 'node:fs';
 import { captureVisualBaselines } from './capture_visual_baselines';
 import { imageDimensions, readPng } from './lib/pixel';
 
@@ -70,6 +71,9 @@ async function main(): Promise<number> {
   for (const goldenPath of Object.values(GOLDENS)) {
     if (!path.isAbsolute(goldenPath)) {
       throw new Error(`Golden path must be absolute: ${goldenPath}`);
+    }
+    if (!fs.existsSync(goldenPath)) {
+      throw new Error(`Missing golden screenshot: ${goldenPath}. Run "npm run visual:update-golden".`);
     }
   }
 

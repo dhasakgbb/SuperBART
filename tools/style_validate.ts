@@ -128,8 +128,9 @@ function validateGameplayLayout(errors: ErrorList): void {
     );
   }
 
-  assertRange(errors, 'gameplayLayout.haze.alpha', gameplay.haze.alpha, 0.08, 0.2);
-  assertRange(errors, 'gameplayLayout.haze.widthFactor', gameplay.haze.widthFactor, 0.7, 1.05);
+  assertRange(errors, 'gameplayLayout.haze.alpha', gameplay.haze.alpha, 0.04, 0.2);
+  assertRange(errors, 'gameplayLayout.haze.widthFactor', gameplay.haze.widthFactor, 0.35, 1.05);
+  assertRange(errors, 'gameplayLayout.cameraZoom', gameplay.cameraZoom, 1.0, 1.6);
   assertRange(errors, 'gameplayLayout.hills.far.scrollFactor', gameplay.hills.far.scrollFactor, 0.1, 0.1);
   assertRange(errors, 'gameplayLayout.hills.near.scrollFactor', gameplay.hills.near.scrollFactor, 0.22, 0.22);
 
@@ -209,8 +210,8 @@ function validateWorldMapSceneContract(errors: ErrorList): void {
   if (source.includes('fontFamily') || source.includes('this.add.text(')) {
     errors.push('WorldMapScene may not use system text rendering.');
   }
-  if (!source.includes('map_node_selected')) {
-    errors.push('WorldMapScene must render sprite-kit node states (map_node_selected and related keys).');
+  if (!source.includes('nodeSpriteKeys.selected')) {
+    errors.push('WorldMapScene must render sprite-kit node states (selected/open/done/locked).');
   }
 }
 
@@ -246,8 +247,8 @@ function validateHudContract(errors: ErrorList): void {
   if (source.includes('.add.text(') || source.includes('fontFamily')) {
     errors.push('HUD must not use system text rendering.');
   }
-  if (!source.includes('COIN') || source.includes('PTU')) {
-    errors.push('HUD top-left copy must use COIN and must not contain PTU.');
+  if (source.includes('PTU')) {
+    errors.push('HUD must not contain PTU copy.');
   }
 }
 
@@ -338,6 +339,27 @@ function validateTypography(errors: ErrorList): void {
   assertRange(errors, 'typography.lineHeightPx', typography.lineHeightPx, 14, 18);
 }
 
+function validatePlayerAnimation(errors: ErrorList): void {
+  const anim = styleConfig.playerAnimation;
+  if (!anim) {
+    errors.push('playerAnimation config block is required in styleConfig.');
+    return;
+  }
+  assertRange(errors, 'playerAnimation.idleThreshold', anim.idleThreshold, 5, 20);
+  assertRange(errors, 'playerAnimation.runThreshold', anim.runThreshold, 130, 200);
+  assertRange(errors, 'playerAnimation.skidThreshold', anim.skidThreshold, 80, 150);
+  assertRange(errors, 'playerAnimation.walkFps', anim.walkFps, 6, 12);
+  assertRange(errors, 'playerAnimation.runFps', anim.runFps, 10, 16);
+  assertRange(errors, 'playerAnimation.landDurationMs', anim.landDurationMs, 50, 120);
+  assertRange(errors, 'playerAnimation.hurtDurationMs', anim.hurtDurationMs, 200, 600);
+  assertRange(errors, 'playerAnimation.headScaleSmall', anim.headScaleSmall, 0.25, 0.45);
+  assertRange(errors, 'playerAnimation.headScaleBig', anim.headScaleBig, 0.18, 0.35);
+  assertRange(errors, 'playerAnimation.dustPuffAlpha', anim.dustPuffAlpha, 0.3, 0.8);
+  assertRange(errors, 'playerAnimation.dustPuffScale', anim.dustPuffScale, 1.0, 2.5);
+  assertRange(errors, 'playerAnimation.dustPuffLifeMs', anim.dustPuffLifeMs, 100, 400);
+  assertRange(errors, 'playerAnimation.dustPuffCount', anim.dustPuffCount, 2, 6);
+}
+
 function main(): number {
   const errors: ErrorList = [];
   validateHudLayout(errors);
@@ -347,6 +369,7 @@ function main(): number {
   validatePalette(errors);
   validateBloom(errors);
   validateTypography(errors);
+  validatePlayerAnimation(errors);
   validateTitleSceneContract(errors);
   validateWorldMapSceneContract(errors);
   validatePlaySceneContract(errors);

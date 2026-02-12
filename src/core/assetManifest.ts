@@ -6,6 +6,7 @@ export const ASSET_MANIFEST = {
     bart_head_48: '/assets/sprites/bart_head_48.png',
     bart_head_64: '/assets/sprites/bart_head_64.png',
     bart_portrait_96: '/assets/sprites/bart_portrait_96.png',
+    dust_puff: '/assets/sprites/dust_puff.png',
     enemy_walker: '/assets/sprites/enemy_walker.svg',
     enemy_shell: '/assets/sprites/enemy_shell.svg',
     enemy_shell_retracted: '/assets/sprites/enemy_shell_retracted.svg',
@@ -34,6 +35,18 @@ export const ASSET_MANIFEST = {
     tileset: '/assets/tiles/tileset.png',
     tile_ground: '/assets/tiles/tile_ground.svg',
     tile_oneway: '/assets/tiles/tile_oneway.svg'
+  },
+  spritesheets: {
+    bart_body_small: {
+      path: '/assets/sprites/bart_body_small.png',
+      frameWidth: 16,
+      frameHeight: 24,
+    },
+    bart_body_big: {
+      path: '/assets/sprites/bart_body_big.png',
+      frameWidth: 16,
+      frameHeight: 32,
+    },
   },
   bitmapFonts: {
     hud: {

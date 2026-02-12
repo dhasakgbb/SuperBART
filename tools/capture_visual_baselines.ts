@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const DEV_PORT = 4179;
@@ -134,7 +135,9 @@ async function main(): Promise<void> {
   console.log(`- play: ${path.relative(process.cwd(), scenes.play)}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const __filename = fileURLToPath(import.meta.url);
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   main().catch((error) => {
     console.error(error);
     process.exitCode = 1;

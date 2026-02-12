@@ -55,3 +55,27 @@ Original prompt: Build a complete, playable Mario-style 2D platformer web game c
 - Fixed `PlayScene` registration key by adding explicit `super('PlayScene')` constructor.
 - Updated UI asset generator to emit XML BMFont data for `bitmap_font.fnt` so Phaser HUD font loads at runtime.
 - Re-ran smoke flow: `TitleScene -> WorldMapScene -> PlayScene -> PauseScene`, plus full quality gates.
+
+## 2026-02-12 - Visual Alignment Implementation (Title + Map + Gameplay)
+- Implemented style-driven visual contracts in `src/style/styleConfig.ts`:
+  - Added `gameplayLayout` with locked sky/haze/cloud/hill parallax values.
+  - Added `worldMapLayout` with explicit coordinates for all 25 campaign nodes.
+  - Expanded `hudLayout` into left/right groups with locked COIN/TIME text formats.
+- Updated runtime scenes:
+  - `PlayScene` now uses `renderGameplayBackground` + `styleConfig.gameplayLayout` (removed legacy themed gradient renderer).
+  - `WorldMapScene` redesigned to sprite-map + bitmap text with selected-node bob.
+  - `TitleScene` UI now camera-fixed via `setScrollFactor(0)` to avoid pan clipping.
+- Updated HUD formatting in `src/ui/hud.ts`:
+  - Replaced PTU with COIN and locked 3-digit TIME formatting.
+- Added generated sprite-kit assets in `tools/make_ui_assets.ts`:
+  - New map node states (`map_node_*`), `map_path_dot`, parallax hills (`hill_far`, `hill_near`), stronger `title_logo` treatment.
+- Registered new assets in `src/core/assetManifest.ts` and asset validators.
+- Replaced/extended style and visual gates:
+  - `tools/style_validate.ts` now validates Title/Map/Play scene style contracts and required docs.
+  - Added Playwright capture script `tools/capture_visual_baselines.ts`.
+  - Replaced visual diff gate in `tools/visual_regress.ts` to capture title/map/play and compare against golden images.
+- Updated docs:
+  - `docs/style_kit.md`
+  - `docs/screenshots/title_expected.md`
+  - Added `docs/screenshots/world_map_expected.md`, `docs/screenshots/play_expected.md`.
+- Next: regenerate assets + golden screenshots, then run full command matrix and resolve any remaining regressions.

@@ -9,18 +9,20 @@ export interface HudRefs {
 
 export function createHud(scene: Phaser.Scene): HudRefs {
   const hud = styleConfig.hudLayout;
+  const hudScale = 1 / Math.max(1, scene.cameras.main.zoom);
 
   const portrait = scene.add.image(hud.portrait.x, hud.portrait.y, 'bart_portrait_96')
     .setOrigin(0, 0)
     .setScrollFactor(0)
     .setDepth(2000)
-    .setScale(hud.portrait.scale);
+    .setScale(hud.portrait.scale * hudScale);
 
   const leftText = scene.add.bitmapText(hud.leftGroup.x, hud.leftGroup.y, styleConfig.typography.fontKey, '', hud.leftGroup.fontSizePx)
     .setOrigin(0, 0)
     .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color)
     .setScrollFactor(0)
     .setDepth(2000);
+  leftText.setScale(hudScale);
   leftText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
 
   const rightText = scene.add.bitmapText(hud.rightGroup.x, hud.rightGroup.y, styleConfig.typography.fontKey, '', hud.rightGroup.fontSizePx)
@@ -28,6 +30,7 @@ export function createHud(scene: Phaser.Scene): HudRefs {
     .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudAccent ?? '#DED256').color)
     .setScrollFactor(0)
     .setDepth(2000);
+  rightText.setScale(hudScale);
   rightText.setLetterSpacing(hud.rightGroup.letterSpacingPx);
 
   return { leftText, rightText, portrait };

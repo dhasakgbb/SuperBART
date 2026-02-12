@@ -24,7 +24,8 @@
     "visual:capture": "tsx tools/capture_visual_baselines.ts",
     "visual:update-golden": "tsx tools/capture_visual_baselines.ts --update-golden",
     "gen:assets": "tsx tools/make_ui_assets.ts",
-    "gen:all": "npm run gen:assets && npm run gen:avatars"
+    "gen:body": "tsx tools/make_body_spritesheet.ts",
+    "gen:all": "npm run gen:assets && npm run gen:avatars && npm run gen:body"
   },
   "dependencies": {
     "phaser": "^3.90.0"

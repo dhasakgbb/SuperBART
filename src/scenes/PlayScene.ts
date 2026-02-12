@@ -7,6 +7,9 @@ import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
 import { resolvePlayerDamage } from '../player/powerup';
 import { createFeelState, stepMovement } from '../player/movement';
+import { PlayerAnimator } from '../player/PlayerAnimator';
+import { createDustPuff, type DustPuffEmitter } from '../player/dustPuff';
+import { createPlayerAnimations } from '../anim/playerAnims';
 import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig from '../style/styleConfig';
 import { computeSeed } from '../systems/progression';
@@ -45,6 +48,11 @@ export class PlayScene extends Phaser.Scene {
   private levelTimeMs = 0;
   private jumpHeldLast = false;
 
+  private playerHead!: Phaser.GameObjects.Sprite;
+  private animator!: PlayerAnimator;
+  private dustPuff!: DustPuffEmitter;
+  private wasOnGround = true;
+
   private completed = false;
   private world = 1;
   private levelIndex = 1;
@@ -59,6 +67,7 @@ export class PlayScene extends Phaser.Scene {
 
   create(): void {
     runtimeStore.mode = 'playing';
+    const actorScale = styleConfig.gameplayLayout.actorScale;
 
     this.world = runtimeStore.save.campaign.world;
     this.levelIndex = runtimeStore.save.campaign.levelIndex;
@@ -125,10 +134,12 @@ export class PlayScene extends Phaser.Scene {
         spawn = { x: e.x, y: e.y };
       } else if (e.type === 'coin') {
         const coin = this.coins.create(e.x, e.y, 'coin') as Phaser.Physics.Arcade.Sprite;
+        coin.setScale(actorScale.coin).setDepth(28);
         coin.refreshBody();
         this.attachCollectibleGlow(coin, 'coin');
       } else if (e.type === 'star') {
         const star = this.stars.create(e.x, e.y, 'star') as Phaser.Physics.Arcade.Sprite;
+        star.setScale(actorScale.star).setDepth(28);
         star.refreshBody();
         this.attachCollectibleGlow(star, 'coin');
       } else if (e.type === 'checkpoint') {
@@ -153,11 +164,32 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    const playerTextureKey = this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48';
-    this.player = this.physics.add.sprite(spawn.x, spawn.y, playerTextureKey);
+    this.spawnShowcaseSetPiece(spawn);
+
+    // Body sprite (physics-enabled, uses spritesheet)
+    const bodyKey = this.playerForm === 'big' ? 'bart_body_big' : 'bart_body_small';
+    this.player = this.physics.add.sprite(spawn.x, spawn.y, bodyKey, 0);
     this.player.setCollideWorldBounds(true);
+    this.player.setScale(actorScale.player).setDepth(36);
     this.player.body.setMaxVelocity(PLAYER_CONSTANTS.maxSpeed, PLAYER_CONSTANTS.maxFallSpeed);
-    this.player.body.setSize(12, 15).setOffset(2, 1);
+    const bodyH = this.playerForm === 'big' ? 30 : 22;
+    this.player.body.setSize(12, bodyH).setOffset(2, 1);
+
+    // Head sprite (visual overlay, no physics)
+    const headKey = this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48';
+    const headScale = this.playerForm === 'big'
+      ? styleConfig.playerAnimation.headScaleBig
+      : styleConfig.playerAnimation.headScaleSmall;
+    this.playerHead = this.add.sprite(spawn.x, spawn.y, headKey);
+    this.playerHead.setScale(headScale);
+    this.playerHead.setDepth(this.player.depth + 1);
+
+    // Animation system
+    createPlayerAnimations(this);
+    this.animator = new PlayerAnimator(this, this.player, this.playerForm);
+    this.dustPuff = createDustPuff(this);
+    this.wasOnGround = true;
+
     this.checkpointXY = { ...spawn };
 
     this.physics.add.collider(this.player, this.solids);
@@ -234,6 +266,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.cameras.main.setBounds(0, 0, level.width * TILE_SIZE, level.height * TILE_SIZE);
+    this.cameras.main.setZoom(styleConfig.gameplayLayout.cameraZoom);
     this.cameras.main.startFollow(this.player, false, 0.16, 0.1);
     this.cameras.main.setDeadzone(170, 90);
 
@@ -286,6 +319,56 @@ export class PlayScene extends Phaser.Scene {
         this.simulateStep(step);
       }
     };
+  }
+
+  private spawnShowcaseSetPiece(spawn: { x: number; y: number }): void {
+    const showcase = styleConfig.gameplayLayout.showcase;
+    if (this.world !== showcase.world || this.levelIndex !== showcase.level) {
+      return;
+    }
+
+    const actorScale = styleConfig.gameplayLayout.actorScale;
+    const blockX = spawn.x + showcase.questionBlockOffset.x;
+    const blockY = spawn.y + showcase.questionBlockOffset.y;
+    const block = this.add
+      .image(blockX, blockY, 'question_block')
+      .setScale(actorScale.questionBlock)
+      .setDepth(26);
+    const blockGlow = this.add
+      .image(blockX, blockY, 'question_block')
+      .setScale(actorScale.questionBlock + 0.24)
+      .setTint(Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color)
+      .setAlpha(Math.max(0.16, styleConfig.bloom.strength * 0.44))
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(25);
+    this.tweens.add({
+      targets: [block, blockGlow],
+      y: blockY - 6,
+      duration: 1260,
+      ease: 'Sine.easeInOut',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    for (let i = 0; i < showcase.coinLine.count; i += 1) {
+      const coinX = spawn.x + showcase.coinLine.startX + i * showcase.coinLine.spacingPx;
+      const coinY = spawn.y + showcase.coinLine.yOffset;
+      const coin = this.coins.create(coinX, coinY, 'coin') as Phaser.Physics.Arcade.Sprite;
+      coin.setScale(actorScale.coin).setDepth(28);
+      coin.refreshBody();
+      this.attachCollectibleGlow(coin, 'coin');
+    }
+
+    const walker = spawnEnemy(
+      'walker',
+      this,
+      spawn.x + showcase.extraWalkerOffsetX,
+      spawn.y - 2,
+      { scene: this, projectiles: this.projectiles },
+      {},
+    );
+    this.enemyHandles.push(walker);
+    this.enemiesGroup.add(walker.sprite);
   }
 
   private attachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite, textureKey: string): void {
@@ -357,7 +440,8 @@ export class PlayScene extends Phaser.Scene {
     const result = resolvePlayerDamage(this.playerForm);
     if (!result.dead) {
       this.playerForm = result.nextForm;
-      this.player.setTexture(this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48');
+      this.switchPlayerForm(result.nextForm);
+      this.animator.triggerHurt();
       this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
       this.player.setVelocity(this.player.flipX ? PLAYER_CONSTANTS.knockbackX : -PLAYER_CONSTANTS.knockbackX, PLAYER_CONSTANTS.knockbackY);
       this.playSfx('hurt');
@@ -373,6 +457,7 @@ export class PlayScene extends Phaser.Scene {
     this.playSfx('hurt');
 
     if (this.lives <= 0) {
+      this.animator.triggerDead();
       runtimeStore.mode = 'game_over';
       persistSave(runtimeStore.save);
       this.scene.start('GameOverScene');
@@ -380,7 +465,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.playerForm = 'small';
-    this.player.setTexture('bart_head_48');
+    this.switchPlayerForm('small');
     this.player.setPosition(this.checkpointXY.x, this.checkpointXY.y);
     this.player.setVelocity(0, 0);
     this.player.clearTint();
@@ -390,9 +475,25 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private switchPlayerForm(form: PlayerForm): void {
+    const bodyKey = form === 'big' ? 'bart_body_big' : 'bart_body_small';
+    const headKey = form === 'big' ? 'bart_head_64' : 'bart_head_48';
+    const headScale = form === 'big'
+      ? styleConfig.playerAnimation.headScaleBig
+      : styleConfig.playerAnimation.headScaleSmall;
+    const bodyH = form === 'big' ? 30 : 22;
+
+    this.player.setTexture(bodyKey, 0);
+    this.player.body.setSize(12, bodyH).setOffset(2, 1);
+    this.playerHead.setTexture(headKey);
+    this.playerHead.setScale(headScale);
+    this.animator.setForm(form);
+  }
+
   private onGoalReached(): void {
     if (this.completed) return;
     this.completed = true;
+    this.animator.triggerWin();
     this.playSfx('flag');
     runtimeStore.save.progression.score += SCORE_VALUES.completeBonus;
     runtimeStore.save.progression.timeMs += this.levelTimeMs;
@@ -413,9 +514,12 @@ export class PlayScene extends Phaser.Scene {
     this.levelTimeMs += dtMs;
     if (this.invulnMsRemaining > 0) {
       this.invulnMsRemaining = Math.max(0, this.invulnMsRemaining - dtMs);
-      this.player.setAlpha(this.invulnMsRemaining % 120 < 60 ? 0.6 : 1);
+      const alpha = this.invulnMsRemaining % 120 < 60 ? 0.6 : 1;
+      this.player.setAlpha(alpha);
+      this.playerHead.setAlpha(alpha);
     } else {
       this.player.setAlpha(1);
+      this.playerHead.setAlpha(1);
     }
 
     updateMovingPlatforms(this.movingPlatforms);
@@ -496,6 +600,34 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.player.body.velocity.x > 0) this.player.setFlipX(false);
     if (this.player.body.velocity.x < 0) this.player.setFlipX(true);
+
+    // Update animation state machine
+    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const inputX: -1 | 0 | 1 = left === right ? 0 : left ? -1 : 1;
+    this.animator.update({
+      vx: this.player.body.velocity.x,
+      vy: this.player.body.velocity.y,
+      inputX,
+      onGround,
+      wasOnGround: this.wasOnGround,
+      jumped: step.jumped,
+      form: this.playerForm,
+    }, Math.min(40, delta));
+    this.wasOnGround = onGround;
+
+    // Sync head position to body + per-frame offset
+    const headOffset = this.animator.getCurrentHeadOffset();
+    const flipSign = this.player.flipX ? -1 : 1;
+    this.playerHead.setPosition(
+      this.player.x + headOffset.dx * flipSign,
+      this.player.y + headOffset.dy,
+    );
+    this.playerHead.setFlipX(this.player.flipX);
+
+    // Dust puff on skid/land
+    if (this.animator.justEntered('skid') || this.animator.justEntered('land')) {
+      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+    }
 
     const lookAhead = Phaser.Math.Clamp(this.player.body.velocity.x * 0.18, -90, 90);
     this.cameras.main.followOffset.x = lookAhead;
