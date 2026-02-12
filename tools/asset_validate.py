@@ -39,6 +39,7 @@ REQUIRED_PNG_DIMENSIONS = {
     'public/assets/sprites/bart_head_48.png': (48, 48),
     'public/assets/sprites/bart_head_64.png': (64, 64),
     'public/assets/sprites/bart_portrait_96.png': (96, 96),
+    'public/assets/sprites/title_logo.png': (512, 160),
 }
 
 

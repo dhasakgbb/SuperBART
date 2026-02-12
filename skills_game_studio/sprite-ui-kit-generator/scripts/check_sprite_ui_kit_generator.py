@@ -24,7 +24,7 @@ SPEC = {
     "contains": [
         {
             "file": "tools/asset_validate.ts",
-            "needles": ["public/assets/sprites/coin.png", "Asset validation failed"],
+            "needles": ["public/assets/sprites/coin.png", "public/assets/sprites/title_logo.png", "Asset validation failed"],
         },
         {
             "file": "package.json",
@@ -32,7 +32,7 @@ SPEC = {
         },
         {
             "file": "tools/make_ui_assets.ts",
-            "needles": ["tileset.png", "question_block.png", "bitmap_font.fnt"],
+            "needles": ["tileset.png", "question_block.png", "title_logo.png", "bitmap_font.fnt"],
         },
     ],
 }

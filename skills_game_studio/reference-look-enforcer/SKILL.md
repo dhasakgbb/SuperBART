@@ -32,20 +32,27 @@ Turn `public/assets/target_look.png` into a codified style contract and enforcea
 ## Workflow
 1. Write and update `docs/style_kit.md` from the reference screenshot.
 2. Keep `src/style/styleConfig.ts` as the canonical style contract input.
-3. Enforce ranges and named color requirements in `tools/style_validate.ts`.
-4. Ensure `npm run lint:style` runs the validator.
-5. Ensure `npm run test` (or equivalent) includes style validation.
-6. Run this skill checker script.
+3. Include a dedicated title-screen composition spec (`Title Screen Spec`) with anchors, timing, and attract background checklist.
+4. Enforce ranges and named color requirements in `tools/style_validate.ts`.
+5. Enforce that `TitleScene` reads from `styleConfig.titleLayout` (no hardcoded placement magic numbers).
+6. Ensure `npm run lint:style` runs the validator.
+7. Ensure `npm run test` (or equivalent) includes style validation.
+8. Run this skill checker script.
 
 ## Required Outputs
 - `docs/style_kit.md`
+- `docs/screenshots/title_expected.md`
+- `docs/screenshots/golden/title_scene_golden.png`
 - `src/style/styleConfig.ts`
 - `tools/style_validate.ts`
+- `tools/visual_regress.ts`
 - `package.json` script wiring for `lint:style`
 
 ## Definition of Done
 - Style kit contains palette, HUD coordinates/anchors, outline, scale, typography, bloom, and drift guardrails.
+- Style kit contains a title-screen section with composition coordinates, font treatment, prompt blink timing, and background checklist.
 - Validator exits nonzero on out-of-range HUD/layout/palette/bloom changes.
+- Validator exits nonzero if `TitleScene` drifts from `styleConfig.titleLayout` usage.
 - Test or CI path executes style validation before merge.
 
 ## Guardrails

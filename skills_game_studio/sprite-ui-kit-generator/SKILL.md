@@ -30,7 +30,7 @@ Generate deterministic pixel-art assets that echo `public/assets/target_look.png
 - Output contracts under `public/assets/tiles`, `public/assets/sprites`, and `public/assets/fonts`.
 
 ## Workflow
-1. Run `tools/make_ui_assets.ts` to generate core tiles/UI sprites/font atlas.
+1. Run `tools/make_ui_assets.ts` to generate core tiles/UI sprites/font atlas/title-logo.
 2. Run `tools/make_bart_sprites.ts` to generate Bart heads/portrait.
 3. Run `tools/asset_validate.ts` to verify required files and dimensions.
 4. Ensure npm scripts are wired: `gen:assets`, `gen:avatars`, `gen:all`, `lint:assets`, and `prebuild`.
@@ -47,6 +47,7 @@ Generate deterministic pixel-art assets that echo `public/assets/target_look.png
 - All required assets are generated locally and deterministic.
 - `npm run lint:assets` exits `0` when assets are present with expected dimensions.
 - `prebuild` executes `gen:all`.
+- Title UI uses generated pixel assets/bitmap text (not system font rendering).
 
 ## Guardrails
 - Do not pull external asset packs.

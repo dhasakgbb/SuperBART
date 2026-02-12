@@ -26,6 +26,7 @@ npm run gen:all
 npm run lint:assets
 npm run lint:style
 npm run lint:audio
+npm run lint:visual
 npm test
 npm run build
 ```
@@ -38,6 +39,7 @@ npm run gen:all
 npm run lint:assets
 npm run lint:style
 npm run lint:audio
+npm run lint:visual
 ```
 
 ## Controls

@@ -10,12 +10,6 @@ export interface HudRefs {
 export function createHud(scene: Phaser.Scene): HudRefs {
   const hud = styleConfig.hudLayout;
 
-  const panelLeft = scene.add.rectangle(8, 6, 570, 38, Phaser.Display.Color.HexStringToColor(stylePalette.hudPanel ?? '#1F1F20').color, 0.86);
-  panelLeft.setOrigin(0, 0).setScrollFactor(0).setDepth(1998);
-
-  const panelRight = scene.add.rectangle(694, 6, 258, 26, Phaser.Display.Color.HexStringToColor(stylePalette.hudPanel ?? '#1F1F20').color, 0.86);
-  panelRight.setOrigin(0, 0).setScrollFactor(0).setDepth(1998);
-
   const portrait = scene.add.image(hud.portrait.x, hud.portrait.y, 'bart_portrait_96')
     .setOrigin(0, 0)
     .setScrollFactor(0)

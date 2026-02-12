@@ -61,6 +61,55 @@ This document defines the locked art-direction contract enforced by `tools/style
   - Font size: `14`
   - Content format: `WORLD W-L  TIME TTT`
 
+## Title Screen Spec
+
+### Composition (960x540 viewport)
+
+- `wordmark`
+  - Asset: `title_logo.png`
+  - Anchor: `top-center`
+  - Position: `x=480`, `y=52`
+  - Scale: `1.0`
+  - Treatment: chunky pixel letters with dark outline + warm highlight + subtle warm glow layer.
+- `portrait`
+  - Asset: `bart_portrait_96.png`
+  - Anchor: `top-left`
+  - Position: `x=760`, `y=98`
+  - Scale: `0.58`
+- `subtitle`
+  - Anchor: `top-center`
+  - Position: `x=480`, `y=228`
+  - Font: bitmap (`hud`)
+  - Font size: `20`
+  - Letter spacing: `2`
+  - Text: `4 WORLDS X 6 LEVELS + FINAL CASTLE`
+- `prompt`
+  - Anchor: `top-center`
+  - Position: `x=480`, `y=398`
+  - Font: bitmap (`hud`)
+  - Font size: `28`
+  - Letter spacing: `2`
+  - Text: `PRESS ENTER`
+  - Blink timing: `420ms`
+- `hints`
+  - Anchor: `top-center`
+  - Position: `x=480`, `y=446`
+  - Font size: `14`
+  - Letter spacing: `1`
+  - Text: `N: NEW GAME   L: LEVEL SELECT   S: SETTINGS`
+
+### Background Composition Checklist
+
+- Live attract background must reuse gameplay-style elements:
+  - sky gradient + haze + silhouettes (same family as gameplay parallax),
+  - drifting cloud sprites,
+  - chunked ground tiles (tile crop from generated tileset),
+  - animated question block bob,
+  - coin shimmer line.
+- Slow camera pan on X axis for attract-mode energy (`~9.8s` yoyo cycle).
+- Use the same bloom tint family (`#F6D58B`) for title glow accents and collectibles.
+- Do not use plain system-font text-on-flat-background composition.
+
 ## Typography Rules
 
 - Style: bitmap/pixel font.
@@ -99,3 +148,10 @@ Implementation policy: if post-processing pipeline is unavailable, use additive 
 - Don't replace bitmap HUD text with anti-aliased vector text.
 - Don't introduce new core palette colors without adding them to `styleConfig`.
 - Don't exceed bloom constraints or wash out silhouettes.
+
+## Visual Regression Gate
+
+- Visual lock is enforced by `tools/visual_regress.ts`.
+- Golden comparison source: `docs/screenshots/golden/title_scene_golden.png`.
+- Target reference: `public/assets/target_look.png`.
+- Required command: `npm run lint:visual` (also included in `npm test`).

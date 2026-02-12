@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 import styleConfig from '../src/style/styleConfig';
 
 type ErrorList = string[];
@@ -50,6 +52,149 @@ function validateHudLayout(errors: ErrorList): void {
   }
   if (hud.portrait.anchor !== 'top-left') {
     errors.push(`hudLayout.portrait.anchor must be top-left for the locked HUD layout, received ${hud.portrait.anchor}`);
+  }
+}
+
+function validateTitleLayout(errors: ErrorList): void {
+  const title = styleConfig.titleLayout;
+  if (!title || !title.wordmark || !title.subtitle || !title.prompt || !title.attract) {
+    errors.push('titleLayout constants are incomplete. Expected wordmark/subtitle/prompt/attract blocks.');
+    return;
+  }
+
+  if (title.viewport.width !== 960 || title.viewport.height !== 540) {
+    errors.push(
+      `titleLayout.viewport must stay locked to 960x540, received ${title.viewport.width}x${title.viewport.height}`,
+    );
+  }
+
+  assertRange(errors, 'titleLayout.wordmark.x', title.wordmark.x, 440, 520);
+  assertRange(errors, 'titleLayout.wordmark.y', title.wordmark.y, 30, 88);
+  assertRange(errors, 'titleLayout.wordmark.scale', title.wordmark.scale, 0.8, 1.25);
+  if (title.wordmark.anchor !== 'top-center') {
+    errors.push(`titleLayout.wordmark.anchor must be top-center, received ${title.wordmark.anchor}`);
+  }
+
+  assertRange(errors, 'titleLayout.portrait.x', title.portrait.x, 680, 840);
+  assertRange(errors, 'titleLayout.portrait.y', title.portrait.y, 70, 140);
+  assertRange(errors, 'titleLayout.portrait.scale', title.portrait.scale, 0.5, 0.75);
+
+  assertRange(errors, 'titleLayout.subtitle.x', title.subtitle.x, 440, 520);
+  assertRange(errors, 'titleLayout.subtitle.y', title.subtitle.y, 186, 260);
+  assertRange(errors, 'titleLayout.subtitle.fontSizePx', title.subtitle.fontSizePx, 16, 24);
+  assertRange(errors, 'titleLayout.subtitle.letterSpacingPx', title.subtitle.letterSpacingPx, 1, 3);
+
+  assertRange(errors, 'titleLayout.prompt.x', title.prompt.x, 440, 520);
+  assertRange(errors, 'titleLayout.prompt.y', title.prompt.y, 360, 430);
+  assertRange(errors, 'titleLayout.prompt.fontSizePx', title.prompt.fontSizePx, 20, 32);
+  assertRange(errors, 'titleLayout.prompt.blinkMs', title.prompt.blinkMs, 280, 700);
+
+  assertRange(errors, 'titleLayout.hints.x', title.hints.x, 440, 520);
+  assertRange(errors, 'titleLayout.hints.y', title.hints.y, 430, 500);
+  assertRange(errors, 'titleLayout.hints.fontSizePx', title.hints.fontSizePx, 12, 18);
+
+  assertRange(errors, 'titleLayout.attract.worldWidthPx', title.attract.worldWidthPx, 1080, 1800);
+  assertRange(errors, 'titleLayout.attract.cameraPanPx', title.attract.cameraPanPx, 120, 280);
+  assertRange(errors, 'titleLayout.attract.cameraPanMs', title.attract.cameraPanMs, 8000, 14000);
+  assertRange(errors, 'titleLayout.attract.groundY', title.attract.groundY, 430, 500);
+  assertRange(errors, 'titleLayout.attract.groundRows', title.attract.groundRows, 3, 6);
+  assertRange(errors, 'titleLayout.attract.cloudDriftPx', title.attract.cloudDriftPx, 80, 180);
+  assertRange(errors, 'titleLayout.attract.cloudDriftMs', title.attract.cloudDriftMs, 16000, 32000);
+  if (!Array.isArray(title.attract.clouds) || title.attract.clouds.length < 2) {
+    errors.push('titleLayout.attract.clouds must define at least two drifting cloud sprites.');
+  } else {
+    for (const [index, cloud] of title.attract.clouds.entries()) {
+      assertRange(errors, `titleLayout.attract.clouds[${index}].x`, cloud.x, 120, 1000);
+      assertRange(errors, `titleLayout.attract.clouds[${index}].y`, cloud.y, 60, 220);
+      assertRange(errors, `titleLayout.attract.clouds[${index}].scale`, cloud.scale, 1.5, 2.6);
+      assertRange(errors, `titleLayout.attract.clouds[${index}].alpha`, cloud.alpha, 0.3, 0.75);
+    }
+  }
+
+  assertRange(errors, 'titleLayout.attract.questionBlock.x', title.attract.questionBlock.x, 520, 760);
+  assertRange(errors, 'titleLayout.attract.questionBlock.y', title.attract.questionBlock.y, 260, 380);
+  assertRange(errors, 'titleLayout.attract.questionBlock.bobPx', title.attract.questionBlock.bobPx, 4, 10);
+  assertRange(errors, 'titleLayout.attract.questionBlock.bobMs', title.attract.questionBlock.bobMs, 900, 1800);
+  assertRange(errors, 'titleLayout.attract.questionBlock.scale', title.attract.questionBlock.scale, 2.2, 3.4);
+
+  assertRange(errors, 'titleLayout.attract.coinLine.count', title.attract.coinLine.count, 3, 6);
+  assertRange(errors, 'titleLayout.attract.coinLine.scale', title.attract.coinLine.scale, 1.8, 2.8);
+  assertRange(errors, 'titleLayout.attract.coinLine.shimmerMs', title.attract.coinLine.shimmerMs, 480, 1200);
+}
+
+function validateTitleSceneContract(errors: ErrorList): void {
+  const scenePath = path.resolve('src/scenes/TitleScene.ts');
+  if (!fs.existsSync(scenePath)) {
+    errors.push('src/scenes/TitleScene.ts is required for title-screen enforcement.');
+    return;
+  }
+
+  const source = fs.readFileSync(scenePath, 'utf-8');
+
+  if (!source.includes('styleConfig.titleLayout')) {
+    errors.push('TitleScene must read title layout values from styleConfig.titleLayout.');
+  }
+  if (!source.includes("'title_logo'")) {
+    errors.push('TitleScene must render the generated title_logo asset.');
+  }
+  if (!source.includes('bitmapText')) {
+    errors.push('TitleScene must use bitmap text for subtitle/prompt treatment.');
+  }
+  if (source.includes('fontFamily')) {
+    errors.push('TitleScene may not use system fontFamily declarations; use bitmap text + generated logo.');
+  }
+  if (source.includes('this.add.text(')) {
+    errors.push('TitleScene may not use system text rendering. Use bitmapText and generated title_logo.');
+  }
+  if (source.includes('this.add.graphics(') || source.includes('this.add.rectangle(')) {
+    errors.push('TitleScene may not use primitive placeholder shapes; use generated sprite kit assets.');
+  }
+
+  const hardcodedPlacementPattern = /this\.add\.(?:text|bitmapText|image|sprite|rectangle)\(\s*\d/;
+  if (hardcodedPlacementPattern.test(source)) {
+    errors.push(
+      'TitleScene contains hardcoded numeric placement in this.add(...) calls. Move placement values into styleConfig.titleLayout.',
+    );
+  }
+}
+
+function validateHudContract(errors: ErrorList): void {
+  const hudPath = path.resolve('src/ui/hud.ts');
+  if (!fs.existsSync(hudPath)) {
+    errors.push('src/ui/hud.ts is required for HUD style enforcement.');
+    return;
+  }
+  const source = fs.readFileSync(hudPath, 'utf-8');
+  if (!source.includes('bitmapText')) {
+    errors.push('HUD must render using bitmapText.');
+  }
+  if (source.includes('this.add.text(') || source.includes('.add.text(')) {
+    errors.push('HUD must not use system text rendering.');
+  }
+  if (source.includes('.add.rectangle(') || source.includes('add.graphics(')) {
+    errors.push('HUD should avoid primitive placeholder panels; use sprite-kit visuals only.');
+  }
+}
+
+function validateTitleExpectedDoc(errors: ErrorList): void {
+  const expectedPath = path.resolve('docs/screenshots/title_expected.md');
+  if (!fs.existsSync(expectedPath)) {
+    errors.push('Missing visual gate doc: docs/screenshots/title_expected.md');
+    return;
+  }
+
+  const content = fs.readFileSync(expectedPath, 'utf-8');
+  const requiredPhrases = [
+    'title_logo.png',
+    'PRESS ENTER',
+    'TitleScene',
+    'styleConfig.ts',
+    'attract-style scene',
+  ];
+  for (const phrase of requiredPhrases) {
+    if (!content.includes(phrase)) {
+      errors.push(`docs/screenshots/title_expected.md must mention "${phrase}".`);
+    }
   }
 }
 
@@ -138,9 +283,13 @@ function validateTypography(errors: ErrorList): void {
 function main(): number {
   const errors: ErrorList = [];
   validateHudLayout(errors);
+  validateTitleLayout(errors);
   validatePalette(errors);
   validateBloom(errors);
   validateTypography(errors);
+  validateTitleSceneContract(errors);
+  validateHudContract(errors);
+  validateTitleExpectedDoc(errors);
 
   if (errors.length > 0) {
     console.error('Style validation failed:');

@@ -19,6 +19,7 @@ def main() -> int:
         ['npm', 'run', 'lint:assets'],
         ['npm', 'run', 'lint:style'],
         ['npm', 'run', 'lint:audio'],
+        ['npm', 'run', 'lint:visual'],
         ['python3', 'tools/check_dependency_rules.py'],
         ['npm', 'run', 'level:preview'],
         ['npm', 'run', 'test'],

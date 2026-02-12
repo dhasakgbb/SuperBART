@@ -15,8 +15,11 @@ SPEC = {
     ],
     "required_files": [
         "docs/style_kit.md",
+        "docs/screenshots/title_expected.md",
+        "docs/screenshots/golden/title_scene_golden.png",
         "src/style/styleConfig.ts",
         "tools/style_validate.ts",
+        "tools/visual_regress.ts",
         "skills_game_studio/reference-look-enforcer/SKILL.md",
         "skills_game_studio/reference-look-enforcer/README.md",
         "skills_game_studio/reference-look-enforcer/evals/eval_001.md",
@@ -24,15 +27,25 @@ SPEC = {
     "contains": [
         {
             "file": "docs/style_kit.md",
-            "needles": ["## Palette", "## HUD Layout Spec", "## Do / Don't"],
+            "needles": ["## Palette", "## HUD Layout Spec", "## Title Screen Spec", "## Do / Don't"],
         },
         {
             "file": "tools/style_validate.ts",
-            "needles": ["validateHudLayout", "validatePalette", "validateBloom"],
+            "needles": [
+                "validateHudLayout",
+                "validateTitleLayout",
+                "validateTitleSceneContract",
+                "validatePalette",
+                "validateBloom",
+            ],
         },
         {
             "file": "package.json",
-            "needles": ["lint:style", "npm run lint:style"],
+            "needles": ["lint:style", "lint:visual", "npm run lint:style"],
+        },
+        {
+            "file": "tools/visual_regress.ts",
+            "needles": ["target_look.png", "title_scene_golden.png", "Visual regression"],
         },
     ],
 }

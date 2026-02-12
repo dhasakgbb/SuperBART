@@ -12,6 +12,7 @@ const REQUIRED_FILES: Array<{ file: string; dimensions?: [number, number] }> = [
   { file: 'public/assets/tiles/tileset.png', dimensions: [16, 112] },
   { file: 'public/assets/sprites/coin.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/question_block.png', dimensions: [16, 16] },
+  { file: 'public/assets/sprites/title_logo.png', dimensions: [512, 160] },
   { file: 'public/assets/sprites/cloud_1.png', dimensions: [24, 16] },
   { file: 'public/assets/sprites/cloud_2.png', dimensions: [32, 18] },
   { file: 'public/assets/fonts/bitmap_font.png', dimensions: [128, 24] },

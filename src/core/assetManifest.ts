@@ -14,6 +14,7 @@ export const ASSET_MANIFEST = {
     projectile: '/assets/sprites/projectile.svg',
     coin: '/assets/sprites/coin.png',
     question_block: '/assets/sprites/question_block.png',
+    title_logo: '/assets/sprites/title_logo.png',
     cloud_1: '/assets/sprites/cloud_1.png',
     cloud_2: '/assets/sprites/cloud_2.png',
     star: '/assets/sprites/star.svg',

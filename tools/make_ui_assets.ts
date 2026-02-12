@@ -321,6 +321,91 @@ const GLYPHS: Record<string, Glyph> = {
   ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
 };
 
+function measureWordWidth(text: string, scale: number): number {
+  const step = 5 * scale + scale;
+  return Math.max(0, text.length * step - scale);
+}
+
+function drawWordLayer(image: PixelImage, text: string, x: number, y: number, scale: number, color: Rgba): void {
+  let cursorX = x;
+  for (const rawChar of text) {
+    const char = rawChar.toUpperCase();
+    const glyph = GLYPHS[char] ?? GLYPHS[' '];
+    for (let gy = 0; gy < glyph.length; gy += 1) {
+      const row = glyph[gy] ?? '';
+      for (let gx = 0; gx < row.length; gx += 1) {
+        if (row[gx] !== '1') {
+          continue;
+        }
+        fillRect(image, cursorX + gx * scale, y + gy * scale, scale, scale, color);
+      }
+    }
+    cursorX += 5 * scale + scale;
+  }
+}
+
+function drawWordHighlights(image: PixelImage, text: string, x: number, y: number, scale: number): void {
+  const highlight = COLORS.sand;
+  const highlightHeight = Math.max(1, Math.floor(scale * 0.5));
+  let cursorX = x;
+  for (const rawChar of text) {
+    const char = rawChar.toUpperCase();
+    const glyph = GLYPHS[char] ?? GLYPHS[' '];
+    for (let gy = 0; gy < glyph.length; gy += 1) {
+      if (gy > 1) {
+        continue;
+      }
+      const row = glyph[gy] ?? '';
+      for (let gx = 0; gx < row.length; gx += 1) {
+        if (row[gx] !== '1') {
+          continue;
+        }
+        fillRect(image, cursorX + gx * scale, y + gy * scale, scale, highlightHeight, highlight);
+      }
+    }
+    cursorX += 5 * scale + scale;
+  }
+}
+
+function makeTitleLogo(): void {
+  const logo = createImage(512, 160, [0, 0, 0, 0]);
+
+  drawDisk(logo, 256, 36, 80, [246, 213, 139, 32]);
+  drawDisk(logo, 256, 42, 110, [246, 213, 139, 16]);
+
+  const line1 = { text: 'SUPER', y: 20, scale: 7 };
+  const line2 = { text: 'BART', y: 86, scale: 8 };
+
+  const drawLine = (line: { text: string; y: number; scale: number }): void => {
+    const width = measureWordWidth(line.text, line.scale);
+    const x = Math.floor((logo.width - width) / 2);
+    const outlineOffsets = [
+      [-2, 0],
+      [2, 0],
+      [0, -2],
+      [0, 2],
+      [-2, -2],
+      [2, -2],
+      [-2, 2],
+      [2, 2],
+    ];
+    for (const [dx, dy] of outlineOffsets) {
+      drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDark);
+    }
+    drawWordLayer(logo, line.text, x, line.y, line.scale, COLORS.checkpointGold);
+    drawWordHighlights(logo, line.text, x, line.y, line.scale);
+  };
+
+  drawLine(line1);
+  drawLine(line2);
+
+  strokeRect(logo, 0, 0, logo.width, logo.height, [29, 29, 29, 90]);
+
+  const output = path.join(repoRoot, 'public/assets/sprites/title_logo.png');
+  writePng(output, logo);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
 const FONT_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-!?., ';
 
 function makeBitmapFont(): void {
@@ -396,6 +481,7 @@ function main(): number {
   makeCoin();
   makeQuestionBlock();
   makeClouds();
+  makeTitleLogo();
   makeBitmapFont();
   return 0;
 }
