@@ -40,3 +40,18 @@ Original prompt: Build a complete, playable Mario-style 2D platformer web game c
 - Add a dedicated Playwright runtime traversal covering title -> level clear -> continue persistence.
 - Add explicit routing for three distinct bonus micro-level scene variants (currently bonus mode uses generator bonus profile).
 - Add minimap PNG export to `tools/levelgen_smoke.py` if image output is required.
+
+## 2026-02-12 - Audio Contract Completion
+- Completed migration from legacy `AudioSynth` usage in `PlayScene` to `AudioEngine` (bus-based WebAudio routing).
+- Added procedural audio module set: `AudioEngine`, `musicPresets`, `music`, and `sfx` with required event keys.
+- Added distinct per-world loop presets (`world1`..`world4`, `castle`) and user-gesture gating before music starts.
+- Implemented settings controls/persistence for master/music/sfx volume and mute toggles with immediate apply.
+- Added deterministic validator `tools/audio_validate.ts` and script `npm run lint:audio`.
+- Added `docs/audio_design.md`, ticket + feature manifest + verification note for `audio_webaudio_music_sfx`.
+- Added test coverage in `tests/audio_contract.test.ts`.
+
+## 2026-02-12 - Runtime Smoke Fixes
+- Resolved module-resolution drift by preferring TypeScript sources over legacy JS twins in Vite config.
+- Fixed `PlayScene` registration key by adding explicit `super('PlayScene')` constructor.
+- Updated UI asset generator to emit XML BMFont data for `bitmap_font.fnt` so Phaser HUD font loads at runtime.
+- Re-ran smoke flow: `TitleScene -> WorldMapScene -> PlayScene -> PauseScene`, plus full quality gates.

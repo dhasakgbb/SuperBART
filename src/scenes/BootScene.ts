@@ -11,6 +11,9 @@ export class BootScene extends Phaser.Scene {
     for (const [key, path] of Object.entries(ASSET_MANIFEST.images)) {
       this.load.image(key, path);
     }
+    for (const [key, font] of Object.entries(ASSET_MANIFEST.bitmapFonts)) {
+      this.load.bitmapFont(key, font.texture, font.data);
+    }
   }
 
   create(): void {

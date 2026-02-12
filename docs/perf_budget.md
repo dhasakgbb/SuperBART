@@ -1,26 +1,37 @@
 # Performance Budget
 
-## Description
-Defines frame-time, memory, and load targets for performance evaluation and release readiness.
+## Target Platform
+- Mid-tier laptop (integrated graphics), modern Chromium/Firefox.
+- Viewport: `960x540`, pixel-art rendering enabled.
 
+## Scene-Specific Frame Budgets (60 FPS target)
+- **Play scene traversal (normal world)**
+  - p50 <= 8.0 ms
+  - p95 <= 14.0 ms
+  - p99 <= 18.0 ms
+- **Play scene stress (final castle, heavy enemies/projectiles)**
+  - p50 <= 9.5 ms
+  - p95 <= 16.5 ms
+  - p99 <= 22.0 ms
+- **Level select/menu scenes**
+  - p50 <= 4.0 ms
+  - p95 <= 7.0 ms
+  - p99 <= 10.0 ms
 
-## Target Hardware
-- Mid-tier laptop CPU/GPU (integrated graphics acceptable)
-- Browser: current Chrome/Edge/Firefox
+## Memory Budgets
+- Runtime JS heap p95 <= 140 MB over a 10-minute run.
+- Asset payload loaded at boot <= 14 MB.
 
-## Frame Time Targets
-- Gameplay p50: <= 8ms
-- Gameplay p95: <= 14ms
-- Gameplay p99: <= 18ms
+## Load/Transition Budgets
+- Cold boot to title <= 2.2 s on warm local npm dev environment.
+- Level transition (clear -> next play start) <= 1.4 s.
+- Pause/resume transition <= 150 ms.
 
-## Memory Targets
-- Runtime JS heap target: <= 120 MB
-- Asset footprint target: <= 10 MB for MVP placeholders
+## Measurement Protocol
+- Use browser performance panel plus `window.capture_perf_snapshot()` every ~10 seconds.
+- Record p50/p95/p99 from at least 60-second play samples.
+- Run both a normal world route and final-castle stress route.
 
-## Load Targets
-- Initial scene load: <= 2.0s on warm cache
-- Restart cycle: <= 1.0s
-
-## Measurement Notes
-- Capture using browser performance tools with a 60s traversal run.
-- Record p50/p95/p99 and note major spikes.
+## Failure Handling
+- Any p95 or p99 breach is release-blocking until mitigated or explicitly waived.
+- Record mitigation action and rerun measurements before merge.

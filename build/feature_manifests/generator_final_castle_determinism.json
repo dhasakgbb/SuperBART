@@ -1,0 +1,13 @@
+{
+  "feature_id": "generator_final_castle_determinism",
+  "code_paths": [
+    "src/levelgen/generator.ts",
+    "src/levelgen/worldRules.ts",
+    "src/systems/progression.ts",
+    "tools/level_preview.ts"
+  ],
+  "test_paths": [
+    "tests/level_generator_validity.test.ts",
+    "tests/generator_determinism_hash.test.ts"
+  ]
+}

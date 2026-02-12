@@ -2,8 +2,10 @@ import Phaser from 'phaser';
 import './style.css';
 import { createGameConfig } from './core/gameConfig';
 import { BootScene } from './scenes/BootScene';
+import { FinalVictoryScene } from './scenes/FinalVictoryScene';
 import { GameOverScene } from './scenes/GameOverScene';
 import { LevelCompleteScene } from './scenes/LevelCompleteScene';
+import { PauseScene } from './scenes/PauseScene';
 import { PlayScene } from './scenes/PlayScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { TitleScene } from './scenes/TitleScene';
@@ -15,8 +17,10 @@ const game = new Phaser.Game(
     TitleScene,
     WorldMapScene,
     PlayScene,
+    PauseScene,
     LevelCompleteScene,
     GameOverScene,
+    FinalVictoryScene,
     SettingsScene
   ])
 );

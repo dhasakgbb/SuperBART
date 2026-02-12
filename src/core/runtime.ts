@@ -1,9 +1,9 @@
-import type { GameMode, SaveGameV2, SuperBartRuntimeState } from '../types/game';
+import type { GameMode, SaveGameV3, SuperBartRuntimeState } from '../types/game';
 import { defaultSave } from '../systems/save';
 
 export interface RuntimeStore {
   mode: GameMode;
-  save: SaveGameV2;
+  save: SaveGameV3;
   levelSeed: number;
   levelTheme: string;
   difficultyTier: number;

@@ -1,23 +1,26 @@
 # CI Release Notes
 
-## Description
-Documents CI pipeline stages, artifact expectations, and release failure handling policy.
-
-
 ## Pipeline Entry
-- Trigger on push to `main` and release tags.
-- Required stages:
-  1. Install dependencies (`npm install`)
-  2. Generate assets (`npm run assets:generate`)
-  3. Test (`npm run test`)
-  4. Validate (`npm run validate`)
-  5. Build (`npm run build`)
+- Trigger: pushes to `main` and release tags.
+- Use deterministic node version and clean install (`npm ci` preferred in CI).
 
-## Artifact Stage
-- Store `dist/` bundle.
-- Store generated build metadata JSON from `tools/build_release.py`.
+## Required CI Stages
+1. `npm ci`
+2. `npm run gen:all`
+3. `npm run lint:assets`
+4. `npm run lint:style`
+5. `npm run lint:audio`
+6. `npm test`
+7. `npm run build`
+8. `python3 tools/build_release.py --version <version> --profile release`
+
+## Artifact Outputs
+- Built bundle: `dist/**`
+- Build metadata: `build/build_metadata.json`
+- Optional perf capture notes attached for release candidates.
 
 ## Failure Handling
-- Fail fast if any stage exits non-zero.
-- Do not publish build artifacts when validation/test fails.
-- Attach failing command output to CI summary for triage.
+- Fail fast on any non-zero stage.
+- Never publish artifacts from a failed run.
+- Include failed command output and relevant logs in CI summary.
+- For flaky failures, re-run once; if still failing, block release and open triage issue.

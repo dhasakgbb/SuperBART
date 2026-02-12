@@ -24,8 +24,13 @@ export const ASSET_MANIFEST = {
     thwomp: '/assets/sprites/thwomp.svg',
     moving_platform: '/assets/sprites/moving_platform.svg',
     tileset: '/assets/tiles/tileset.png',
-    bitmap_font: '/assets/fonts/bitmap_font.png',
     tile_ground: '/assets/tiles/tile_ground.svg',
     tile_oneway: '/assets/tiles/tile_oneway.svg'
+  },
+  bitmapFonts: {
+    hud: {
+      texture: '/assets/fonts/bitmap_font.png',
+      data: '/assets/fonts/bitmap_font.fnt'
+    }
   }
 };

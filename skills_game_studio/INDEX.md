@@ -12,6 +12,8 @@ This directory contains a complete Codex skill suite for an engine-neutral game 
 | `gameplay-feature-factory` | Ship ticketed gameplay features with code/tests/verification | `build/feature_manifests/<feature_id>.json`, `docs/verification/<feature_id>.md` |
 | `performance-sheriff` | Set performance budgets and regression gates | `docs/perf_budget.md`, `tools/profile_helpers/`, `docs/perf_regression_checklist.md` |
 | `content-pipeline-asset-hygiene` | Define and validate asset ingestion rules | `docs/pipeline_import_rules.md`, `tools/asset_validate.py`, `assets/placeholders/` |
+| `reference-look-enforcer` | Convert screenshot art direction into a strict style contract | `docs/style_kit.md`, `src/style/styleConfig.ts`, `tools/style_validate.ts` |
+| `sprite-ui-kit-generator` | Generate deterministic pixel UI/sprite bundles and dimension checks | `tools/make_ui_assets.ts`, `tools/make_bart_sprites.ts`, `tools/asset_validate.ts` |
 | `build-release-automator` | Standardize versioning and release automation | `build/versioning.md`, `tools/build_release.py`, `docs/ci_release_notes.md` |
 | `qa-harness-repro-first` | Build deterministic repro harnesses for QA | `tests/repro_scenes/`, `docs/qa_repro_playbook.md` |
 | `narrative-dialogue-room` | Produce canon, voice standards, and localization constraints | `docs/lore_bible.md`, `docs/voice_guides/`, `docs/localization_constraints.md` |

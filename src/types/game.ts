@@ -2,17 +2,22 @@ export type PlayerForm = 'small' | 'big';
 
 export type GameMode =
   | 'title'
+  | 'level_select'
   | 'world_map'
   | 'playing'
+  | 'paused'
   | 'level_complete'
   | 'game_over'
+  | 'victory'
   | 'settings';
 
 export interface CampaignState {
   world: number;
   levelIndex: number;
   totalLevels: number;
-  bonusUnlocked: boolean[];
+  worldLayout: number[];
+  unlockedLevelKeys: string[];
+  completedLevelKeys: string[];
 }
 
 export interface ProgressionState {
@@ -58,15 +63,16 @@ export interface SuperBartRuntimeState {
 
 export interface GameSettings {
   masterVolume: number;
-  musicEnabled: boolean;
-  sfxEnabled: boolean;
+  musicVolume: number;
+  sfxVolume: number;
+  musicMuted: boolean;
+  sfxMuted: boolean;
   screenShakeEnabled: boolean;
 }
 
-export interface SaveGameV2 {
-  schemaVersion: 2;
+export interface SaveGameV3 {
+  schemaVersion: 3;
   campaign: CampaignState;
   progression: ProgressionState;
   settings: GameSettings;
-  unlockedBonusLevels: number[];
 }

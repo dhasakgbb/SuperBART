@@ -1,0 +1,16 @@
+{
+  "feature_id": "campaign_v3_level_select_pause_victory",
+  "code_paths": [
+    "src/types/game.ts",
+    "src/systems/save.ts",
+    "src/systems/progression.ts",
+    "src/scenes/WorldMapScene.ts",
+    "src/scenes/PauseScene.ts",
+    "src/scenes/FinalVictoryScene.ts",
+    "src/scenes/LevelCompleteScene.ts",
+    "src/main.ts"
+  ],
+  "test_paths": [
+    "tests/save_migration.test.ts"
+  ]
+}

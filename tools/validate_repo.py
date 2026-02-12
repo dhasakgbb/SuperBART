@@ -15,9 +15,12 @@ def run(cmd: list[str], cwd: Path) -> None:
 def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     checks = [
-        ['python3', 'tools/asset_validate.py'],
-        ['python3', 'tools/mechanics_validate.py'],
-        ['python3', 'tools/levelgen_smoke.py', '--world', '1', '--level', '1', '--seed', '1337'],
+        ['npm', 'run', 'gen:all'],
+        ['npm', 'run', 'lint:assets'],
+        ['npm', 'run', 'lint:style'],
+        ['npm', 'run', 'lint:audio'],
+        ['python3', 'tools/check_dependency_rules.py'],
+        ['npm', 'run', 'level:preview'],
         ['npm', 'run', 'test'],
     ]
 

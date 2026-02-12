@@ -359,26 +359,35 @@ function makeBitmapFont(): void {
   writePng(pngPath, atlas);
   console.log(`Wrote ${path.relative(repoRoot, pngPath)}`);
 
-  const fntLines = [
-    'info face="SuperBARTBitmap" size=8 bold=0 italic=0 charset="" unicode=0 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=1,1',
-    `common lineHeight=8 base=7 scaleW=${atlas.width} scaleH=${atlas.height} pages=1 packed=0`,
-    'page id=0 file="bitmap_font.png"',
-    `chars count=${FONT_CHARSET.length}`,
-  ];
-
+  const charLines: string[] = [];
   FONT_CHARSET.split('').forEach((char, idx) => {
     const col = idx % columns;
     const row = Math.floor(idx / columns);
     const x = col * cellWidth;
     const y = row * cellHeight;
     const code = char.charCodeAt(0);
-    fntLines.push(
-      `char id=${code} x=${x} y=${y} width=6 height=8 xoffset=0 yoffset=0 xadvance=7 page=0 chnl=0`,
+    charLines.push(
+      `    <char id="${code}" x="${x}" y="${y}" width="6" height="8" xoffset="0" yoffset="0" xadvance="7" page="0" chnl="0" />`,
     );
   });
 
+  const fntXml = [
+    '<?xml version="1.0"?>',
+    '<font>',
+    '  <info face="SuperBARTBitmap" size="8" bold="0" italic="0" charset="" unicode="0" stretchH="100" smooth="0" aa="1" padding="0,0,0,0" spacing="1,1" />',
+    `  <common lineHeight="8" base="7" scaleW="${atlas.width}" scaleH="${atlas.height}" pages="1" packed="0" />`,
+    '  <pages>',
+    '    <page id="0" file="bitmap_font.png" />',
+    '  </pages>',
+    `  <chars count="${FONT_CHARSET.length}">`,
+    ...charLines,
+    '  </chars>',
+    '</font>',
+    '',
+  ].join('\n');
+
   const fntPath = path.join(fontDir, 'bitmap_font.fnt');
-  fs.writeFileSync(fntPath, `${fntLines.join('\n')}\n`, 'utf-8');
+  fs.writeFileSync(fntPath, fntXml, 'utf-8');
   console.log(`Wrote ${path.relative(repoRoot, fntPath)}`);
 }
 

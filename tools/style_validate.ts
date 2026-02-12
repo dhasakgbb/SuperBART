@@ -29,17 +29,17 @@ function validateHudLayout(errors: ErrorList): void {
     );
   }
 
-  assertRange(errors, 'hudLayout.topText.x', hud.topText.x, 8, 20);
+  assertRange(errors, 'hudLayout.topText.x', hud.topText.x, 74, 100);
   assertRange(errors, 'hudLayout.topText.y', hud.topText.y, 8, 16);
-  assertRange(errors, 'hudLayout.topText.fontSizePx', hud.topText.fontSizePx, 14, 18);
+  assertRange(errors, 'hudLayout.topText.fontSizePx', hud.topText.fontSizePx, 12, 16);
 
-  assertRange(errors, 'hudLayout.rightText.x', hud.rightText.x, 770, 810);
+  assertRange(errors, 'hudLayout.rightText.x', hud.rightText.x, 920, 952);
   assertRange(errors, 'hudLayout.rightText.y', hud.rightText.y, 8, 16);
   assertRange(errors, 'hudLayout.rightText.fontSizePx', hud.rightText.fontSizePx, 12, 16);
 
-  assertRange(errors, 'hudLayout.portrait.x', hud.portrait.x, 890, 930);
-  assertRange(errors, 'hudLayout.portrait.y', hud.portrait.y, 60, 86);
-  assertRange(errors, 'hudLayout.portrait.scale', hud.portrait.scale, 0.58, 0.68);
+  assertRange(errors, 'hudLayout.portrait.x', hud.portrait.x, 8, 22);
+  assertRange(errors, 'hudLayout.portrait.y', hud.portrait.y, 4, 14);
+  assertRange(errors, 'hudLayout.portrait.scale', hud.portrait.scale, 0.62, 0.72);
 
   const allowedAnchors = new Set(['top-left', 'top-right']);
   if (!allowedAnchors.has(hud.topText.anchor)) {
@@ -48,8 +48,8 @@ function validateHudLayout(errors: ErrorList): void {
   if (!allowedAnchors.has(hud.rightText.anchor)) {
     errors.push(`hudLayout.rightText.anchor must be top-left or top-right, received ${hud.rightText.anchor}`);
   }
-  if (!allowedAnchors.has(hud.portrait.anchor)) {
-    errors.push(`hudLayout.portrait.anchor must be top-left or top-right, received ${hud.portrait.anchor}`);
+  if (hud.portrait.anchor !== 'top-left') {
+    errors.push(`hudLayout.portrait.anchor must be top-left for the locked HUD layout, received ${hud.portrait.anchor}`);
   }
 }
 
@@ -120,11 +120,27 @@ function validateBloom(errors: ErrorList): void {
   assertHex(errors, 'bloom.tint', bloom.tint);
 }
 
+function validateTypography(errors: ErrorList): void {
+  const typography = styleConfig.typography;
+  if (typography.style !== 'bitmap') {
+    errors.push(`typography.style must be "bitmap", received ${typography.style}`);
+  }
+  if (typography.casing !== 'uppercase') {
+    errors.push(`typography.casing must be "uppercase", received ${typography.casing}`);
+  }
+  if (typeof typography.fontKey !== 'string' || typography.fontKey.trim().length === 0) {
+    errors.push('typography.fontKey must be defined for bitmap font rendering.');
+  }
+  assertRange(errors, 'typography.letterSpacingPx', typography.letterSpacingPx, 1, 2);
+  assertRange(errors, 'typography.lineHeightPx', typography.lineHeightPx, 14, 18);
+}
+
 function main(): number {
   const errors: ErrorList = [];
   validateHudLayout(errors);
   validatePalette(errors);
   validateBloom(errors);
+  validateTypography(errors);
 
   if (errors.length > 0) {
     console.error('Style validation failed:');

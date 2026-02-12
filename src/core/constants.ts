@@ -22,14 +22,18 @@ export const PLAYER_CONSTANTS = {
 
 export const DEFAULT_SETTINGS: GameSettings = {
   masterVolume: 0.6,
-  musicEnabled: true,
-  sfxEnabled: true,
+  musicVolume: 0.58,
+  sfxVolume: 0.62,
+  musicMuted: false,
+  sfxMuted: false,
   screenShakeEnabled: true
 };
 
-export const CAMPAIGN_LEVELS_PER_WORLD = 5;
-export const CAMPAIGN_WORLD_COUNT = 5;
-export const TOTAL_CAMPAIGN_LEVELS = CAMPAIGN_LEVELS_PER_WORLD * CAMPAIGN_WORLD_COUNT;
+export const CAMPAIGN_WORLD_LAYOUT = [6, 6, 6, 6, 1] as const;
+export const CAMPAIGN_WORLD_COUNT = CAMPAIGN_WORLD_LAYOUT.length;
+// Kept for compatibility with legacy callers that still expect a flat per-world level count.
+export const CAMPAIGN_LEVELS_PER_WORLD = Math.max(...CAMPAIGN_WORLD_LAYOUT);
+export const TOTAL_CAMPAIGN_LEVELS = CAMPAIGN_WORLD_LAYOUT.reduce((acc, levels) => acc + levels, 0);
 
 export const SCORE_VALUES = {
   coin: 10,

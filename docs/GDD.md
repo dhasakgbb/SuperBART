@@ -1,44 +1,52 @@
-# Super BART V2 GDD
+# Super BART GDD
 
-## Pillars
-1. Tight platformer feel: acceleration curves, coyote time, jump buffer, variable jump.
-2. Deterministic progression: 25 campaign levels generated from world/level/seed.
-3. Readable challenge growth: enemy/hazard variety and world-themed parameters.
-4. Fast iteration: deterministic tools, runtime debug hooks, automation-friendly tests.
+## Core Loop
+1. Select an unlocked campaign level from Level Select.
+2. Run/jump through a deterministic chunk-generated platforming route.
+3. Collect coins/stars, defeat enemies, activate checkpoints, and clear goal.
+4. Receive level summary and unlock the next level.
+5. Complete all 25 levels (`4x6 + final castle`) to reach final victory.
 
-## Scope
-- Engine: Phaser 3 Arcade Physics.
-- Worlds: 5 campaign worlds x 5 levels each.
-- Bonus: 3 micro-levels unlocked via stars.
-- Power states: `small`, `big`.
-- No slopes, no multiplayer, no world-map overworld simulation.
+## MVP Scope
+- Engine: Phaser 3 + TypeScript + Vite.
+- Campaign topology: World 1-4 each have 6 levels; World 5 has a single final castle level.
+- Menus/screens: Title, Level Select, Play, Pause, Level Complete, Game Over, Final Victory, Settings.
+- Required movement feel: acceleration/deceleration, coyote time, jump buffer, variable jump cut, stomp hitstop.
+- Required enemies/hazards: walker, shell enemy, flyer, shooter, spike, thwomp-lite, moving platforms.
+- Art/audio constraints:
+  - In-repo generated assets only; no external downloads.
+  - Bart portrait/head generated from `public/assets/bart_source.png`.
+  - Procedural WebAudio SFX and looping world music.
+- Persistence: localStorage save schema v3 with unlocked/completed level tracking.
 
-## Core Mechanics
-- Run, jump, variable jump cut, coyote (100ms), jump buffer (100ms).
-- Damage with knockback + invulnerability frames.
-- Death + respawn at active checkpoint.
-- Collect coins (score) and stars (unlock progression).
-- Goal flag ends level with summary transition.
+## Visual Direction
+- North-star: `public/assets/target_look.png`.
+- Chunky pixel silhouettes, dark outlines, warm bloom accents.
+- Locked HUD composition:
+  - Top-left portrait + `BART` + lives/star/coin counters.
+  - Top-right `WORLD` and `TIME`.
+- Style constants must live in `src/style/styleConfig.ts` and be enforced by `tools/style_validate.ts`.
 
-## Enemy and Hazard Matrix
-- Walker patrol enemy.
-- Shell enemy with retract + kick.
-- Flying sine enemy.
-- Spitter enemy with tile-colliding projectiles.
-- Spike hazard.
-- Thwomp-lite hazard.
-- Moving platform + pit + springboard hazard combination.
+## Systems
+- Level generation: deterministic chunk+seed generation with world-specific rules and final-castle bias.
+- Progression: unlock next level on clear, preserve completion state, final-castle completion ends campaign.
+- Runtime debugging: state export (`window.__SUPER_BART__.getState`, `window.render_game_to_text`) and perf snapshot helper.
 
-## Content System
-- Runtime procedural generator: `generateLevel({world, levelIndex, seed})`.
-- Chunk grammar: start, mid_flat, vertical_climb, coin_arc, enemy_gauntlet, moving_platform, checkpoint, end.
-- World rules tune gap rates, enemy density, projectile cadence, moving platforms, palette, and tempo.
+## Risks
+- Visual drift from target screenshot if style constants are bypassed.
+- Campaign progression regressions during v2->v3 save migration.
+- Scene-flow regressions when adding Pause and Final Victory routes.
+- Chunk generator changes can silently affect fairness or determinism.
+- Large production bundle can impact low-end browser performance.
 
-## Acceptance Criteria
-- Title screen -> world map -> playable level loop.
-- Campaign progression supports 25 levels.
-- At least 6 enemy/hazard behaviors active.
-- Power-up loop `small <-> big` works.
-- Checkpoints and deterministic respawns work.
-- Audio synthesis with settings toggles works.
-- `npm run dev`, `npm run test`, `npm run validate`, `npm run build` pass.
+## Mitigations
+- Mandatory gates: `gen:all`, `lint:assets`, `lint:style`, `lint:audio`, `npm test`, `npm run build`.
+- Deterministic generator hash test and level preview tooling.
+- Save migration tests for schema normalization and final-level completion behavior.
+- Dependency-boundary checker to prevent architecture drift.
+
+## Milestones
+1. Phase A: visual/style lock + deterministic asset generation.
+2. Phase B: spec and architecture rule update.
+3. Phase C: gameplay + progression + scene flow completion.
+4. Phase D: QA reproducibility, build/release docs, perf budget and helpers.

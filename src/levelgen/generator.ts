@@ -2,6 +2,7 @@ import { TILE_SIZE } from '../core/constants';
 import type { ChunkType, EntityType, GeneratedLevel, LevelEntity, LevelGenerationInput } from '../types/levelgen';
 import { createRng } from './rng';
 import { getWorldRules } from './worldRules';
+import { campaignOrdinal } from '../systems/progression';
 
 const CHUNK_WIDTH = 24;
 const LEVEL_HEIGHT = 34;
@@ -32,7 +33,8 @@ function addEntity(entities: LevelEntity[], type: EntityType, xTile: number, yTi
 export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
   const rules = getWorldRules(input.world);
   const rng = createRng(input.seed ^ (input.world << 7) ^ (input.levelIndex << 13));
-  const chunkCount = input.bonus ? 6 : 11;
+  const finalCastle = !input.bonus && input.world === 5 && input.levelIndex === 1;
+  const chunkCount = input.bonus ? 6 : finalCastle ? 16 : Math.min(14, 8 + input.world + input.levelIndex);
   const width = chunkCount * CHUNK_WIDTH;
   const grid = makeGrid(width, LEVEL_HEIGHT);
   const entities: LevelEntity[] = [];
@@ -61,6 +63,9 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
     }
 
     const chunkTypePool: ChunkType[] = ['mid_flat', 'coin_arc', 'enemy_gauntlet', 'vertical_climb', 'moving_platform'];
+    if (finalCastle) {
+      chunkTypePool.push('enemy_gauntlet', 'enemy_gauntlet', 'moving_platform', 'vertical_climb');
+    }
     if (chunk % rules.checkpointSpacingChunks === 0 && chunk > 1) {
       chunkTypePool.push('checkpoint');
     }
@@ -71,7 +76,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
     groundY = Math.max(21, Math.min(28, groundY + variance));
 
     const gapStart = x0 + rng.nextInt(6, 13);
-    const gapWidth = rng.chance(rules.gapFrequency) ? rng.nextInt(2, 4) : 0;
+    const gapWidth = rng.chance(finalCastle ? rules.gapFrequency + 0.08 : rules.gapFrequency) ? rng.nextInt(2, finalCastle ? 5 : 4) : 0;
 
     fillGround(grid, x0, x1, groundY);
     if (gapWidth > 0) {
@@ -94,15 +99,15 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       }
     }
 
-    if (chosen === 'enemy_gauntlet' || rng.chance(rules.enemyDensity)) {
+    if (chosen === 'enemy_gauntlet' || rng.chance(finalCastle ? rules.enemyDensity + 0.1 : rules.enemyDensity)) {
       addEntity(entities, 'walker', x0 + 8, groundY - 1, { patrol: 4 });
-      if (rng.chance(0.5)) {
+      if (rng.chance(finalCastle ? 0.78 : 0.5)) {
         addEntity(entities, 'shell', x0 + 14, groundY - 1, { patrol: 4 });
       }
-      if (rng.chance(0.35)) {
+      if (rng.chance(finalCastle ? 0.58 : 0.35)) {
         addEntity(entities, 'flying', x0 + 17, groundY - 6, { amp: 20 });
       }
-      if (rng.chance(0.3 + input.world * 0.06)) {
+      if (rng.chance((finalCastle ? 0.62 : 0.3) + input.world * 0.06)) {
         addEntity(entities, 'spitter', x0 + 20, groundY - 1, { cadenceMs: rules.projectileCadenceMs });
       }
     }
@@ -119,7 +124,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       addEntity(entities, 'spike', x0 + 5, groundY - 1);
     }
 
-    if (chosen === 'moving_platform' || rng.chance(rules.movingPlatformFrequency)) {
+    if (chosen === 'moving_platform' || rng.chance(finalCastle ? rules.movingPlatformFrequency + 0.12 : rules.movingPlatformFrequency)) {
       const y = groundY - 6;
       movingPlatforms.push({
         id: `mp_${chunk}`,
@@ -127,10 +132,13 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
         y: y * TILE_SIZE,
         minX: (x0 + 5) * TILE_SIZE,
         maxX: (x0 + 16) * TILE_SIZE,
-        speed: 50 + input.world * 8
+        speed: 50 + input.world * 8 + (finalCastle ? 22 : 0)
       });
       addEntity(entities, 'thwomp', x0 + 18, groundY - 6, { topY: groundY - 10, bottomY: groundY - 2 });
       addEntity(entities, 'spike', x0 + 12, groundY - 1);
+      if (finalCastle && rng.chance(0.5)) {
+        addEntity(entities, 'spike', x0 + 8, groundY - 1);
+      }
     }
 
     if (chosen === 'checkpoint') {
@@ -144,7 +152,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
     }
 
     for (let tx = x0 + 2; tx < x1 - 1; tx += 3) {
-      if (rng.chance(rules.coinDensity * 0.25)) {
+      if (rng.chance(rules.coinDensity * (finalCastle ? 0.14 : 0.25))) {
         addEntity(entities, 'coin', tx, groundY - rng.nextInt(2, 4));
       }
     }
@@ -172,7 +180,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       world: input.world,
       levelIndex: input.levelIndex,
       theme: input.bonus ? 'bonus' : rules.theme,
-      difficultyTier: (input.world - 1) * 5 + input.levelIndex,
+      difficultyTier: campaignOrdinal(input.world, input.levelIndex),
       chunksUsed,
       seed: input.seed
     }

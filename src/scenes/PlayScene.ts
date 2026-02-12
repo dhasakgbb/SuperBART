@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
-import { AudioSynth } from '../audio/synth';
+import { AudioEngine } from '../audio/AudioEngine';
 import { PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
 import { buildRuntimeState, runtimeStore } from '../core/runtime';
 import { spawnEnemy, type EnemyHandle } from '../enemies/registry';
 import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
-import { collectGrowthPowerup, resolvePlayerDamage } from '../player/powerup';
+import { resolvePlayerDamage } from '../player/powerup';
 import { createFeelState, stepMovement } from '../player/movement';
 import { renderThemedBackground } from '../rendering/parallax';
+import styleConfig from '../style/styleConfig';
 import { computeSeed } from '../systems/progression';
 import { persistSave } from '../systems/save';
 import type { PlayerForm, SuperBartRuntimeState } from '../types/game';
@@ -29,8 +30,10 @@ export class PlayScene extends Phaser.Scene {
   private thwomps!: Phaser.Physics.Arcade.Group;
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private enemyHandles: EnemyHandle[] = [];
+  private collectibleGlows = new Map<number, Phaser.GameObjects.Image>();
+  private glowIdCounter = 1;
   private hud!: HudRefs;
-  private music = new AudioSynth();
+  private readonly audio = AudioEngine.shared();
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
 
   private playerForm: PlayerForm = 'small';
@@ -45,6 +48,10 @@ export class PlayScene extends Phaser.Scene {
   private completed = false;
   private world = 1;
   private levelIndex = 1;
+
+  constructor() {
+    super('PlayScene');
+  }
 
   init(data: { bonus?: boolean }): void {
     this.levelBonus = Boolean(data?.bonus);
@@ -127,9 +134,13 @@ export class PlayScene extends Phaser.Scene {
       if (e.type === 'spawn') {
         spawn = { x: e.x, y: e.y };
       } else if (e.type === 'coin') {
-        this.coins.create(e.x, e.y, 'coin').refreshBody();
+        const coin = this.coins.create(e.x, e.y, 'coin') as Phaser.Physics.Arcade.Sprite;
+        coin.refreshBody();
+        this.attachCollectibleGlow(coin, 'coin');
       } else if (e.type === 'star') {
-        this.stars.create(e.x, e.y, 'star').refreshBody();
+        const star = this.stars.create(e.x, e.y, 'star') as Phaser.Physics.Arcade.Sprite;
+        star.refreshBody();
+        this.attachCollectibleGlow(star, 'coin');
       } else if (e.type === 'checkpoint') {
         const cp = this.checkpoints.create(e.x, e.y, 'checkpoint') as Phaser.Physics.Arcade.Sprite;
         cp.setData('checkpointId', String(e.data?.checkpointId ?? e.id));
@@ -172,6 +183,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.physics.add.overlap(this.player, this.coins, (_p, coin) => {
+      this.detachCollectibleGlow(coin as Phaser.Physics.Arcade.Sprite);
       coin.destroy();
       runtimeStore.save.progression.coins += 1;
       runtimeStore.save.progression.score += SCORE_VALUES.coin;
@@ -179,10 +191,11 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.physics.add.overlap(this.player, this.stars, (_p, star) => {
+      this.detachCollectibleGlow(star as Phaser.Physics.Arcade.Sprite);
       star.destroy();
       runtimeStore.save.progression.stars += 1;
       runtimeStore.save.progression.score += SCORE_VALUES.star;
-      this.playSfx('coin');
+      this.playSfx('power');
     });
 
     this.physics.add.overlap(this.player, this.checkpoints, (_p, cpObj) => {
@@ -213,6 +226,9 @@ export class PlayScene extends Phaser.Scene {
         if (p.body.velocity.y > 0) {
           p.setVelocityY(-220);
         }
+        if (target.kind === 'shell' && Math.abs(target.sprite.body.velocity.x) >= 150) {
+          this.playSfx('shell');
+        }
         if (target.kind !== 'shell' || (target.kind === 'shell' && target.sprite.body.velocity.x === 0)) {
           if (target.kind !== 'shell' || target.sprite.texture.key !== 'enemy_shell_retracted') {
             target.sprite.disableBody(true, true);
@@ -240,16 +256,20 @@ export class PlayScene extends Phaser.Scene {
       w: Phaser.Input.Keyboard.KeyCodes.W,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       r: Phaser.Input.Keyboard.KeyCodes.R,
-      esc: Phaser.Input.Keyboard.KeyCodes.ESC
+      esc: Phaser.Input.Keyboard.KeyCodes.ESC,
+      p: Phaser.Input.Keyboard.KeyCodes.P
     }) as Record<string, Phaser.Input.Keyboard.Key>;
 
     this.hud = createHud(this);
     this.lives = 3;
 
-    this.music.init(runtimeStore.save.settings.masterVolume);
-    if (runtimeStore.save.settings.musicEnabled) {
-      this.music.startMusic(120 + this.world * 6, [0, 2, 4, 7, 9]);
-    }
+    this.audio.configureFromSettings(runtimeStore.save.settings);
+    this.audio.stopMusic();
+    this.audio.startWorldMusic(this.world);
+
+    this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      runtimeStore.mode = 'playing';
+    });
 
     this.registerDebugHooks();
   }
@@ -261,6 +281,14 @@ export class PlayScene extends Phaser.Scene {
     (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = root;
 
     (window as Window & { render_game_to_text?: () => string }).render_game_to_text = () => JSON.stringify(this.getRuntimeState());
+    (window as Window & { capture_perf_snapshot?: () => Record<string, number> }).capture_perf_snapshot = () => {
+      const renderer = this.game.renderer as unknown as { info?: { render?: { drawCalls?: number } } };
+      return {
+        fps: Math.round(this.game.loop.actualFps),
+        drawCalls: renderer.info?.render?.drawCalls ?? 0,
+        entities: this.enemyHandles.filter((h) => h.sprite.active).length + this.projectiles.countActive(true)
+      };
+    };
     (window as Window & { advanceTime?: (ms: number) => void }).advanceTime = (ms: number) => {
       const step = 16;
       const steps = Math.max(1, Math.floor(ms / step));
@@ -268,6 +296,33 @@ export class PlayScene extends Phaser.Scene {
         this.simulateStep(step);
       }
     };
+  }
+
+  private attachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite, textureKey: string): void {
+    if (!styleConfig.bloom.enabled) {
+      return;
+    }
+    const glow = this.add.image(sprite.x, sprite.y, textureKey)
+      .setDepth(sprite.depth - 1)
+      .setAlpha(Math.min(0.8, Math.max(0.22, styleConfig.bloom.strength)))
+      .setTint(Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setScale(1 + styleConfig.bloom.radius * 0.09);
+    const id = this.glowIdCounter++;
+    sprite.setData('collectibleGlowId', id);
+    this.collectibleGlows.set(id, glow);
+  }
+
+  private detachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite): void {
+    const id = Number(sprite.getData('collectibleGlowId'));
+    if (!Number.isFinite(id)) {
+      return;
+    }
+    const glow = this.collectibleGlows.get(id);
+    if (glow) {
+      glow.destroy();
+      this.collectibleGlows.delete(id);
+    }
   }
 
   private getRuntimeState(): SuperBartRuntimeState {
@@ -291,10 +346,17 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.entityCounts.movingPlatforms = this.movingPlatforms.countActive(true);
   }
 
-  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'gameover'): void {
-    if (runtimeStore.save.settings.sfxEnabled) {
-      this.music.playSfx(kind);
-    }
+  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag'): void {
+    const keyMap = {
+      jump: 'jump',
+      coin: 'coin',
+      stomp: 'stomp',
+      hurt: 'hurt',
+      power: 'power_up',
+      shell: 'shell_kick',
+      flag: 'goal_clear'
+    } as const;
+    this.audio.playSfx(keyMap[kind]);
   }
 
   private damagePlayer(reason: string): void {
@@ -318,7 +380,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.save.progression.deaths += 1;
     this.lives -= 1;
     this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
-    this.playSfx('gameover');
+    this.playSfx('hurt');
 
     if (this.lives <= 0) {
       runtimeStore.mode = 'game_over';
@@ -345,7 +407,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.save.progression.score += SCORE_VALUES.completeBonus;
     runtimeStore.save.progression.timeMs += this.levelTimeMs;
     persistSave(runtimeStore.save);
-    this.music.stopMusic();
+    this.audio.stopMusic();
     this.scene.start('LevelCompleteScene', {
       stats: {
         timeSec: Math.floor(this.levelTimeMs / 1000),
@@ -414,9 +476,10 @@ export class PlayScene extends Phaser.Scene {
       this.scene.restart({ bonus: this.levelBonus });
       return;
     }
-    if (Phaser.Input.Keyboard.JustDown(this.keys.esc)) {
-      this.music.stopMusic();
-      this.scene.start('WorldMapScene');
+    if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.p)) {
+      this.scene.launch('PauseScene');
+      runtimeStore.mode = 'paused';
+      this.scene.pause();
       return;
     }
 

@@ -56,15 +56,15 @@ const WORLD_RULES: Record<number, WorldRuleset> = {
   5: {
     theme: 'castle',
     groundVariance: 3,
-    gapFrequency: 0.24,
-    enemyDensity: 0.68,
-    projectileCadenceMs: 1450,
-    movingPlatformFrequency: 0.28,
+    gapFrequency: 0.3,
+    enemyDensity: 0.76,
+    projectileCadenceMs: 1325,
+    movingPlatformFrequency: 0.33,
     checkpointSpacingChunks: 2,
-    coinDensity: 0.45,
+    coinDensity: 0.36,
     starTarget: 3,
     palette: { skyTop: 0x221122, skyBottom: 0x3b1f2b, accent: 0xd7263d },
-    audio: { tempo: 145, scale: [0, 3, 5, 6, 10] }
+    audio: { tempo: 152, scale: [0, 1, 4, 6, 10] }
   }
 };
 

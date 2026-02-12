@@ -1,7 +1,9 @@
 :root {
-  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
-  color: #fff;
-  background: radial-gradient(circle at top, #335, #111a2f 60%, #090d18 100%);
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  color: #f2fdfd;
+  background:
+    radial-gradient(circle at 30% 10%, rgb(246 213 139 / 18%), transparent 42%),
+    linear-gradient(180deg, #0a121c 0%, #212826 52%, #1d1d1d 100%);
 }
 
 * {
@@ -23,7 +25,9 @@ body {
 }
 
 canvas {
-  border: 2px solid #ffe082;
-  box-shadow: 0 18px 48px rgb(0 0 0 / 50%);
+  border: 3px solid #ded256;
+  box-shadow:
+    0 0 0 2px #1d1d1d,
+    0 24px 48px rgb(0 0 0 / 55%);
   image-rendering: pixelated;
 }

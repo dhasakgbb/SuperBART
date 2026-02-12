@@ -1,0 +1,13 @@
+{
+  "feature_id": "style_hud_bloom_lock",
+  "code_paths": [
+    "docs/style_kit.md",
+    "src/style/styleConfig.ts",
+    "tools/style_validate.ts",
+    "src/ui/hud.ts",
+    "src/scenes/PlayScene.ts"
+  ],
+  "test_paths": [
+    "tests/boot_game_init.test.ts"
+  ]
+}
