@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate pixelated Bart avatar sprites from public/assets/bart_source.png."""
+"""Generate pixelated Bart avatar sprites from public/assets/target_look.png."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ def add_outline(image: Image.Image) -> Image.Image:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    source_path = repo_root / 'public' / 'assets' / 'bart_source.png'
+    source_path = repo_root / 'public' / 'assets' / 'target_look.png'
     sprites_dir = repo_root / 'public' / 'assets' / 'sprites'
 
     if not source_path.exists():

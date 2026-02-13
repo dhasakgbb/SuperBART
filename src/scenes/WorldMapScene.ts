@@ -5,6 +5,7 @@ import { runtimeStore } from '../core/runtime';
 import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig, { stylePalette } from '../style/styleConfig';
 import { campaignOrdinal, campaignRefFromOrdinal, levelKey } from '../systems/progression';
+import { WORLD_NAMES } from '../levelgen/worldRules';
 import { isLevelUnlocked, persistSave, setCurrentLevel } from '../systems/save';
 
 interface MapNode {
@@ -30,6 +31,7 @@ export class WorldMapScene extends Phaser.Scene {
   private nodeSprites = new Map<string, Phaser.GameObjects.Image>();
   private nodeLabels = new Map<string, Phaser.GameObjects.BitmapText>();
   private selectedBobTween: Phaser.Tweens.Tween | null = null;
+  private sceneReadyStableFrames = 2;
 
   constructor() {
     super('WorldMapScene');
@@ -81,7 +83,7 @@ export class WorldMapScene extends Phaser.Scene {
     const font = styleConfig.typography.fontKey;
     for (const row of styleConfig.worldMapLayout.worldLabels) {
       this.add
-        .bitmapText(row.x, row.y, font, `WORLD ${row.world}`, 14)
+        .bitmapText(row.x, row.y, font, WORLD_NAMES[row.world] ?? `WORLD ${row.world}`, 14)
         .setOrigin(0, 0)
         .setTint(color('hudText'))
         .setDepth(55);
@@ -193,6 +195,38 @@ export class WorldMapScene extends Phaser.Scene {
     this.updateSelectionVisuals();
   }
 
+  private setSceneReadyMarker(): void {
+    const root = ((window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ ?? {}) as Record<
+      string,
+      unknown
+    >;
+    root.sceneName = this.scene.key;
+    root.sceneReady = false;
+    root.sceneReadyFrame = -1;
+    root.sceneFrame = this.game.loop.frame;
+    root.sceneReadyCounter = 0;
+
+    const onPostUpdate = (): void => {
+      root.sceneName = this.scene.key;
+      root.sceneFrame = this.game.loop.frame;
+      const stableCounter = Number(root.sceneReadyCounter ?? 0) + 1;
+      root.sceneReadyCounter = stableCounter;
+      if (stableCounter >= this.sceneReadyStableFrames) {
+        root.sceneReady = true;
+        if (typeof root.sceneReadyFrame !== 'number' || root.sceneReadyFrame < 0) {
+          root.sceneReadyFrame = this.game.loop.frame;
+        }
+      }
+    };
+
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    });
+
+    (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = root;
+  }
+
   create(): void {
     runtimeStore.mode = 'level_select';
     const audio = AudioEngine.shared();
@@ -215,6 +249,7 @@ export class WorldMapScene extends Phaser.Scene {
     this.renderPathDots();
     this.renderNodes();
     this.updateSelectionVisuals();
+    this.setSceneReadyMarker();
 
     this.input.keyboard?.on('keydown-UP', () => {
       this.moveSelection(-1);

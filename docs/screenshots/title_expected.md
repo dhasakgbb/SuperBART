@@ -7,9 +7,9 @@ This gate describes the required title-screen composition for `TitleScene`.
 - Upper third shows generated `title_logo.png` centered and reading `SUPER BART`.
 - Portrait (`bart_portrait_96.png`) appears near the wordmark as a brand marker.
 - Subtitle line below the logo:
-  - `4 WORLDS X 6 LEVELS + FINAL CASTLE`
+  - `4 WORLDS X 6 LEVELS + FINAL BENCHMARK`
 - Bottom area includes blinking `PRESS ENTER` and hint row:
-  - `N: NEW GAME   L: LEVEL SELECT   S: SETTINGS`
+  - `N: NEW DEPLOYMENT   L: SERVICE MAP   S: SETTINGS`
 
 ## Camera Lock Requirement
 

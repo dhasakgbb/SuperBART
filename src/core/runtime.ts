@@ -15,7 +15,7 @@ export const runtimeStore: RuntimeStore = {
   mode: 'title',
   save: defaultSave(),
   levelSeed: 0,
-  levelTheme: 'grass',
+  levelTheme: 'azure',
   difficultyTier: 1,
   chunksUsed: [],
   entityCounts: {

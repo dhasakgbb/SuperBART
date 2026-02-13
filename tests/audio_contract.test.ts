@@ -6,7 +6,7 @@ import { AUDIO_CAPS } from '../src/audio/AudioEngine';
 import { MUSIC_PRESETS } from '../src/audio/musicPresets';
 import { REQUIRED_SFX_KEYS, SFX_DEFINITIONS } from '../src/audio/sfx';
 
-const REQUIRED_PRESET_KEYS = ['world1', 'world2', 'world3', 'world4', 'castle'] as const;
+const REQUIRED_PRESET_KEYS = ['azure', 'pipeline', 'enterprise', 'gpu', 'benchmark'] as const;
 const REQUIRED_SFX_KEYS_CONTRACT = [
   'jump',
   'coin',

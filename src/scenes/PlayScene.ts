@@ -5,8 +5,9 @@ import { buildRuntimeState, runtimeStore } from '../core/runtime';
 import { spawnEnemy, type EnemyHandle } from '../enemies/registry';
 import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
+import { getWorldRules } from '../levelgen/worldRules';
 import { resolvePlayerDamage } from '../player/powerup';
-import { createFeelState, stepMovement } from '../player/movement';
+import { createFeelState, DEFAULT_WORLD_MODIFIERS, stepMovement, type WorldModifiers } from '../player/movement';
 import { PlayerAnimator } from '../player/PlayerAnimator';
 import { createDustPuff, type DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
@@ -15,7 +16,8 @@ import styleConfig from '../style/styleConfig';
 import { computeSeed } from '../systems/progression';
 import { persistSave } from '../systems/save';
 import type { PlayerForm, SuperBartRuntimeState } from '../types/game';
-import { createHud, renderHud, type HudRefs } from '../ui/hud';
+import { createHud, renderHud, updateHudPosition, type HudRefs } from '../ui/hud';
+import { SCENE_TEXT } from '../content/contentManifest';
 
 export class PlayScene extends Phaser.Scene {
   private levelBonus = false;
@@ -28,10 +30,12 @@ export class PlayScene extends Phaser.Scene {
   private spikes!: Phaser.Physics.Arcade.StaticGroup;
   private springs!: Phaser.Physics.Arcade.StaticGroup;
   private checkpoints!: Phaser.Physics.Arcade.StaticGroup;
+  private questionBlocks!: Phaser.Physics.Arcade.StaticGroup;
   private goal!: Phaser.Physics.Arcade.Sprite;
   private projectiles!: Phaser.Physics.Arcade.Group;
   private thwomps!: Phaser.Physics.Arcade.Group;
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
+  private damageZones!: Phaser.Physics.Arcade.StaticGroup;
   private enemyHandles: EnemyHandle[] = [];
   private collectibleGlows = new Map<number, Phaser.GameObjects.Image>();
   private glowIdCounter = 1;
@@ -56,6 +60,7 @@ export class PlayScene extends Phaser.Scene {
   private completed = false;
   private world = 1;
   private levelIndex = 1;
+  private worldModifiers: WorldModifiers = { ...DEFAULT_WORLD_MODIFIERS };
 
   constructor() {
     super('PlayScene');
@@ -84,6 +89,9 @@ export class PlayScene extends Phaser.Scene {
       throw new Error(`Generated invalid level: ${validation.errors.join(', ')}`);
     }
 
+    const rules = getWorldRules(this.world);
+    this.worldModifiers = { ...DEFAULT_WORLD_MODIFIERS, ...rules.modifiers };
+
     runtimeStore.levelSeed = seed;
     runtimeStore.levelTheme = level.metadata.theme;
     runtimeStore.difficultyTier = level.metadata.difficultyTier;
@@ -101,9 +109,11 @@ export class PlayScene extends Phaser.Scene {
     this.spikes = this.physics.add.staticGroup();
     this.springs = this.physics.add.staticGroup();
     this.checkpoints = this.physics.add.staticGroup();
+    this.questionBlocks = this.physics.add.staticGroup();
     this.projectiles = this.physics.add.group({ allowGravity: false });
     this.thwomps = this.physics.add.group({ immovable: true, allowGravity: false });
     this.enemiesGroup = this.physics.add.group();
+    this.damageZones = this.physics.add.staticGroup();
 
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
@@ -142,6 +152,12 @@ export class PlayScene extends Phaser.Scene {
         star.setScale(actorScale.star).setDepth(28);
         star.refreshBody();
         this.attachCollectibleGlow(star, 'coin');
+      } else if (e.type === 'question_block') {
+        const qb = this.questionBlocks.create(e.x, e.y, 'question_block') as Phaser.Physics.Arcade.Sprite;
+        qb.setScale(actorScale.questionBlock).setDepth(26);
+        qb.setData('state', 'active');
+        qb.refreshBody();
+        this.attachCollectibleGlow(qb, 'question_block');
       } else if (e.type === 'checkpoint') {
         const cp = this.checkpoints.create(e.x, e.y, 'checkpoint') as Phaser.Physics.Arcade.Sprite;
         cp.setData('checkpointId', String(e.data?.checkpointId ?? e.id));
@@ -158,7 +174,7 @@ export class PlayScene extends Phaser.Scene {
         thwomp.setData('bottomY', Number(e.data?.bottomY ?? e.y + 30));
         thwomp.setData('state', 'idle');
       } else if (e.type === 'walker' || e.type === 'shell' || e.type === 'flying' || e.type === 'spitter') {
-        const handle = spawnEnemy(e.type, this, e.x, e.y, { scene: this, projectiles: this.projectiles }, e.data);
+        const handle = spawnEnemy(e.type, this, e.x, e.y, this.buildEnemyContext(), e.data);
         this.enemyHandles.push(handle);
         this.enemiesGroup.add(handle.sprite);
       }
@@ -196,7 +212,14 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.movingPlatforms);
     this.physics.add.collider(this.enemiesGroup, this.solids);
     this.physics.add.collider(this.enemiesGroup, this.movingPlatforms);
-    this.physics.add.collider(this.projectiles, this.solids, (proj) => proj.destroy());
+    this.physics.add.collider(this.projectiles, this.solids, (proj) => {
+      const p = proj as Phaser.Physics.Arcade.Sprite;
+      const zone = this.damageZones.create(p.x, p.y, 'projectile') as Phaser.Physics.Arcade.Sprite;
+      zone.setAlpha(0.4).setTint(0xff5252).setScale(1.5);
+      zone.refreshBody();
+      this.time.delayedCall(1000, () => { zone.disableBody(true, true); zone.destroy(); });
+      p.destroy();
+    });
 
     this.physics.add.collider(this.player, this.oneWay, undefined, (_player, platform) => {
       const p = _player.body as Phaser.Physics.Arcade.Body;
@@ -222,13 +245,18 @@ export class PlayScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.player, this.checkpoints, (_p, cpObj) => {
       const cp = cpObj as Phaser.Physics.Arcade.Sprite;
+      const prevId = this.checkpointId;
       this.checkpointId = String(cp.getData('checkpointId'));
       this.checkpointXY = { x: cp.x, y: cp.y - 20 };
       cp.setTint(0x76ff03);
+      if (prevId !== this.checkpointId) {
+        this.showPopUpText(cp.x, cp.y - 24, SCENE_TEXT.gameplay.checkpointSaved);
+      }
     });
 
     this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached());
     this.physics.add.overlap(this.player, this.spikes, () => this.damagePlayer('spike'));
+    this.physics.add.overlap(this.player, this.damageZones, () => this.damagePlayer('zone'));
     this.physics.add.overlap(this.player, this.thwomps, () => this.damagePlayer('thwomp'));
     this.physics.add.overlap(this.player, this.projectiles, (_p, proj) => {
       proj.destroy();
@@ -237,6 +265,14 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.springs, () => {
       this.player.setVelocityY(-460);
       this.playSfx('jump');
+    });
+
+    this.physics.add.collider(this.player, this.questionBlocks, (_pObj, blockObj) => {
+      const p = _pObj as Phaser.Physics.Arcade.Sprite;
+      const block = blockObj as Phaser.Physics.Arcade.Sprite;
+      if (p.body.velocity.y < 0 && p.body.touching.up) {
+        this.hitQuestionBlock(block);
+      }
     });
 
     this.physics.add.collider(this.player, this.enemiesGroup, (pObj, eObj) => {
@@ -258,6 +294,11 @@ export class PlayScene extends Phaser.Scene {
         }
         runtimeStore.save.progression.score += SCORE_VALUES.stomp;
         this.playSfx('stomp');
+        this.showPopUpText(
+          target.sprite.x,
+          target.sprite.y - 16,
+          `${target.displayName} ${SCENE_TEXT.gameplay.correctedSuffix}`
+        );
         this.physics.world.pause();
         this.time.delayedCall(PLAYER_CONSTANTS.hitstopMs, () => this.physics.world.resume());
       } else {
@@ -301,6 +342,11 @@ export class PlayScene extends Phaser.Scene {
     const root = (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ ?? {};
     root.getState = () => this.getRuntimeState();
     root.scene = this;
+    root.sceneName = this.scene.key;
+    root.sceneReady = false;
+    root.sceneReadyFrame = -1;
+    root.sceneFrame = this.game.loop.frame;
+    root.sceneReadyCounter = 0;
     (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = root;
 
     (window as Window & { render_game_to_text?: () => string }).render_game_to_text = () => JSON.stringify(this.getRuntimeState());
@@ -319,6 +365,23 @@ export class PlayScene extends Phaser.Scene {
         this.simulateStep(step);
       }
     };
+
+    const onPostUpdate = (): void => {
+      root.sceneName = this.scene.key;
+      root.sceneFrame = this.game.loop.frame;
+      const stableCounter = Number(root.sceneReadyCounter ?? 0) + 1;
+      root.sceneReadyCounter = stableCounter;
+      if (stableCounter >= 2 && !root.sceneReady) {
+        root.sceneReady = true;
+        if (typeof root.sceneReadyFrame !== 'number' || root.sceneReadyFrame < 0) {
+          root.sceneReadyFrame = this.game.loop.frame;
+        }
+      }
+    };
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    });
   }
 
   private spawnShowcaseSetPiece(spawn: { x: number; y: number }): void {
@@ -330,25 +393,11 @@ export class PlayScene extends Phaser.Scene {
     const actorScale = styleConfig.gameplayLayout.actorScale;
     const blockX = spawn.x + showcase.questionBlockOffset.x;
     const blockY = spawn.y + showcase.questionBlockOffset.y;
-    const block = this.add
-      .image(blockX, blockY, 'question_block')
-      .setScale(actorScale.questionBlock)
-      .setDepth(26);
-    const blockGlow = this.add
-      .image(blockX, blockY, 'question_block')
-      .setScale(actorScale.questionBlock + 0.24)
-      .setTint(Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color)
-      .setAlpha(Math.max(0.16, styleConfig.bloom.strength * 0.44))
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(25);
-    this.tweens.add({
-      targets: [block, blockGlow],
-      y: blockY - 6,
-      duration: 1260,
-      ease: 'Sine.easeInOut',
-      repeat: -1,
-      yoyo: true,
-    });
+    const block = this.questionBlocks.create(blockX, blockY, 'question_block') as Phaser.Physics.Arcade.Sprite;
+    block.setScale(actorScale.questionBlock).setDepth(26);
+    block.setData('state', 'active');
+    block.refreshBody();
+    this.attachCollectibleGlow(block, 'question_block');
 
     for (let i = 0; i < showcase.coinLine.count; i += 1) {
       const coinX = spawn.x + showcase.coinLine.startX + i * showcase.coinLine.spacingPx;
@@ -364,11 +413,59 @@ export class PlayScene extends Phaser.Scene {
       this,
       spawn.x + showcase.extraWalkerOffsetX,
       spawn.y - 2,
-      { scene: this, projectiles: this.projectiles },
+      this.buildEnemyContext(),
       {},
     );
     this.enemyHandles.push(walker);
     this.enemiesGroup.add(walker.sprite);
+  }
+
+  private buildEnemyContext(): import('../enemies/registry').EnemyContext {
+    return {
+      scene: this,
+      projectiles: this.projectiles,
+      onSpawnEnemy: (handle) => {
+        this.enemyHandles.push(handle);
+        this.enemiesGroup.add(handle.sprite);
+      },
+    };
+  }
+
+  private hitQuestionBlock(block: Phaser.Physics.Arcade.Sprite): void {
+    const state = String(block.getData('state'));
+    if (state === 'used') return;
+
+    block.setData('state', 'used');
+    this.detachCollectibleGlow(block);
+    block.setTexture('question_block_used');
+    block.refreshBody();
+
+    // Bump animation
+    const origY = block.y;
+    this.tweens.add({
+      targets: block,
+      y: origY - 8,
+      duration: 80,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+    });
+
+    // Spawn coin reward that pops out the top
+    const rewardCoin = this.add.image(block.x, block.y - 20, 'coin')
+      .setScale(styleConfig.gameplayLayout.actorScale.coin)
+      .setDepth(30);
+    this.tweens.add({
+      targets: rewardCoin,
+      y: block.y - 48,
+      alpha: 0,
+      duration: 400,
+      ease: 'Quad.easeOut',
+      onComplete: () => rewardCoin.destroy(),
+    });
+
+    runtimeStore.save.progression.coins += 1;
+    runtimeStore.save.progression.score += SCORE_VALUES.questionBlock;
+    this.playSfx('block_hit');
   }
 
   private attachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite, textureKey: string): void {
@@ -419,7 +516,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.entityCounts.movingPlatforms = this.movingPlatforms.countActive(true);
   }
 
-  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag'): void {
+  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'block_hit'): void {
     const keyMap = {
       jump: 'jump',
       coin: 'coin',
@@ -427,9 +524,28 @@ export class PlayScene extends Phaser.Scene {
       hurt: 'hurt',
       power: 'power_up',
       shell: 'shell_kick',
-      flag: 'goal_clear'
+      flag: 'goal_clear',
+      block_hit: 'block_hit'
     } as const;
     this.audio.playSfx(keyMap[kind]);
+  }
+
+  private showPopUpText(x: number, y: number, message: string): void {
+    const popup = this.add.text(x, y, message, {
+      fontSize: '12px',
+      color: '#ffe082',
+      fontFamily: 'monospace',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(90);
+    this.tweens.add({
+      targets: popup,
+      y: y - 28,
+      alpha: 0,
+      duration: 800,
+      ease: 'Quad.easeOut',
+      onComplete: () => popup.destroy(),
+    });
   }
 
   private damagePlayer(reason: string): void {
@@ -470,8 +586,11 @@ export class PlayScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.clearTint();
 
-    if (reason === 'pit' && runtimeStore.save.settings.screenShakeEnabled) {
-      this.cameras.main.shake(190, 0.004);
+    if (reason === 'pit') {
+      this.showPopUpText(this.player.x, this.player.y - 30, SCENE_TEXT.gameplay.contextWindowExceeded);
+      if (runtimeStore.save.settings.screenShakeEnabled) {
+        this.cameras.main.shake(190, 0.004);
+      }
     }
   }
 
@@ -511,7 +630,7 @@ export class PlayScene extends Phaser.Scene {
 
   private simulateStep(dtMs: number): void {
     if (this.completed) return;
-    this.levelTimeMs += dtMs;
+    this.levelTimeMs += dtMs * this.worldModifiers.tokenBurnRate;
     if (this.invulnMsRemaining > 0) {
       this.invulnMsRemaining = Math.max(0, this.invulnMsRemaining - dtMs);
       const alpha = this.invulnMsRemaining % 120 < 60 ? 0.6 : 1;
@@ -563,6 +682,7 @@ export class PlayScene extends Phaser.Scene {
       form: this.playerForm,
       timeSec: Math.floor(this.levelTimeMs / 1000)
     });
+    updateHudPosition(this.hud, this.cameras.main);
   }
 
   update(_time: number, delta: number): void {
@@ -591,7 +711,7 @@ export class PlayScene extends Phaser.Scene {
       jumpHeld,
       onGround: this.player.body.blocked.down || this.player.body.touching.down,
       feel: this.feel
-    });
+    }, this.worldModifiers);
     this.feel = step.feel;
 
     this.player.setVelocityX(step.vx);

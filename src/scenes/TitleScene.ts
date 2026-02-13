@@ -15,9 +15,42 @@ function palette(name: string): number {
 export class TitleScene extends Phaser.Scene {
   private promptBlink: Phaser.Time.TimerEvent | null = null;
   private cameraPanTween: Phaser.Tweens.Tween | null = null;
+  private sceneReadyStableFrames = 2;
 
   constructor() {
     super('TitleScene');
+  }
+
+  private setSceneReadyMarker(): void {
+    const root = ((window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ ?? {}) as Record<
+      string,
+      unknown
+    >;
+    root.sceneName = this.scene.key;
+    root.sceneReady = false;
+    root.sceneReadyFrame = -1;
+    root.sceneFrame = this.game.loop.frame;
+    root.sceneReadyCounter = 0;
+
+    const onPostUpdate = (): void => {
+      root.sceneName = this.scene.key;
+      root.sceneFrame = this.game.loop.frame;
+      const stableCounter = Number(root.sceneReadyCounter ?? 0) + 1;
+      root.sceneReadyCounter = stableCounter;
+      if (stableCounter >= this.sceneReadyStableFrames) {
+        root.sceneReady = true;
+        if (typeof root.sceneReadyFrame !== 'number' || root.sceneReadyFrame < 0) {
+          root.sceneReadyFrame = this.game.loop.frame;
+        }
+      }
+    };
+
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+    });
+
+    (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = root;
   }
 
   create(): void {
@@ -33,6 +66,7 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette('skyDeep'));
     this.renderAttractBackground();
     this.renderTitleUi();
+    this.setSceneReadyMarker();
 
     this.promptBlink = this.time.addEvent({
       delay: titleLayout.prompt.blinkMs,

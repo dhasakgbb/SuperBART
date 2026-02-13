@@ -17,6 +17,7 @@ def main() -> int:
     checks = [
         ['npm', 'run', 'gen:all'],
         ['npm', 'run', 'lint:assets'],
+        ['npm', 'run', 'lint:content'],
         ['npm', 'run', 'lint:style'],
         ['npm', 'run', 'lint:audio'],
         ['npm', 'run', 'lint:visual'],

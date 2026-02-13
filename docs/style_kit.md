@@ -35,8 +35,8 @@ This style kit is the source-of-truth contract enforced by `tools/style_validate
 - `portrait`: `x=14`, `y=8`, scale `0.66`.
 - `leftGroup`: `x=84`, `y=11`, font `14`.
 - `rightGroup`: `x=948`, `y=11`, font `14`, right-aligned.
-- Locked text format:
-  - `BART  LIVES NN  STAR NNN  COIN NNN`
+- Contract text format:
+  - `BART x{instances}  ✦{evals}  ◎{tokens}`
   - `WORLD W-L  TIME TTT`
 - `TIME` is always 3 digits (`TTT`).
 

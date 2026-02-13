@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { runtimeStore } from '../core/runtime';
 import { persistSave } from '../systems/save';
+import { SCENE_TEXT } from '../content/contentManifest';
 
 export class SettingsScene extends Phaser.Scene {
   private backScene = 'TitleScene';
@@ -21,14 +22,49 @@ export class SettingsScene extends Phaser.Scene {
 
     const redraw = () => {
       this.children.removeAll();
-      this.add.text(240, 90, 'SETTINGS', { fontSize: '46px', color: '#ffffff', fontFamily: 'monospace' });
-      this.add.text(120, 188, `Master [Q/E]: ${(runtimeStore.save.settings.masterVolume * 100).toFixed(0)}%`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(120, 228, `Music Vol [A/D]: ${(runtimeStore.save.settings.musicVolume * 100).toFixed(0)}%`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(120, 268, `SFX Vol [Z/C]: ${(runtimeStore.save.settings.sfxVolume * 100).toFixed(0)}%`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(120, 308, `Music Mute [M]: ${runtimeStore.save.settings.musicMuted ? 'ON' : 'OFF'}`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(120, 348, `SFX Mute [X]: ${runtimeStore.save.settings.sfxMuted ? 'ON' : 'OFF'}`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(120, 388, `Screen Shake [H]: ${runtimeStore.save.settings.screenShakeEnabled ? 'ON' : 'OFF'}`, { fontSize: '24px', color: '#ffe082' });
-      this.add.text(180, 410, `Esc: Back (${this.backScene})`, { fontSize: '20px', color: '#ffffff' });
+      this.add.text(240, 90, SCENE_TEXT.settings.heading, { fontSize: '46px', color: '#ffffff', fontFamily: 'monospace' });
+      this.add.text(
+        120,
+        188,
+        `${SCENE_TEXT.settings.masterLabel} ${(runtimeStore.save.settings.masterVolume * 100).toFixed(0)}%`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        120,
+        228,
+        `${SCENE_TEXT.settings.musicLabel} ${(runtimeStore.save.settings.musicVolume * 100).toFixed(0)}%`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        120,
+        268,
+        `${SCENE_TEXT.settings.sfxLabel} ${(runtimeStore.save.settings.sfxVolume * 100).toFixed(0)}%`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        120,
+        308,
+        `${SCENE_TEXT.settings.musicMuteLabel} ${runtimeStore.save.settings.musicMuted ? 'ON' : 'OFF'}`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        120,
+        348,
+        `${SCENE_TEXT.settings.sfxMuteLabel} ${runtimeStore.save.settings.sfxMuted ? 'ON' : 'OFF'}`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        120,
+        388,
+        `${SCENE_TEXT.settings.shakeLabel} ${runtimeStore.save.settings.screenShakeEnabled ? 'ON' : 'OFF'}`,
+        { fontSize: '24px', color: '#ffe082' }
+      );
+      this.add.text(
+        180,
+        410,
+        SCENE_TEXT.settings.backHintTemplate.replace('{scene}', this.backScene),
+        { fontSize: '20px', color: '#ffffff' }
+      );
     };
 
     const persistAndApply = (menuSound: boolean): void => {

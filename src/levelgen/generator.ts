@@ -1,5 +1,13 @@
 import { TILE_SIZE } from '../core/constants';
-import type { ChunkType, EntityType, GeneratedLevel, LevelEntity, LevelGenerationInput } from '../types/levelgen';
+import type {
+  ChunkFamily,
+  ChunkTemplateType,
+  ChunkType,
+  EntityType,
+  GeneratedLevel,
+  LevelEntity,
+  LevelGenerationInput,
+} from '../types/levelgen';
 import { createRng } from './rng';
 import { getWorldRules } from './worldRules';
 import { campaignOrdinal } from '../systems/progression';
@@ -8,11 +16,18 @@ const CHUNK_WIDTH = 24;
 const LEVEL_HEIGHT = 34;
 const BASE_GROUND = 26;
 
+const FAMILY_TEMPLATES: Record<ChunkFamily, ChunkTemplateType[]> = {
+  server_room: ['mid_flat', 'mid_flat', 'coin_arc'],
+  training_run: ['coin_arc', 'vertical_climb', 'enemy_gauntlet'],
+  rag_pipeline: ['moving_platform', 'vertical_climb', 'enemy_gauntlet'],
+  rate_limiter: ['moving_platform', 'enemy_gauntlet', 'coin_arc'],
+};
+
 function makeGrid(width: number, height: number): number[][] {
   return Array.from({ length: height }, () => Array.from({ length: width }, () => 0));
 }
 
-function fillGround(grid: number[][], x0: number, x1: number, y: number): void {
+function makeGridFillGround(grid: number[][], x0: number, x1: number, y: number): void {
   for (let x = x0; x <= x1; x += 1) {
     for (let yy = y; yy < grid.length; yy += 1) {
       grid[yy]![x] = 1;
@@ -20,14 +35,41 @@ function fillGround(grid: number[][], x0: number, x1: number, y: number): void {
   }
 }
 
-function addEntity(entities: LevelEntity[], type: EntityType, xTile: number, yTile: number, data?: Record<string, number | string | boolean>): void {
+function addEntity(
+  entities: LevelEntity[],
+  type: EntityType,
+  xTile: number,
+  yTile: number,
+  data?: Record<string, number | string | boolean>,
+): void {
   entities.push({
     id: `${type}_${entities.length + 1}`,
     type,
     x: xTile * TILE_SIZE + TILE_SIZE / 2,
     y: yTile * TILE_SIZE + TILE_SIZE / 2,
-    data
+    data,
   });
+}
+
+function pickChunkTemplate(
+  rng: ReturnType<typeof createRng>,
+  allowedFamilies: ChunkFamily[],
+  world: number,
+  levelIndex: number,
+  chunkIndex: number,
+): { family: ChunkFamily; template: ChunkTemplateType } {
+  const family = allowedFamilies.length === 1 ? allowedFamilies[0]! : rng.pick(allowedFamilies);
+  const familyPool = FAMILY_TEMPLATES[family] as ChunkTemplateType[];
+
+  const pool = [...familyPool];
+  if (levelIndex >= 3 && chunkIndex >= 4 && world + levelIndex > 2) {
+    pool.push('moving_platform');
+  }
+  if (world >= 4) {
+    pool.push('enemy_gauntlet', 'enemy_gauntlet');
+  }
+
+  return { family, template: rng.pick(pool) };
 }
 
 export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
@@ -50,35 +92,36 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
     const x1 = x0 + CHUNK_WIDTH - 1;
 
     if (chunk === 0) {
-      fillGround(grid, x0, x1, groundY);
+      makeGridFillGround(grid, x0, x1, groundY);
       addEntity(entities, 'spawn', x0 + 2, groundY - 2);
       continue;
     }
 
     if (chunk === chunkCount - 1) {
-      fillGround(grid, x0, x1, groundY);
+      makeGridFillGround(grid, x0, x1, groundY);
       addEntity(entities, 'goal', x1 - 2, groundY - 3);
       chunksUsed.push('end');
       continue;
     }
 
-    const chunkTypePool: ChunkType[] = ['mid_flat', 'coin_arc', 'enemy_gauntlet', 'vertical_climb', 'moving_platform'];
-    if (finalCastle) {
-      chunkTypePool.push('enemy_gauntlet', 'enemy_gauntlet', 'moving_platform', 'vertical_climb');
-    }
-    if (chunk % rules.checkpointSpacingChunks === 0 && chunk > 1) {
-      chunkTypePool.push('checkpoint');
-    }
-    const chosen = rng.pick(chunkTypePool);
-    chunksUsed.push(chosen);
+    const { family, template } = pickChunkTemplate(
+      rng,
+      rules.allowedChunkFamilies,
+      input.world,
+      input.levelIndex,
+      chunk,
+    );
+    chunksUsed.push(family);
 
     const variance = rng.nextInt(-rules.groundVariance, rules.groundVariance);
     groundY = Math.max(21, Math.min(28, groundY + variance));
 
     const gapStart = x0 + rng.nextInt(6, 13);
-    const gapWidth = rng.chance(finalCastle ? rules.gapFrequency + 0.08 : rules.gapFrequency) ? rng.nextInt(2, finalCastle ? 5 : 4) : 0;
+    const gapWidth = rng.chance(finalCastle ? rules.gapFrequency + 0.08 : rules.gapFrequency)
+      ? rng.nextInt(2, finalCastle ? 5 : 4)
+      : 0;
 
-    fillGround(grid, x0, x1, groundY);
+    makeGridFillGround(grid, x0, x1, groundY);
     if (gapWidth > 0) {
       for (let x = gapStart; x < gapStart + gapWidth; x += 1) {
         for (let y = 0; y < LEVEL_HEIGHT; y += 1) {
@@ -88,18 +131,33 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       addEntity(entities, 'spring', gapStart - 1, groundY - 1);
     }
 
-    if (chosen === 'coin_arc') {
+    const hasCheckpoint = chunk % rules.checkpointSpacingChunks === 0 && chunk > 1;
+    if (hasCheckpoint) {
+      chunksUsed.push('checkpoint');
+      const checkpointId = `cp_${input.world}_${input.levelIndex}_${chunk}`;
+      addEntity(entities, 'checkpoint', x0 + 5, groundY - 2, { checkpointId });
+      checkpoints.push({
+        id: checkpointId,
+        x: (x0 + 5) * TILE_SIZE,
+        y: (groundY - 2) * TILE_SIZE,
+      });
+    }
+
+    if (template === 'coin_arc') {
       for (let i = 0; i < 5; i += 1) {
         const tx = x0 + 5 + i;
-        const ty = groundY - 5 + Math.abs(2 - i);
+        const ty = groundY - 4 + Math.abs(2 - i);
         addEntity(entities, 'coin', tx, ty);
       }
+      if (rng.chance(0.6)) {
+        addEntity(entities, 'question_block', x0 + 7, groundY - 4);
+      }
       if (rng.chance(0.45)) {
-        addEntity(entities, 'star', x0 + 11, groundY - 7);
+        addEntity(entities, 'star', x0 + 11, groundY - 6);
       }
     }
 
-    if (chosen === 'enemy_gauntlet' || rng.chance(finalCastle ? rules.enemyDensity + 0.1 : rules.enemyDensity)) {
+    if (template === 'enemy_gauntlet' || rng.chance(finalCastle ? rules.enemyDensity + 0.1 : rules.enemyDensity)) {
       addEntity(entities, 'walker', x0 + 8, groundY - 1, { patrol: 4 });
       if (rng.chance(finalCastle ? 0.78 : 0.5)) {
         addEntity(entities, 'shell', x0 + 14, groundY - 1, { patrol: 4 });
@@ -112,7 +170,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       }
     }
 
-    if (chosen === 'vertical_climb') {
+    if (template === 'vertical_climb') {
       for (let i = 0; i < 3; i += 1) {
         const px = x0 + 7 + i * 5;
         const py = groundY - 4 - i * 3;
@@ -124,7 +182,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       addEntity(entities, 'spike', x0 + 5, groundY - 1);
     }
 
-    if (chosen === 'moving_platform' || rng.chance(finalCastle ? rules.movingPlatformFrequency + 0.12 : rules.movingPlatformFrequency)) {
+    if (template === 'moving_platform' || rng.chance(finalCastle ? rules.movingPlatformFrequency + 0.12 : rules.movingPlatformFrequency)) {
       const y = groundY - 6;
       movingPlatforms.push({
         id: `mp_${chunk}`,
@@ -132,7 +190,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
         y: y * TILE_SIZE,
         minX: (x0 + 5) * TILE_SIZE,
         maxX: (x0 + 16) * TILE_SIZE,
-        speed: 50 + input.world * 8 + (finalCastle ? 22 : 0)
+        speed: 50 + input.world * 8 + (finalCastle ? 22 : 0),
       });
       addEntity(entities, 'thwomp', x0 + 18, groundY - 6, { topY: groundY - 10, bottomY: groundY - 2 });
       addEntity(entities, 'spike', x0 + 12, groundY - 1);
@@ -141,20 +199,14 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       }
     }
 
-    if (chosen === 'checkpoint') {
-      const checkpointId = `cp_${input.world}_${input.levelIndex}_${chunk}`;
-      addEntity(entities, 'checkpoint', x0 + 5, groundY - 2, { checkpointId });
-      checkpoints.push({
-        id: checkpointId,
-        x: (x0 + 5) * TILE_SIZE,
-        y: (groundY - 2) * TILE_SIZE
-      });
-    }
-
     for (let tx = x0 + 2; tx < x1 - 1; tx += 3) {
       if (rng.chance(rules.coinDensity * (finalCastle ? 0.14 : 0.25))) {
-        addEntity(entities, 'coin', tx, groundY - rng.nextInt(2, 4));
+        addEntity(entities, 'coin', tx, groundY - rng.nextInt(2, 3));
       }
+    }
+
+    if (template === 'mid_flat' && rng.chance(0.35)) {
+      addEntity(entities, 'question_block', x0 + rng.nextInt(8, 16), groundY - 4);
     }
   }
 
@@ -174,7 +226,7 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
     checkpoints,
     goal: {
       x: (width - 3) * TILE_SIZE,
-      y: (BASE_GROUND - 2) * TILE_SIZE
+      y: (BASE_GROUND - 2) * TILE_SIZE,
     },
     metadata: {
       world: input.world,
@@ -182,8 +234,8 @@ export function generateLevel(input: LevelGenerationInput): GeneratedLevel {
       theme: input.bonus ? 'bonus' : rules.theme,
       difficultyTier: campaignOrdinal(input.world, input.levelIndex),
       chunksUsed,
-      seed: input.seed
-    }
+      seed: input.seed,
+    },
   };
 }
 

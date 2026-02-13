@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
-const SOURCE = path.join(repoRoot, 'public/assets/bart_source.png');
+const SOURCE = path.join(repoRoot, 'public/assets/target_look.png');
 const OUTPUT_DIR = path.join(repoRoot, 'public/assets/sprites');
 
 const OUTPUTS = [

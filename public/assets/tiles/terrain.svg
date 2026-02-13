@@ -1,8 +1,44 @@
 <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-  <rect x='0' y='0' width='32' height='32' fill='#6b4f2a'/>
-  <rect x='0' y='0' width='32' height='8' fill='#8bc34a'/>
-  <rect x='32' y='0' width='32' height='32' fill='#9e9e9e'/>
-  <rect x='32' y='0' width='32' height='6' fill='#d7d7d7'/>
-  <rect x='0' y='32' width='32' height='32' fill='#4e342e'/>
-  <rect x='32' y='32' width='32' height='32' fill='#455a64'/>
+  <rect width='64' height='64' fill='#17181c'/>
+
+  <!-- ground chunk -->
+  <rect x='0' y='0' width='32' height='32' fill='#bf5309'/>
+  <rect x='0' y='0' width='32' height='4' fill='#53b35c'/>
+  <rect x='0' y='4' width='32' height='3' fill='#2a8f4e'/>
+  <rect x='2' y='8' width='2' height='2' fill='#6a2a07'/>
+  <rect x='8' y='10' width='2' height='2' fill='#6a2a07'/>
+  <rect x='14' y='6' width='2' height='2' fill='#6a2a07'/>
+  <rect x='20' y='9' width='2' height='2' fill='#6a2a07'/>
+  <rect x='26' y='7' width='2' height='2' fill='#6a2a07'/>
+  <rect x='30' y='11' width='2' height='1' fill='#6a2a07'/>
+
+  <!-- brick chunk -->
+  <rect x='32' y='0' width='32' height='32' fill='#ef8b32'/>
+  <rect x='32' y='0' width='32' height='4' fill='#6a2a07'/>
+  <rect x='32' y='7' width='32' height='1' fill='#6a2a07'/>
+  <rect x='32' y='14' width='32' height='1' fill='#6a2a07'/>
+  <rect x='32' y='21' width='32' height='1' fill='#6a2a07'/>
+  <rect x='32' y='28' width='32' height='1' fill='#6a2a07'/>
+  <rect x='36' y='4' width='2' height='3' fill='#6a2a07'/>
+  <rect x='44' y='11' width='2' height='3' fill='#6a2a07'/>
+  <rect x='52' y='18' width='2' height='3' fill='#6a2a07'/>
+  <rect x='58' y='25' width='2' height='3' fill='#6a2a07'/>
+
+  <!-- platform chunk -->
+  <rect x='0' y='32' width='32' height='32' fill='#5d6774'/>
+  <rect x='0' y='32' width='32' height='5' fill='#8f98a3'/>
+  <rect x='2' y='33' width='28' height='2' fill='#dce9f4'/>
+  <rect x='4' y='36' width='24' height='1' fill='#17181c'/>
+  <rect x='6' y='37' width='4' height='1' fill='#2a2a2a'/>
+  <rect x='22' y='37' width='4' height='1' fill='#2a2a2a'/>
+
+  <!-- steel chunk -->
+  <rect x='32' y='32' width='32' height='32' fill='#1d7e44'/>
+  <rect x='32' y='32' width='32' height='5' fill='#2b974a'/>
+  <rect x='36' y='36' width='24' height='3' fill='#17181c'/>
+  <rect x='40' y='39' width='2' height='25' fill='#2a2a2a'/>
+  <rect x='46' y='39' width='2' height='25' fill='#2a2a2a'/>
+  <rect x='56' y='39' width='2' height='25' fill='#2a2a2a'/>
+  <rect x='44' y='41' width='12' height='2' fill='#cfa55f'/>
+  <rect x='44' y='44' width='12' height='2' fill='#cfa55f'/>
 </svg>

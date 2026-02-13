@@ -34,7 +34,7 @@ REQUIRED_SVG = [
 ]
 
 REQUIRED_PNG_DIMENSIONS = {
-    'public/assets/bart_source.png': None,
+    'public/assets/target_look.png': None,
     'public/assets/sprites/bart_head_32.png': (32, 32),
     'public/assets/sprites/bart_head_48.png': (48, 48),
     'public/assets/sprites/bart_head_64.png': (64, 64),

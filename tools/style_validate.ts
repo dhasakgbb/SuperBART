@@ -53,13 +53,26 @@ function validateHudLayout(errors: ErrorList): void {
   if (hud.portrait.anchor !== 'top-left') {
     errors.push(`hudLayout.portrait.anchor must be top-left for the locked HUD layout, received ${hud.portrait.anchor}`);
   }
-  if (!hud.leftGroup.textFormat.includes('COIN')) {
-    errors.push('hudLayout.leftGroup.textFormat must include COIN.');
+  if (!hud.leftGroup.textFormat.includes('BART')) {
+    errors.push('hudLayout.leftGroup.textFormat must include BART.');
+  }
+  if (!hud.leftGroup.textFormat.includes('x')) {
+    errors.push('hudLayout.leftGroup.textFormat must include the BART multiplier glyph pattern "x".');
+  }
+  if (!hud.rightGroup.textFormat.includes('WORLD')) {
+    errors.push('hudLayout.rightGroup.textFormat must include WORLD.');
   }
   if (!hud.rightGroup.textFormat.includes('TIME')) {
     errors.push('hudLayout.rightGroup.textFormat must include TIME.');
   }
   assertRange(errors, 'hudLayout.timeDigits', hud.timeDigits, 3, 3);
+
+  const forbiddenHudWords = ['LIVES', 'STAR', 'COIN'];
+  for (const word of forbiddenHudWords) {
+    if (hud.leftGroup.textFormat.includes(word) || hud.rightGroup.textFormat.includes(word)) {
+      errors.push(`hudLayout text contracts must not include legacy HUD words. Found ${word}.`);
+    }
+  }
 }
 
 function validateTitleLayout(errors: ErrorList): void {
@@ -133,6 +146,49 @@ function validateGameplayLayout(errors: ErrorList): void {
   assertRange(errors, 'gameplayLayout.cameraZoom', gameplay.cameraZoom, 1.0, 1.6);
   assertRange(errors, 'gameplayLayout.hills.far.scrollFactor', gameplay.hills.far.scrollFactor, 0.1, 0.1);
   assertRange(errors, 'gameplayLayout.hills.near.scrollFactor', gameplay.hills.near.scrollFactor, 0.22, 0.22);
+
+  const profile = gameplay.parallaxProfile;
+  if (!profile) {
+    errors.push('gameplayLayout.parallaxProfile is required for deterministic depth passes.');
+  } else {
+    if (typeof profile.enabled !== 'boolean') {
+      errors.push('gameplayLayout.parallaxProfile.enabled must be a boolean.');
+    }
+    if (profile.enabled && !Array.isArray(profile.layers)) {
+      errors.push('gameplayLayout.parallaxProfile.layers must be an array when parallax is enabled.');
+    }
+    if (profile.enabled && profile.layers.length < 2) {
+      errors.push('gameplayLayout.parallaxProfile.layers must define at least 2 layers for NES depth motion.');
+    }
+    if (profile.depthCue && profile.depthCue.enabled) {
+      if (!styleConfig.palette.swatches.some((entry) => entry.name === profile.depthCue.topSwatch)) {
+        errors.push(`gameplayLayout.parallaxProfile.depthCue.topSwatch "${profile.depthCue.topSwatch}" is not defined in palette.`);
+      }
+      if (!styleConfig.palette.swatches.some((entry) => entry.name === profile.depthCue.midSwatch)) {
+        errors.push(`gameplayLayout.parallaxProfile.depthCue.midSwatch "${profile.depthCue.midSwatch}" is not defined in palette.`);
+      }
+      assertRange(errors, 'gameplayLayout.parallaxProfile.depthCue.startY', profile.depthCue.startY, 0, 520);
+      assertRange(errors, 'gameplayLayout.parallaxProfile.depthCue.bandHeightPx', profile.depthCue.bandHeightPx, 60, 240);
+      assertRange(errors, 'gameplayLayout.parallaxProfile.depthCue.maxAlpha', profile.depthCue.maxAlpha, 0.05, 0.35);
+      assertRange(errors, 'gameplayLayout.parallaxProfile.depthCue.bands', profile.depthCue.bands, 4, 24);
+    }
+    for (const [index, layer] of profile.layers.entries()) {
+      assertRange(
+        errors,
+        `gameplayLayout.parallaxProfile.layers[${index}].spacingPx`,
+        layer.spacingPx,
+        80,
+        560,
+      );
+      assertRange(
+        errors,
+        `gameplayLayout.parallaxProfile.layers[${index}].parallaxFactor || gameplayLayout.parallaxProfile.layers[${index}].scrollFactor`,
+        layer.scrollFactor ?? layer.parallaxFactor,
+        0.05,
+        0.4,
+      );
+    }
+  }
 
   for (const [index, cloud] of gameplay.clouds.entries()) {
     assertRange(errors, `gameplayLayout.clouds[${index}].scrollFactor`, cloud.scrollFactor, 0.05, 0.12);
@@ -254,9 +310,9 @@ function validateHudContract(errors: ErrorList): void {
 
 function validateDocs(errors: ErrorList): void {
   const requiredDocs = [
-    { file: 'docs/screenshots/title_expected.md', mustContain: ['setScrollFactor(0)', 'title_logo.png', 'PRESS ENTER'] },
+    { file: 'docs/screenshots/title_expected.md', mustContain: ['setScrollFactor(0)', 'title_logo.png', 'PRESS ENTER', 'N: NEW DEPLOYMENT'] },
     { file: 'docs/screenshots/world_map_expected.md', mustContain: ['WorldMapScene', 'map_node_selected', 'bitmap text'] },
-    { file: 'docs/screenshots/play_expected.md', mustContain: ['renderGameplayBackground', 'hill_far', 'COIN'] },
+    { file: 'docs/screenshots/play_expected.md', mustContain: ['BART x{instances}', '✦', '◎', 'WORLD W-L', 'TIME TTT'] },
   ];
 
   for (const doc of requiredDocs) {

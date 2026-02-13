@@ -1,3 +1,12 @@
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
-<rect x='7' y='2' width='2' height='12' fill='#e0e0e0'/><polygon points='9,4 14,6 9,8' fill='#29b6f6'/>
+<rect width='16' height='16' fill='none'/>
+<rect x='7' y='2' width='2' height='12' fill='#f2f8fd'/>
+<rect x='9' y='3' width='5' height='6' fill='#3ca4e8'/>
+<rect x='9' y='9' width='5' height='4' fill='#f2cc62'/>
+<rect x='10' y='4' width='3' height='2' fill='#d7efec'/>
+<rect x='10' y='10' width='3' height='1' fill='#1d1d1d'/>
+<rect x='10' y='5' width='1' height='4' fill='#1d1d1d'/>
+<rect x='12' y='5' width='1' height='4' fill='#1d1d1d'/>
+<rect x='8' y='1' width='1' height='1' fill='#1d1d1d'/>
+<rect x='8' y='14' width='1' height='1' fill='#1d1d1d'/>
 </svg>

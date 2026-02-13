@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { runtimeStore } from '../core/runtime';
+import { SCENE_TEXT } from '../content/contentManifest';
 
 export class PauseScene extends Phaser.Scene {
   constructor() {
@@ -13,8 +14,8 @@ export class PauseScene extends Phaser.Scene {
     audio.configureFromSettings(runtimeStore.save.settings);
     audio.playSfx('pause');
     this.add.rectangle(0, 0, 960, 540, 0x000000, 0.65).setOrigin(0, 0);
-    this.add.text(350, 170, 'PAUSED', { fontSize: '58px', color: '#ffe082', fontFamily: 'monospace' });
-    this.add.text(230, 290, 'ESC / P: Resume\nL: Level Select\nT: Title', {
+    this.add.text(350, 170, SCENE_TEXT.pause.heading, { fontSize: '58px', color: '#ffe082', fontFamily: 'monospace' });
+    this.add.text(230, 290, SCENE_TEXT.pause.hint, {
       fontSize: '30px',
       color: '#ffffff',
       fontFamily: 'monospace',

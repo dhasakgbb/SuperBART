@@ -1,3 +1,14 @@
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
-<polygon points='2,14 8,2 14,14' fill='#b0bec5'/>
+<rect width='16' height='16' fill='none'/>
+<rect x='0' y='14' width='16' height='2' fill='#1d1d1d'/>
+<rect x='1' y='13' width='14' height='1' fill='#272b31'/>
+<polygon points='1,13 3,7 5,13' fill='#cfd8df'/>
+<polygon points='4,13 6,7 8,13' fill='#f2f8fd'/>
+<polygon points='7,13 9,7 11,13' fill='#cfd8df'/>
+<polygon points='10,13 12,7 14,13' fill='#f2f8df'/>
+<line x1='1' y1='13' x2='5' y2='13' stroke='#111114' stroke-width='1'/>
+<line x1='5' y1='13' x2='8' y2='13' stroke='#111114' stroke-width='1'/>
+<line x1='8' y1='13' x2='11' y2='13' stroke='#111114' stroke-width='1'/>
+<line x1='11' y1='13' x2='14' y2='13' stroke='#111114' stroke-width='1'/>
+<rect x='7' y='11' width='2' height='1' fill='#111114'/>
 </svg>

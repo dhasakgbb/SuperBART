@@ -4,7 +4,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
+import { chromium, type Page } from 'playwright';
 
 const DEV_PORT = 4179;
 const DEV_URL = `http://127.0.0.1:${DEV_PORT}`;
@@ -21,6 +21,81 @@ function ensureDir(dir: string): void {
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForSceneReadyMarker(page: Page, targetScene: string): Promise<void> {
+  const timeoutMs = 15000;
+  const start = Date.now();
+  let stableCount = 0;
+  let lastReadyFrame = -1;
+  let markerSeen = false;
+  const stableTarget = 3;
+
+  while (Date.now() - start < timeoutMs) {
+    const state = await page.evaluate(() => {
+      const marker = (window as typeof window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__;
+      if (!marker || typeof marker !== 'object' || marker === null) {
+        return null;
+      }
+      const sceneName = typeof marker.sceneName === 'string' ? marker.sceneName : '';
+      const sceneReady = marker.sceneReady === true;
+      const sceneFrame = typeof marker.sceneFrame === 'number' && Number.isFinite(marker.sceneFrame) ? marker.sceneFrame : null;
+      const sceneReadyFrame =
+        typeof marker.sceneReadyFrame === 'number' && Number.isFinite(marker.sceneReadyFrame)
+          ? marker.sceneReadyFrame
+          : null;
+      return {
+        sceneName,
+        sceneReady,
+        sceneFrame,
+        sceneReadyFrame,
+      };
+    });
+
+    if (!state) {
+      await wait(16);
+      continue;
+    }
+
+    markerSeen = true;
+    if (state.sceneName !== targetScene || !state.sceneReady) {
+      stableCount = 0;
+      lastReadyFrame = -1;
+      await wait(16);
+      continue;
+    }
+
+    if (typeof state.sceneFrame !== 'number' || typeof state.sceneReadyFrame !== 'number') {
+      await wait(16);
+      continue;
+    }
+
+    if (state.sceneFrame - state.sceneReadyFrame < 2) {
+      await wait(16);
+      continue;
+    }
+
+    if (state.sceneReadyFrame === lastReadyFrame) {
+      stableCount += 1;
+    } else {
+      lastReadyFrame = state.sceneReadyFrame;
+      stableCount = 1;
+    }
+
+    if (stableCount >= stableTarget) {
+      return;
+    }
+
+    await wait(16);
+  }
+
+  if (!markerSeen) {
+    throw new Error(
+      `Missing deterministic scene marker: window.__SUPER_BART__ for ${targetScene}. Ensure setSceneReadyMarker() is called in each scene.`,
+    );
+  }
+
+  throw new Error(`Timed out waiting for deterministic scene readiness marker: ${targetScene}`);
 }
 
 function waitForServer(url: string, timeoutMs: number): Promise<void> {
@@ -89,19 +164,19 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
       const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
       await page.goto(DEV_URL, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('canvas');
-      await wait(300);
+      await waitForSceneReadyMarker(page, 'TitleScene');
 
       const canvas = page.locator('canvas');
       const titlePath = path.resolve(outputDir, 'title_scene_current.png');
       await canvas.screenshot({ path: titlePath });
 
       await page.keyboard.press('Enter');
-      await wait(380);
+      await waitForSceneReadyMarker(page, 'WorldMapScene');
       const mapPath = path.resolve(outputDir, 'map_scene_current.png');
       await canvas.screenshot({ path: mapPath });
 
       await page.keyboard.press('Enter');
-      await wait(620);
+      await waitForSceneReadyMarker(page, 'PlayScene');
       const playPath = path.resolve(outputDir, 'play_scene_current.png');
       await canvas.screenshot({ path: playPath });
 

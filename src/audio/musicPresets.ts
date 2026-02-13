@@ -1,4 +1,4 @@
-export type MusicPresetKey = 'world1' | 'world2' | 'world3' | 'world4' | 'castle';
+export type MusicPresetKey = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark';
 
 export interface InstrumentPreset {
   wave: OscillatorType;
@@ -153,8 +153,8 @@ const DRUMS_HEAVY: Pick<DrumTrackPattern, 'kick' | 'hat' | 'snare'> = {
 };
 
 export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
-  world1: {
-    key: 'world1',
+  azure: {
+    key: 'azure',
     tempoBpm: 126,
     rootHz: 196,
     // Major flavor.
@@ -187,8 +187,8 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
       ...DRUMS_STANDARD
     }
   },
-  world2: {
-    key: 'world2',
+  pipeline: {
+    key: 'pipeline',
     tempoBpm: 118,
     rootHz: 174.61,
     // Harmonic minor-ish.
@@ -220,8 +220,8 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
       ...DRUMS_TIGHT
     }
   },
-  world3: {
-    key: 'world3',
+  enterprise: {
+    key: 'enterprise',
     tempoBpm: 136,
     rootHz: 220,
     // Lydian-ish sparkle.
@@ -253,8 +253,8 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
       ...DRUMS_TIGHT
     }
   },
-  world4: {
-    key: 'world4',
+  gpu: {
+    key: 'gpu',
     tempoBpm: 124,
     rootHz: 164.81,
     // Natural minor.
@@ -286,8 +286,8 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
       ...DRUMS_HEAVY
     }
   },
-  castle: {
-    key: 'castle',
+  benchmark: {
+    key: 'benchmark',
     tempoBpm: 152,
     rootHz: 146.83,
     // Tense / dissonant.
@@ -322,9 +322,9 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
 };
 
 export function presetForWorld(world: number): MusicPresetKey {
-  if (world === 1) return 'world1';
-  if (world === 2) return 'world2';
-  if (world === 3) return 'world3';
-  if (world === 4) return 'world4';
-  return 'castle';
+  if (world === 1) return 'azure';
+  if (world === 2) return 'pipeline';
+  if (world === 3) return 'enterprise';
+  if (world === 4) return 'gpu';
+  return 'benchmark';
 }

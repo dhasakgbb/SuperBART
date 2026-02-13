@@ -14,9 +14,9 @@ This gate describes the required `PlayScene` visual direction.
 
 ## Required HUD
 
-- Top-left format: `BART  LIVES NN  STAR NNN  COIN NNN`.
+- Top-left format: `BART x{instances}  ✦{values}  ◎{values}`.
 - Top-right format: `WORLD W-L  TIME TTT`.
-- `COIN` must appear in HUD text (never `PTU`).
+- Token/eval icon labels must remain icon-only (`✦`, `◎`) and never use `LIVES`, `STAR`, or `COIN` text labels.
 
 ## Enforcement
 

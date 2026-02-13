@@ -15,7 +15,7 @@
 - Required enemies/hazards: walker, shell enemy, flyer, shooter, spike, thwomp-lite, moving platforms.
 - Art/audio constraints:
   - In-repo generated assets only; no external downloads.
-  - Bart portrait/head generated from `public/assets/bart_source.png`.
+- Bart portrait/head generated from `public/assets/target_look.png`.
   - Procedural WebAudio SFX and looping world music.
 - Persistence: localStorage save schema v3 with unlocked/completed level tracking.
 

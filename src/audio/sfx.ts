@@ -6,6 +6,7 @@ export type SfxKey =
   | 'power_up'
   | 'shell_kick'
   | 'goal_clear'
+  | 'block_hit'
   | 'menu_move'
   | 'menu_confirm'
   | 'game_over'
@@ -125,6 +126,17 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     decaySec: 0.03,
     sustain: 0.2,
     releaseSec: 0.05,
+    gain: 0.22
+  },
+  block_hit: {
+    wave: 'square',
+    startHz: 600,
+    endHz: 420,
+    durationSec: 0.08,
+    attackSec: 0.002,
+    decaySec: 0.025,
+    sustain: 0.3,
+    releaseSec: 0.04,
     gain: 0.22
   },
   goal_clear: {

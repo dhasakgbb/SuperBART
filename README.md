@@ -23,6 +23,7 @@ npm run preview
 ## Required Quality Gates
 ```bash
 npm run gen:all
+npm run lint:content
 npm run lint:assets
 npm run lint:style
 npm run lint:audio

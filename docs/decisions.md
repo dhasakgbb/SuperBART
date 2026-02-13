@@ -6,7 +6,7 @@
 - Save format is upgraded from `SaveGameV2` to `SaveGameV3` with local migration and normalized unlock/completion lists.
 - Final castle is implemented as `World 5, Level 1`; clearing it routes to Final Victory.
 - No external art/audio packs are allowed; all runtime assets are generated/authored in repo.
-- Bart head/portrait assets are generated prebuild from `public/assets/bart_source.png` only.
+- Bart head/portrait assets are generated prebuild from `public/assets/target_look.png` only.
 - HUD uses generated bitmap font + top-left portrait/counters and top-right world/time anchors.
 - Bloom/glow uses style-config numeric controls with additive sprite layers as deterministic fallback.
 - Legacy JS compatibility files are retained where existing tests still reference them; gameplay runtime path is TypeScript-first.

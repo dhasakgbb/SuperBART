@@ -8,7 +8,7 @@ export const PLAYER_CONSTANTS = {
   runAcceleration: 1900,
   runDrag: 1600,
   maxSpeed: 210,
-  jumpVelocity: -360,
+  jumpVelocity: -420,
   jumpCutMultiplier: 0.52,
   gravityY: 980,
   coyoteMs: 100,
@@ -36,8 +36,19 @@ export const CAMPAIGN_LEVELS_PER_WORLD = Math.max(...CAMPAIGN_WORLD_LAYOUT);
 export const TOTAL_CAMPAIGN_LEVELS = CAMPAIGN_WORLD_LAYOUT.reduce((acc, levels) => acc + levels, 0);
 
 export const SCORE_VALUES = {
-  coin: 10,
-  stomp: 100,
-  star: 250,
-  completeBonus: 500
+  coin: 10,       // credit
+  questionBlock: 50,
+  stomp: 100,     // correction
+  star: 250,      // eval
+  completeBonus: 500  // deploy bonus
+} as const;
+
+export const DISPLAY_NAMES = {
+  coin: 'API CREDIT',
+  star: 'EVAL',
+  stomp: 'CORRECTED',
+  lives: 'INSTANCES',
+  gameOver: '429 TOO MANY REQUESTS',
+  levelClear: 'DEPLOYED TO PROD',
+  finalVictory: 'AGI ACHIEVED',
 } as const;

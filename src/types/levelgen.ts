@@ -1,27 +1,57 @@
-export type ThemeName = 'grass' | 'desert' | 'ice' | 'factory' | 'castle' | 'bonus';
+import type { ChunkFamily as CanonicalChunkFamily, WorldPhysicsMultipliers, WorldTheme } from '../content/contentManifest';
 
-export type ChunkType =
-  | 'start'
-  | 'mid_flat'
-  | 'vertical_climb'
-  | 'coin_arc'
-  | 'enemy_gauntlet'
-  | 'moving_platform'
-  | 'checkpoint'
-  | 'end';
+export type ThemeName = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark' | 'bonus';
 
-export type EntityType =
-  | 'spawn'
-  | 'goal'
-  | 'coin'
-  | 'star'
+export type ChunkFamily = CanonicalChunkFamily;
+
+export type StructuralChunkType = 'start' | 'checkpoint' | 'end';
+
+export type ChunkTemplateType = 'mid_flat' | 'vertical_climb' | 'coin_arc' | 'enemy_gauntlet' | 'moving_platform';
+
+export type ChunkType = StructuralChunkType | ChunkFamily;
+
+export type LegacyCollectibleAlias = 'coin' | 'star';
+export type CanonicalCollectibleId = 'token' | 'eval' | 'gpu_allocation' | 'copilot_mode' | 'semantic_kernel' | 'deploy_to_prod' | 'works_on_my_machine';
+export type LegacyCollectibleAliasExtended =
+  | 'fire_flower'
+  | 'power_up'
+  | 'assist_bot'
+  | 'green_button'
+  | 'woom';
+export type CollectibleType = CanonicalCollectibleId | LegacyCollectibleAlias | LegacyCollectibleAliasExtended;
+
+export type EnemyType =
   | 'walker'
   | 'shell'
   | 'flying'
   | 'spitter'
+  | 'hallucination'
+  | 'legacy_system'
+  | 'hot_take'
+  | 'analyst'
+  | 'technical_debt'
+  | 'tethered_debt';
+
+export type EntityType =
+  | 'spawn'
+  | 'goal'
+  | LegacyCollectibleAlias
+  | CanonicalCollectibleId
+  | LegacyCollectibleAliasExtended
+  | 'question_block'
+  | 'checkpoint'
+  | 'walker'
+  | 'shell'
+  | 'flying'
+  | 'spitter'
+  | 'hallucination'
+  | 'legacy_system'
+  | 'hot_take'
+  | 'analyst'
+  | 'technical_debt'
+  | 'tethered_debt'
   | 'spike'
   | 'thwomp'
-  | 'checkpoint'
   | 'spring'
   | 'moving_platform';
 
@@ -61,7 +91,8 @@ export interface GeneratedLevel {
 }
 
 export interface WorldRuleset {
-  theme: ThemeName;
+  theme: WorldTheme;
+  multipliers: WorldPhysicsMultipliers;
   groundVariance: number;
   gapFrequency: number;
   enemyDensity: number;
@@ -70,6 +101,7 @@ export interface WorldRuleset {
   checkpointSpacingChunks: number;
   coinDensity: number;
   starTarget: number;
+  allowedChunkFamilies: ChunkFamily[];
   palette: {
     skyTop: number;
     skyBottom: number;
@@ -79,4 +111,5 @@ export interface WorldRuleset {
     tempo: number;
     scale: number[];
   };
+  modifiers?: Partial<import('../player/movement').WorldModifiers>;
 }

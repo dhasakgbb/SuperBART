@@ -18,40 +18,42 @@ import {
   writePng,
 } from './lib/pixel';
 
+type GeneratorPass = 'all' | 'objects' | 'hud';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
 const COLORS = {
-  inkDark: parseHex('#1D1D1D'),
-  inkSoft: parseHex('#2B2824'),
-  inkDeep: parseHex('#111114'),
-  grassTop: parseHex('#46BA4C'),
-  grassMid: parseHex('#20A36D'),
-  mossDark: parseHex('#0A582C'),
-  hillFarDark: parseHex('#1A6B2A'),
-  hillFarLight: parseHex('#2FA84A'),
-  hillNearDark: parseHex('#2DA845'),
-  hillNearLight: parseHex('#5EDD6B'),
-  groundShadow: parseHex('#742B01'),
-  groundMid: parseHex('#B6560E'),
-  groundWarm: parseHex('#DC7C1D'),
-  sand: parseHex('#DED256'),
-  hudBlue: parseHex('#1E4EA3'),
-  hudBlueLight: parseHex('#5FA2F2'),
-  cloudLight: parseHex('#F2FDFD'),
-  cloudShade: parseHex('#D9E7EB'),
-  steel: parseHex('#9FA8B3'),
-  steelDark: parseHex('#66707C'),
-  checkpointBlue: parseHex('#3CA4E8'),
-  checkpointGold: parseHex('#F1C55F'),
-  checkpointRed: parseHex('#D0644A'),
-  mapLockedDark: parseHex('#4E545E'),
-  mapLockedLight: parseHex('#7B8591'),
-  mapDoneDark: parseHex('#1D7E44'),
-  mapDoneLight: parseHex('#59C66F'),
-  mapOpenDark: parseHex('#1B4D95'),
-  mapOpenLight: parseHex('#77B7FA'),
+  inkDark: parseHex('#17181c'),
+  inkSoft: parseHex('#2a2a2a'),
+  inkDeep: parseHex('#0e0f12'),
+  grassTop: parseHex('#53b35c'),
+  grassMid: parseHex('#2a8f4e'),
+  mossDark: parseHex('#1d5e36'),
+  hillFarDark: parseHex('#196228'),
+  hillFarLight: parseHex('#3ea84f'),
+  hillNearDark: parseHex('#2b974a'),
+  hillNearLight: parseHex('#67e06f'),
+  groundShadow: parseHex('#6a2a07'),
+  groundMid: parseHex('#bf5309'),
+  groundWarm: parseHex('#ef8b32'),
+  sand: parseHex('#e2bd50'),
+  hudBlue: parseHex('#245bb1'),
+  hudBlueLight: parseHex('#6bb0ff'),
+  cloudLight: parseHex('#f6fcff'),
+  cloudShade: parseHex('#dce9f4'),
+  steel: parseHex('#8f98a3'),
+  steelDark: parseHex('#5d6774'),
+  checkpointBlue: parseHex('#37a9ef'),
+  checkpointGold: parseHex('#f2cb60'),
+  checkpointRed: parseHex('#cf6a50'),
+  mapLockedDark: parseHex('#4a5058'),
+  mapLockedLight: parseHex('#7a8491'),
+  mapDoneDark: parseHex('#1d7e44'),
+  mapDoneLight: parseHex('#68d17c'),
+  mapOpenDark: parseHex('#215eab'),
+  mapOpenLight: parseHex('#86c5ff'),
 };
 
 const TILE_SIZE = 16;
@@ -107,6 +109,7 @@ function drawOneWayTile(tile: PixelImage): void {
   fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
   fillRect(tile, 1, 6, 14, 3, COLORS.groundWarm);
   fillRect(tile, 1, 9, 14, 2, COLORS.groundShadow);
+  fillRect(tile, 6, 7, 4, 1, COLORS.sand);
   for (let x = 2; x < TILE_SIZE - 2; x += 4) {
     fillRect(tile, x, 6, 1, 5, COLORS.inkSoft);
   }
@@ -118,9 +121,11 @@ function drawSpikeTile(tile: PixelImage): void {
   fillRect(tile, 0, 13, TILE_SIZE, 3, COLORS.groundShadow);
   for (let peak = 0; peak < 4; peak += 1) {
     const baseX = peak * 4;
-    drawLine(tile, baseX, 13, baseX + 2, 6, COLORS.steel);
-    drawLine(tile, baseX + 4, 13, baseX + 2, 6, COLORS.steel);
-    fillRect(tile, baseX + 1, 10, 3, 3, COLORS.cloudShade);
+    drawLine(tile, baseX, 13, baseX + 2, 6, COLORS.sand);
+    drawLine(tile, baseX + 4, 13, baseX + 2, 6, COLORS.sand);
+    fillRect(tile, baseX + 1, 10, 3, 3, [217, 230, 240, 255]);
+    setPixel(tile, baseX + 2, 6, COLORS.checkpointRed);
+    setPixel(tile, baseX + 2, 7, COLORS.inkDeep);
   }
   for (let x = 0; x < TILE_SIZE; x += 1) {
     setPixel(tile, x, 13, COLORS.inkDark);
@@ -177,24 +182,13 @@ function makeTileset(): void {
 
 function makeCoin(): void {
   const coin = createImage(16, 16, [0, 0, 0, 0]);
-  drawDisk(coin, 8, 8, 6, COLORS.checkpointGold);
-  drawDisk(coin, 8, 8, 4, COLORS.sand);
-  fillRect(coin, 7, 4, 2, 8, COLORS.groundWarm);
-
-  for (let y = 0; y < 16; y += 1) {
-    for (let x = 0; x < 16; x += 1) {
-      const [r, g, b, a] = getPixel(coin, x, y);
-      if (a === 0) {
-        continue;
-      }
-      const isEdge = isTransparent(getPixel(coin, x - 1, y)) || isTransparent(getPixel(coin, x + 1, y)) || isTransparent(getPixel(coin, x, y - 1)) || isTransparent(getPixel(coin, x, y + 1));
-      if (isEdge) {
-        setPixel(coin, x, y, COLORS.inkDark);
-      } else if (x < 8 && y < 7) {
-        setPixel(coin, x, y, [Math.min(r + 18, 255), Math.min(g + 18, 255), Math.min(b + 12, 255), a]);
-      }
-    }
-  }
+  drawDisk(coin, 8, 8, 6, COLORS.inkDark);
+  drawDisk(coin, 8, 8, 5, COLORS.groundMid);
+  drawDisk(coin, 8, 8, 4, COLORS.groundWarm);
+  drawDisk(coin, 8, 8, 3, COLORS.checkpointGold);
+  drawDisk(coin, 8, 8, 2, COLORS.sand);
+  drawDisk(coin, 8, 8, 1, COLORS.inkDark);
+  outlineOpaquePixels(coin, COLORS.inkDeep);
 
   const output = path.join(repoRoot, 'public/assets/sprites/coin.png');
   writePng(output, coin);
@@ -203,24 +197,38 @@ function makeCoin(): void {
 
 function makeQuestionBlock(): void {
   const block = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(block, 0, 0, 16, 16, COLORS.groundWarm);
-  fillRect(block, 1, 1, 14, 14, COLORS.checkpointGold);
-  fillRect(block, 2, 2, 12, 4, COLORS.sand);
-
-  const dark = COLORS.groundShadow;
+  fillRect(block, 0, 0, 16, 16, COLORS.inkDark);
+  fillRect(block, 1, 1, 14, 14, COLORS.groundMid);
+  fillRect(block, 2, 2, 12, 12, COLORS.groundWarm);
+  strokeRect(block, 1, 1, 14, 14, COLORS.groundShadow);
   const q = [
-    [6, 5], [7, 5], [8, 5],
-    [9, 6],
-    [8, 7],
-    [7, 8],
-    [7, 10],
+    [6, 4], [7, 4], [8, 4], [9, 5], [8, 6], [8, 7], [6, 9], [6, 10], [7, 11], [8, 10],
   ];
-  q.forEach(([x, y]) => setPixel(block, x, y, dark));
-
-  fillRect(block, 6, 12, 4, 2, COLORS.groundMid);
+  q.forEach(([x, y]) => setPixel(block, x, y, COLORS.groundWarm));
+  fillRect(block, 8, 12, 1, 2, COLORS.inkDark);
+  fillRect(block, 2, 2, 12, 1, COLORS.inkDark);
+  fillRect(block, 2, 13, 12, 1, COLORS.inkDark);
   strokeRect(block, 0, 0, 16, 16, COLORS.inkDark);
 
   const output = path.join(repoRoot, 'public/assets/sprites/question_block.png');
+  writePng(output, block);
+  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function makeQuestionBlockUsed(): void {
+  const block = createImage(16, 16, [0, 0, 0, 0]);
+  fillRect(block, 0, 0, 16, 16, COLORS.inkDark);
+  fillRect(block, 1, 1, 14, 14, COLORS.groundMid);
+  fillRect(block, 2, 2, 12, 2, COLORS.groundShadow);
+  fillRect(block, 2, 13, 12, 1, COLORS.inkDark);
+  for (let y = 3; y < 13; y += 1) {
+    setPixel(block, 2, y, COLORS.inkDeep);
+    setPixel(block, 13, y, COLORS.inkDeep);
+  }
+  fillRect(block, 6, 12, 4, 2, COLORS.inkDeep);
+  strokeRect(block, 0, 0, 16, 16, COLORS.inkDark);
+
+  const output = path.join(repoRoot, 'public/assets/sprites/question_block_used.png');
   writePng(output, block);
   console.log(`Wrote ${path.relative(repoRoot, output)}`);
 }
@@ -250,12 +258,12 @@ function outlineOpaquePixels(image: PixelImage, outline: Rgba): void {
 function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): PixelImage {
   const cloud = createImage(baseWidth, baseHeight, [0, 0, 0, 0]);
   const puffs = variant === 1
-    ? [[6, 9, 5], [12, 7, 6], [18, 9, 5]]
+    ? [[6, 9, 5], [12, 7, 5], [18, 9, 5]]
     : [[7, 10, 5], [13, 7, 7], [20, 7, 6], [26, 10, 5]];
 
   for (const [cx, cy, radius] of puffs) {
     drawDisk(cloud, cx, cy, radius, COLORS.cloudLight);
-    drawDisk(cloud, cx, cy + 1, Math.max(2, radius - 1), COLORS.cloudShade);
+    drawDisk(cloud, cx + 1, cy + 1, Math.max(2, radius - 1), COLORS.cloudShade);
   }
 
   for (let y = 0; y < cloud.height; y += 1) {
@@ -264,8 +272,11 @@ function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): Pixel
       if (pixel[3] === 0) {
         continue;
       }
-      if (y < cloud.height / 2) {
+      const topBand = y < cloud.height / 2;
+      if (topBand) {
         setPixel(cloud, x, y, COLORS.cloudLight);
+      } else if ((x + y) % 3 === 0) {
+        setPixel(cloud, x, y, COLORS.cloudShade);
       }
     }
   }
@@ -277,6 +288,9 @@ function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): Pixel
 function makeClouds(): void {
   const cloud1 = drawCloud(24, 16, 1);
   const cloud2 = drawCloud(32, 18, 2);
+
+  outlineOpaquePixels(cloud1, COLORS.inkDark);
+  outlineOpaquePixels(cloud2, COLORS.inkDark);
 
   const out1 = path.join(repoRoot, 'public/assets/sprites/cloud_1.png');
   const out2 = path.join(repoRoot, 'public/assets/sprites/cloud_2.png');
@@ -383,8 +397,10 @@ function drawWordHighlights(image: PixelImage, text: string, x: number, y: numbe
 function makeTitleLogo(): void {
   const logo = createImage(512, 160, [0, 0, 0, 0]);
 
-  drawDisk(logo, 256, 36, 82, [246, 213, 139, 48]);
-  drawDisk(logo, 256, 42, 114, [246, 213, 139, 22]);
+  drawDisk(logo, 256, 36, 82, [246, 213, 139, 26]);
+  drawDisk(logo, 256, 40, 112, [246, 213, 139, 16]);
+  fillRect(logo, 0, 9, 512, 2, [16, 17, 22, 190]);
+  fillRect(logo, 0, 149, 512, 2, [16, 17, 22, 190]);
 
   const line1 = { text: 'SUPER', y: 20, scale: 7 };
   const line2 = { text: 'BART', y: 86, scale: 8 };
@@ -409,13 +425,14 @@ function makeTitleLogo(): void {
       [-3, 0], [3, 0], [0, -3], [0, 3],
     ];
     for (const [dx, dy] of outlineOffsets) {
-      drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDark);
+      drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDeep);
     }
 
     drawWordLayer(logo, line.text, x, line.y + 1, line.scale, COLORS.groundMid);
     drawWordLayer(logo, line.text, x, line.y, line.scale, COLORS.checkpointGold);
     drawWordLayer(logo, line.text, x, line.y - 1, line.scale, COLORS.sand);
     drawWordHighlights(logo, line.text, x, line.y, line.scale);
+    drawWordLayer(logo, line.text, x + 1, line.y + 1, line.scale, [12, 12, 12, 60]);
   };
 
   drawLine(line1);
@@ -439,7 +456,7 @@ function makeMapNodes(): void {
         if (px[3] === 0) {
           continue;
         }
-        if (y < 8) {
+        if (y < 7) {
           setPixel(node, x, y, rim);
         }
       }
@@ -459,10 +476,10 @@ function makeMapNodes(): void {
     drawLine(node, 7, 11, 11, 7, COLORS.inkDark);
   });
   const locked = makeNode(COLORS.mapLockedLight, COLORS.mapLockedDark, COLORS.steel, (node) => {
-    fillRect(node, 6, 8, 4, 3, COLORS.inkDark);
-    fillRect(node, 5, 7, 6, 1, COLORS.inkDark);
-    fillRect(node, 6, 5, 1, 2, COLORS.inkDark);
-    fillRect(node, 9, 5, 1, 2, COLORS.inkDark);
+    fillRect(node, 6, 8, 4, 3, COLORS.inkDeep);
+    fillRect(node, 5, 7, 6, 1, COLORS.inkDeep);
+    fillRect(node, 6, 5, 1, 2, COLORS.inkDeep);
+    fillRect(node, 9, 5, 1, 2, COLORS.inkDeep);
   });
   const selected = makeNode(COLORS.checkpointGold, COLORS.groundWarm, COLORS.sand, (node) => {
     drawDisk(node, 8, 8, 2, COLORS.inkDark);
@@ -472,6 +489,7 @@ function makeMapNodes(): void {
   const pathDot = createImage(8, 8, [0, 0, 0, 0]);
   drawDisk(pathDot, 4, 4, 2, COLORS.checkpointGold);
   drawDisk(pathDot, 4, 4, 1, COLORS.sand);
+  outlineOpaquePixels(pathDot, COLORS.inkDeep);
   outlineOpaquePixels(pathDot, COLORS.inkDark);
 
   const outputDir = path.join(repoRoot, 'public/assets/sprites');
@@ -493,18 +511,23 @@ function makeMapNodes(): void {
 function makeHills(): void {
   const far = createImage(80, 44, [0, 0, 0, 0]);
   drawDisk(far, 22, 32, 24, COLORS.hillFarDark);
-  drawDisk(far, 50, 28, 26, COLORS.hillFarDark);
-  drawDisk(far, 62, 30, 18, COLORS.hillFarDark);
+  drawDisk(far, 50, 29, 24, COLORS.hillFarDark);
+  drawDisk(far, 62, 32, 18, COLORS.hillFarDark);
   drawDisk(far, 48, 20, 12, COLORS.hillFarLight);
-  drawDisk(far, 24, 24, 10, COLORS.hillFarLight);
+  drawDisk(far, 24, 22, 10, COLORS.hillFarLight);
+  drawDisk(far, 0, 43, 16, COLORS.hillFarDark);
+  fillRect(far, 2, 34, 18, 1, COLORS.hillFarLight);
+  fillRect(far, 45, 31, 10, 1, COLORS.hillFarLight);
   outlineOpaquePixels(far, COLORS.inkDark);
 
   const near = createImage(88, 46, [0, 0, 0, 0]);
-  drawDisk(near, 26, 34, 24, COLORS.hillNearDark);
+  drawDisk(near, 26, 35, 24, COLORS.hillNearDark);
   drawDisk(near, 56, 30, 28, COLORS.hillNearDark);
   drawDisk(near, 72, 33, 16, COLORS.hillNearDark);
   drawDisk(near, 52, 22, 14, COLORS.hillNearLight);
-  drawDisk(near, 28, 26, 12, COLORS.hillNearLight);
+  drawDisk(near, 28, 24, 10, COLORS.hillNearLight);
+  fillRect(near, 10, 32, 30, 1, COLORS.hillNearLight);
+  fillRect(near, 60, 26, 10, 1, COLORS.hillNearLight);
   outlineOpaquePixels(near, COLORS.inkDark);
 
   const outFar = path.join(repoRoot, 'public/assets/sprites/hill_far.png');
@@ -539,6 +562,12 @@ function makeBitmapFont(): void {
             const above = getPixel(atlas, ox + gx, oy + gy - 1);
             if (above[3] === 0) {
               setPixel(atlas, ox + gx, oy + gy - 1, [18, 18, 18, 128]);
+            }
+          }
+          if (gx + 1 < line.length) {
+            const right = getPixel(atlas, ox + gx + 1, oy + gy);
+            if (right[3] === 0) {
+              setPixel(atlas, ox + gx + 1, oy + gy, COLORS.cloudShade);
             }
           }
         }
@@ -604,16 +633,76 @@ function makeDustPuff(): void {
   console.log(`Wrote ${path.relative(repoRoot, output)}`);
 }
 
+function selectedPassFromArg(): GeneratorPass {
+  const passArg = process.argv.find((arg, index, args) => arg === '--pass' && index + 1 < args.length);
+  if (!passArg) {
+    return 'all';
+  }
+
+  const raw = process.argv[process.argv.indexOf(passArg) + 1];
+  if (raw === 'objects' || raw === 'hud' || raw === 'all') {
+    return raw;
+  }
+
+  throw new Error(`Invalid --pass value: ${raw}. Expected objects|hud|all.`);
+}
+
+function runGeneratorPass(pass: GeneratorPass): void {
+  const executeAll = (): void => {
+    const tasks: Array<() => void> = [
+      makeTileset,
+      makeCoin,
+      makeQuestionBlock,
+      makeQuestionBlockUsed,
+      makeClouds,
+      makeHills,
+      makeMapNodes,
+      makeTitleLogo,
+      makeBitmapFont,
+      makeDustPuff,
+    ];
+    for (const task of tasks) {
+      task();
+    }
+  };
+
+  const executeObjects = (): void => {
+    const tasks: Array<() => void> = [
+      makeCoin,
+      makeQuestionBlock,
+      makeQuestionBlockUsed,
+    ];
+    for (const task of tasks) {
+      task();
+    }
+  };
+
+  const executeHud = (): void => {
+    const tasks: Array<() => void> = [
+      makeClouds,
+      makeHills,
+      makeMapNodes,
+      makeTitleLogo,
+      makeBitmapFont,
+      makeDustPuff,
+    ];
+    for (const task of tasks) {
+      task();
+    }
+  };
+
+  const runs: Record<GeneratorPass, () => void> = {
+    all: executeAll,
+    objects: executeObjects,
+    hud: executeHud,
+  };
+
+  runs[pass]();
+}
+
 function main(): number {
-  makeTileset();
-  makeCoin();
-  makeQuestionBlock();
-  makeClouds();
-  makeHills();
-  makeMapNodes();
-  makeTitleLogo();
-  makeBitmapFont();
-  makeDustPuff();
+  const pass = selectedPassFromArg();
+  runGeneratorPass(pass);
   return 0;
 }
 
