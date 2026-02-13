@@ -13,10 +13,17 @@ function resolveAsset(relativePath) {
   return path.join(repoRoot, 'public', relativePath);
 }
 
+function imagePath(entry) {
+  if (typeof entry === 'string') {
+    return entry;
+  }
+  return entry?.path;
+}
+
 describe('boot and level load smoke checks', () => {
   it('boot manifest references local files that exist', () => {
     for (const p of Object.values(ASSET_MANIFEST.images)) {
-      expect(existsSync(resolveAsset(p))).toBe(true);
+      expect(existsSync(resolveAsset(imagePath(p)))).toBe(true);
     }
     for (const p of Object.values(ASSET_MANIFEST.tilemaps)) {
       expect(existsSync(resolveAsset(p))).toBe(true);

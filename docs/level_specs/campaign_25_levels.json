@@ -1,0 +1,1385 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-02-13T00:00:00.000Z",
+  "worldCount": 5,
+  "levels": [
+    {
+      "world": 1,
+      "level": 1,
+      "title": "Boot Camp I",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "flat_intro_02"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_stair_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "flat_guide_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "flat_step_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 1,
+      "level": 2,
+      "title": "Boot Camp II",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_short_guarded_01",
+            "coin_arch_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "walker_patrol_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 1,
+      "level": 3,
+      "title": "Basic Coins I",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_rail_01",
+            "coin_arch_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "flat_guide_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_02",
+            "coin_reward_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 1,
+      "level": 4,
+      "title": "Safety Lanes",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "platform_bubble_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "falloff_step_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "flat_guide_01",
+            "spike_low_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "platform_bubble_02"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 1,
+      "level": 5,
+      "title": "Mini Boss Gate",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "flat_intro_02"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "flat_guide_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "platform_stack_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_02",
+            "shell_blocker_01",
+            "spike_low_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "coin_rail_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 1,
+      "level": 6,
+      "title": "Run Onset",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_rail_01",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "platform_bubble_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "walker_patrol_02",
+            "flying_drift_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 2,
+      "level": 1,
+      "title": "Boot Camp II",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_short_guarded_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "coin_arch_01",
+            "coin_reward_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "spike_sweep_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 1
+      }
+    },
+    {
+      "world": 2,
+      "level": 2,
+      "title": "Skid Timing",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_short_guarded_01",
+            "gap_long_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "platform_stack_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_02",
+            "recovery_lane_01",
+            "walker_patrol_03"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "coin_rail_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 2,
+      "level": 3,
+      "title": "Air Drift I",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "falloff_step_01",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "coin_stair_01",
+            "gap_long_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "flying_drift_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 2,
+      "level": 4,
+      "title": "Vertical Pressure",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "platform_stack_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "falloff_step_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flying_drift_01",
+            "flat_guide_01",
+            "spike_low_01",
+            "recovery_lane_01",
+            "walker_patrol_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "platform_bubble_02"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 2,
+      "level": 5,
+      "title": "Coin Bridges",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_arch_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "coin_rail_01",
+            "rise_step_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_03",
+            "flat_guide_01",
+            "spike_low_01",
+            "recovery_lane_01",
+            "walker_patrol_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "coin_reward_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 2,
+      "level": 6,
+      "title": "Recovery Lab",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "platform_bubble_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "falloff_step_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flying_drift_01",
+            "flying_drift_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 1,
+      "title": "Patrol Cadence",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "walker_patrol_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "walker_patrol_02",
+            "walker_patrol_03"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "gap_short_guarded_01",
+            "coin_arch_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "shell_blocker_01",
+            "flat_guide_01",
+            "spike_low_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 2,
+      "title": "Jump-Lock",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_short_guarded_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "falloff_step_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flying_drift_01",
+            "walker_patrol_02",
+            "walker_patrol_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 3,
+      "title": "Telegraphed Hazards",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "spike_low_01",
+            "recovery_lane_01",
+            "spike_sweep_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "gap_short_guarded_01",
+            "coin_reward_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "spike_sweep_01",
+            "recovery_lane_01",
+            "walker_patrol_02",
+            "thwomp_intro_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 4,
+      "title": "Double Threat I",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "coin_arch_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "walker_patrol_03",
+            "flying_drift_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "platform_bubble_01",
+            "gap_long_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "recovery_lane_01",
+            "shell_blocker_01",
+            "recovery_lane_01",
+            "spike_low_01",
+            "recovery_lane_01",
+            "flat_guide_01",
+            "flying_drift_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 5,
+      "title": "Momentum Rhythm",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "platform_stack_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "falloff_step_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "walker_patrol_03",
+            "shell_blocker_01",
+            "flat_guide_01",
+            "spike_low_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 3,
+      "level": 6,
+      "title": "Final of World",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_arch_01",
+            "spike_sweep_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "gap_short_guarded_01",
+            "gap_long_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "flying_drift_02",
+            "shell_blocker_01",
+            "walker_patrol_03"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 1,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 1,
+      "title": "Thwomp Timing",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "thwomp_intro_01",
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "flat_guide_01",
+            "spike_sweep_01",
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "gap_long_01",
+            "platform_bubble_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "walker_patrol_02",
+            "walker_patrol_03"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 2,
+      "title": "Flicker Hazard Mix",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "falloff_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "spike_low_01",
+            "spike_sweep_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "gap_short_guarded_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "flying_drift_01",
+            "flying_drift_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 3,
+      "title": "Enemy Traffic",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "flat_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "walker_patrol_03",
+            "shell_blocker_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "platform_stack_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "walker_patrol_01",
+            "walker_patrol_02",
+            "walker_patrol_03",
+            "shell_blocker_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 4,
+      "title": "Coin Rhythm II",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "coin_rail_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "coin_stair_01",
+            "coin_arch_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "coin_reward_01",
+            "gap_long_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "walker_patrol_02",
+            "flat_guide_01",
+            "spike_sweep_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 5,
+      "title": "Full Pace Form",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "rise_step_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "platform_bubble_01",
+            "coin_stair_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "gap_short_guarded_01",
+            "falloff_step_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "walker_patrol_03",
+            "shell_blocker_01",
+            "flying_drift_02"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "platform_stack_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 4,
+      "level": 6,
+      "title": "Endurance Build",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_long_01",
+            "coin_rail_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "platform_stack_01",
+            "platform_bubble_01"
+          ]
+        },
+        {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "walker_patrol_01",
+            "walker_patrol_02",
+            "flat_guide_01",
+            "spike_low_01",
+            "recovery_lane_01",
+            "flying_drift_01",
+            "shell_blocker_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_01"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
+      }
+    },
+    {
+      "world": 5,
+      "level": 1,
+      "title": "Finale Mastery",
+      "sequence": [
+        {
+          "phase": "INTRO",
+          "chunks": [
+            "flat_intro_01",
+            "flat_guide_01"
+          ]
+        },
+        {
+          "phase": "PRACTICE",
+          "chunks": [
+            "gap_short_guarded_01",
+            "thwomp_intro_01",
+            "recovery_lane_01"
+          ]
+        },
+        {
+          "phase": "VARIATION",
+          "chunks": [
+            "rise_step_01",
+            "falloff_step_01",
+            "gap_long_01"
+          ]
+        },
+      {
+          "phase": "CHALLENGE",
+          "chunks": [
+            "flat_guide_01",
+            "thwomp_intro_01",
+            "recovery_lane_01",
+            "walker_patrol_03",
+            "flat_guide_01",
+            "spike_sweep_01",
+            "recovery_lane_01",
+            "flying_drift_02",
+            "shell_blocker_01"
+          ]
+        },
+        {
+          "phase": "COOLDOWN",
+          "chunks": [
+            "recovery_lane_02",
+            "platform_bubble_02"
+          ]
+        },
+        {
+          "phase": "FINALE",
+          "chunks": [
+            "flat_finish_02"
+          ]
+        }
+      ],
+      "hardRules": {
+        "maxNewMechanicsPerChunk": 1,
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 3
+      }
+    }
+  ]
+}

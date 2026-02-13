@@ -1,12 +1,86 @@
 import type { ChunkFamily as CanonicalChunkFamily, WorldPhysicsMultipliers, WorldTheme } from '../content/contentManifest';
 
 export type ThemeName = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark' | 'bonus';
+export type PacingPhase = 'INTRO' | 'PRACTICE' | 'VARIATION' | 'CHALLENGE' | 'COOLDOWN' | 'FINALE';
+export type ChunkTag =
+  | 'FLAT'
+  | 'RISE_STEP'
+  | 'DROP_STEP'
+  | 'GAP_SHORT'
+  | 'GAP_LONG'
+  | 'PLATFORM_BUBBLE'
+  | 'PLATFORM_STACK'
+  | 'CLIFF_EDGE'
+  | 'SLOPE_DOWN'
+  | 'SLOPE_UP'
+  | 'MOVE_PLATFORM'
+  | 'VERTICAL_LIFT'
+  | 'PASSAGE_TUNNEL'
+  | 'SPIKE_LOW'
+  | 'SPIKE_SWEEP'
+  | 'THWOMP_DROP'
+  | 'ELECTRO'
+  | 'CRUSH_ZONE'
+  | 'BOUNCE_ZONE'
+  | 'GOOMBA_SPAWN'
+  | 'FLYER_DRIFT'
+  | 'WALKER_PATROL'
+  | 'TURNAROUND_ENEMY'
+  | 'BLOCKER'
+  | 'COIN_STAIR'
+  | 'COIN_ARCH'
+  | 'COIN_RAIL'
+  | 'COIN_REWARD'
+  | 'MYSTERY_POD'
+  | 'POWERUP_HINT'
+  | 'COOLDOWN_LANE'
+  | 'PRACTICE_PAD'
+  | 'COMEDY_VENT'
+  | 'VARIATION_PAD'
+  | 'VANISH_PLATFORM'
+  | 'BENCHMARK_AUTO_SCROLL';
 
-export type ChunkFamily = CanonicalChunkFamily;
+export interface ChunkTemplate {
+  id: string;
+  tags: ChunkTag[];
+  weight: number;
+  lengthPx: number;
+  recoveryAfter: boolean;
+  mechanicsIntroduced: string[];
+  vanish_platform?: {
+    visibleMs: number;
+    hiddenMs: number;
+  };
+  benchmark_auto_scroll?: {
+    speedPxPerSec: number;
+    durationMs: number;
+  };
+  boss_arena_anchor?: { x: number; y: number; width: number };
+  enemyCap?: number;
+}
+
+export interface PacingSegment {
+  phase: PacingPhase;
+  chunks: string[];
+}
+
+export interface LevelHardRules {
+  maxNewMechanicsPerChunk: number;
+  minRecoveryGap: number;
+  maxHazardClusters: number;
+}
+
+export type ChunkFamily = CanonicalChunkFamily | 'azure_walkway' | 'benchmark_sprint';
 
 export type StructuralChunkType = 'start' | 'checkpoint' | 'end';
 
-export type ChunkTemplateType = 'mid_flat' | 'vertical_climb' | 'coin_arc' | 'enemy_gauntlet' | 'moving_platform';
+export type ChunkTemplateType =
+  | 'mid_flat'
+  | 'vertical_climb'
+  | 'coin_arc'
+  | 'enemy_gauntlet'
+  | 'moving_platform'
+  | 'benchmark_sprint';
 
 export type ChunkType = StructuralChunkType | ChunkFamily;
 
@@ -29,6 +103,8 @@ export type EnemyType =
   | 'legacy_system'
   | 'hot_take'
   | 'analyst'
+  | 'compliance_officer'
+  | 'compliance'
   | 'technical_debt'
   | 'tethered_debt';
 
@@ -48,6 +124,7 @@ export type EntityType =
   | 'legacy_system'
   | 'hot_take'
   | 'analyst'
+  | 'compliance_officer'
   | 'technical_debt'
   | 'tethered_debt'
   | 'spike'
@@ -60,6 +137,22 @@ export interface LevelGenerationInput {
   levelIndex: number;
   seed: number;
   bonus?: boolean;
+}
+
+export interface LevelSpec {
+  world: number;
+  level: number;
+  title: string;
+  sequence: PacingSegment[];
+  hardRules: LevelHardRules;
+  notes?: string;
+}
+
+export interface CampaignArtifact {
+  version: string;
+  generatedAt: string;
+  worldCount: number;
+  levels: LevelSpec[];
 }
 
 export interface LevelEntity {
@@ -75,7 +168,7 @@ export interface GeneratedLevel {
   width: number;
   height: number;
   tileGrid: number[][];
-  oneWayPlatforms: Array<{ x: number; y: number; w: number }>;
+  oneWayPlatforms: Array<{ x: number; y: number; w: number; vanish?: { visibleMs: number; hiddenMs: number } }>;
   movingPlatforms: Array<{ id: string; x: number; y: number; minX: number; maxX: number; speed: number }>;
   entities: LevelEntity[];
   checkpoints: Array<{ id: string; x: number; y: number }>;
@@ -85,7 +178,8 @@ export interface GeneratedLevel {
     levelIndex: number;
     theme: ThemeName;
     difficultyTier: number;
-    chunksUsed: ChunkType[];
+    chunksUsed: string[];
+    pacing: PacingPhase[];
     seed: number;
   };
 }
@@ -111,5 +205,23 @@ export interface WorldRuleset {
     tempo: number;
     scale: number[];
   };
+  campaign?: WorldLevelConstraint;
   modifiers?: Partial<import('../player/movement').WorldModifiers>;
+}
+
+export interface WorldLevelConstraint {
+  allowedChunkTags: ChunkTag[];
+  allowedHazardTags: ChunkTag[];
+  allowedEnemyTags: string[];
+  maxNewMechanicsPerChunk: number;
+  minRecoveryGap: number;
+  maxHazardClusters: number;
+  guidanceWindow: number;
+  hazardWeights: Record<string, number>;
+  enemyWeights: Record<string, number>;
+  speedMultiplier: number;
+  gravityMultiplier: number;
+  tokenBurnRate: number;
+  tokenSpawnMultiplier?: number;
+  hazardDensityMultiplier?: number;
 }

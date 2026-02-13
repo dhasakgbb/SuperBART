@@ -12,29 +12,12 @@ except Exception:  # pragma: no cover
     print('ERROR: Pillow is required. Run: python3 -m pip install -r tools/requirements.txt')
     raise SystemExit(1)
 
-REQUIRED_SVG = [
-    'public/assets/sprites/player_small.svg',
-    'public/assets/sprites/player_big.svg',
-    'public/assets/sprites/enemy_walker.svg',
-    'public/assets/sprites/enemy_shell.svg',
-    'public/assets/sprites/enemy_shell_retracted.svg',
-    'public/assets/sprites/enemy_flying.svg',
-    'public/assets/sprites/enemy_spitter.svg',
-    'public/assets/sprites/projectile.svg',
-    'public/assets/sprites/coin.svg',
-    'public/assets/sprites/star.svg',
-    'public/assets/sprites/flag.svg',
-    'public/assets/sprites/checkpoint.svg',
-    'public/assets/sprites/spring.svg',
-    'public/assets/sprites/spike.svg',
-    'public/assets/sprites/thwomp.svg',
-    'public/assets/sprites/moving_platform.svg',
-    'public/assets/tiles/tile_ground.svg',
-    'public/assets/tiles/tile_oneway.svg',
-]
+ASSET_MANIFEST_PATH = 'src/core/assetManifest.ts'
+MANIFEST_PATH_RE = re.compile(r"['\"](/assets/[^'\"]+)['\"]")
 
 REQUIRED_PNG_DIMENSIONS = {
     'public/assets/target_look.png': None,
+    'public/assets/target_look_2.jpeg': None,
     'public/assets/sprites/bart_head_32.png': (32, 32),
     'public/assets/sprites/bart_head_48.png': (48, 48),
     'public/assets/sprites/bart_head_64.png': (64, 64),
@@ -51,21 +34,31 @@ REQUIRED_PNG_DIMENSIONS = {
     'public/assets/sprites/map_path_dot.png': (8, 8),
 }
 
+REFERENCE_IMAGE_CONSTRAINTS = {
+    'public/assets/target_look.png': {'format': 'PNG', 'extensions': {'.png'}},
+    'public/assets/target_look_2.jpeg': {'format': 'JPEG', 'extensions': {'.jpeg', '.jpg'}},
+}
+
 
 def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     errors: list[str] = []
 
-    for rel in REQUIRED_SVG:
-        path = repo / rel
-        if not path.exists():
-            errors.append(f'missing: {rel}')
-            continue
-        txt = path.read_text(encoding='utf-8')
-        if '<svg' not in txt:
-            errors.append(f'not svg: {rel}')
-        if re.search(r'TODO|coming soon', txt, flags=re.IGNORECASE):
-            errors.append(f'placeholder text in: {rel}')
+    manifest_path = repo / ASSET_MANIFEST_PATH
+    if not manifest_path.exists():
+        errors.append(f'missing manifest file: {ASSET_MANIFEST_PATH}')
+    else:
+        manifest_text = manifest_path.read_text(encoding='utf-8')
+        manifest_image_paths = MANIFEST_PATH_RE.findall(manifest_text)
+        for rel_path in manifest_image_paths:
+            if not rel_path.lower().endswith('.svg'):
+                continue
+            errors.append(f'asset manifest references SVG in runtime image path: {rel_path}')
+
+        for rel in manifest_image_paths:
+            abs_path = repo / 'public' / rel.lstrip('/')
+            if not abs_path.exists():
+                errors.append(f'missing manifest asset: {rel}')
 
     for rel, expected_dim in REQUIRED_PNG_DIMENSIONS.items():
         path = repo / rel
@@ -75,6 +68,17 @@ def main() -> int:
         try:
             with Image.open(path) as img:
                 img.load()
+                if img.width <= 0 or img.height <= 0:
+                    errors.append(f'invalid image dimensions for {rel}: cannot be zero-sized')
+                if rel in REFERENCE_IMAGE_CONSTRAINTS:
+                    constraints = REFERENCE_IMAGE_CONSTRAINTS[rel]
+                    suffix = path.suffix.lower()
+                    if suffix not in constraints['extensions']:
+                        errors.append(
+                            f'Invalid extension for {rel}: expected one of {sorted(constraints["extensions"])}; got {suffix}'
+                        )
+                    if img.format != constraints['format']:
+                        errors.append(f'Invalid image format for {rel}: expected {constraints["format"]}, got {img.format}')
                 if expected_dim and img.size != expected_dim:
                     errors.append(f'wrong dimensions for {rel}: expected {expected_dim}, got {img.size}')
         except Exception as exc:

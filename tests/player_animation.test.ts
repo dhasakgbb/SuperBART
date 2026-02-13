@@ -53,6 +53,14 @@ describe('player animation state machine', () => {
     expect(r.state).toBe('run');
   });
 
+  test('run state requires run intent alignment with input', () => {
+    const r = resolve({ vx: 240, inputX: 0 });
+    expect(r.state).toBe('walk');
+
+    const r2 = resolve({ vx: 240, inputX: 1 });
+    expect(r2.state).toBe('run');
+  });
+
   test('skid when reversing at speed', () => {
     const r = resolve({ vx: 150, inputX: -1 });
     expect(r.state).toBe('skid');
@@ -125,6 +133,34 @@ describe('player animation state machine', () => {
 
     const r2 = resolve({ vx: 180, inputX: -1 });
     expect(r2.state).toBe('skid');
+  });
+
+  test('skid is recoverable to walk when motion is realigned', () => {
+    const r1 = resolve({ vx: 180, inputX: -1 });
+    expect(r1.state).toBe('skid');
+
+    const r2 = resolve({ vx: 100, inputX: -1 });
+    expect(r2.state).toBe('walk');
+  });
+
+  test('motion hint run maps directly to run state', () => {
+    const r = resolve({ vx: 220, inputX: 1, onGround: true, motionState: 'run' });
+    expect(r.state).toBe('run');
+  });
+
+  test('run motion hint remains speed-qualified (low speed stays walk)', () => {
+    const r = resolve({ vx: 110, inputX: 0, onGround: true, motionState: 'run' });
+    expect(r.state).toBe('walk');
+  });
+
+  test('run motion hint drops when motion intent is absent', () => {
+    const r1 = resolve({ vx: 240, inputX: 0, onGround: true, motionState: 'run' });
+    expect(r1.state).toBe('walk');
+  });
+
+  test('motion hint skid is prioritized before speed thresholds on ground', () => {
+    const r = resolve({ vx: 180, inputX: 1, onGround: true, motionState: 'skid' });
+    expect(r.state).toBe('skid');
   });
 
   test('ground to jump to fall sequence', () => {

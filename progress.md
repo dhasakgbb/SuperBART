@@ -79,3 +79,41 @@ Original prompt: Build a complete, playable Mario-style 2D platformer web game c
   - `docs/screenshots/title_expected.md`
   - Added `docs/screenshots/world_map_expected.md`, `docs/screenshots/play_expected.md`.
 - Next: regenerate assets + golden screenshots, then run full command matrix and resolve any remaining regressions.
+
+## 2026-02-13 - Post-hardening gameplay + visual QA slice
+- Completed movement and feel hardening:
+  - `src/player/movement.ts`: one-shot jump-cut on jump-release edge, explicit air-control/air-drag split, run charge/desired-state logic, and skid state transitions.
+  - `src/scenes/PlayScene.ts`: stomp collision path now dedupes per-frame stomps, gates repeated stomps with cooldown, and applies timed hit-stop with feedback cues.
+- Tightened visual QA:
+  - `tools/visual_regress.ts`: added render-quality preflight metrics (coverage/luma spread/luma mean) before pixel-diff validation.
+  - `tools/capture_visual_baselines.ts`: deterministic scene marker + settle-frame wait remains in place for consistent capture timing.
+- Contract tuning:
+- `src/core/constants.ts`: reduced stomp hit-stop window toward 1-2 frame behavior.
+
+## 2026-02-13 - Movement Feel Slice (Run/Air-control/Skid/Stomp measurable)
+- Added movement contract synchronization in `scripts/playfeel_contract.json`:
+  - `stomp_hitstop_ms` now matches `PLAYER_CONSTANTS.stompHitstopMs` (`32`).
+  - Added explicit run/skid/jump-cut timing fields for measurable enforcement.
+- Added deterministic feel acceptance helpers in `tests/helpers/movementAcceptance.ts`.
+- Updated `tests/quality.playfeel.test.ts` to validate:
+  - run-charge transition framing and speed ratio,
+  - air-control cap,
+  - one-shot jump-cut and short vs sustained jump comparison,
+  - skid entry timing and duration,
+  - stomp hit-stop/cooldown contract parity.
+- Updated `tests/player_animation.test.ts` for speed-qualified `run` hint handling and skid recovery assertions.
+- Added run-state qualification in `src/player/PlayerAnimator.ts` so `motionState: 'run'` now requires thresholded speed.
+
+## 2026-02-13 - Phase-2 Playfeel Audit Deterministic Sweep
+- Ran deterministic playfeel sweep using `npm run playfeel:phase2` for all 4 scenarios over all levels:
+  - jump-cut: run_id `2026-02-13T18:25:49.129Z_3613` (24/25 PASS, fail `5-1`)
+  - run-skid: run_id `2026-02-13T18:28:57.561Z_3998` (24/25 PASS, fail `5-1`)
+  - stomp: run_id `2026-02-13T18:32:00.898Z_5243` (24/25 PASS, fail `5-1`)
+  - telegraph: run_id `2026-02-13T18:35:02.694Z_7631` (24/25 PASS, fail `5-1`)
+- Gate orchestration baseline re-run (`npm run ci:gates:log`) currently fails at `lint_visual` for map/play diffs:
+  - run_id `2026-02-13T18:38:31.388Z_9594`
+  - `lint_visual` fail on map/play thresholds, so gate stack did not reach full test/build.
+- Jump-cut one-shot deterministic tests remain failing:
+  - `tests/player_feel_timing.test.ts`
+  - `tests/quality.playfeel.test.ts`
+- Next step recorded: isolate and fix `5-1` bootstrap timeout during play entry and re-run full phase-2 sweep before reattempting 7-gate close.

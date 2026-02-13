@@ -301,11 +301,11 @@ export const CONTENT_WORLD_CHUNK_FAMILIES = Object.entries(WORLD_CHUNK_FAMILIES)
 export const COLLECTIBLES: CollectibleContract[] = [
   { id: 'token', aliases: ['coin'], displayName: 'TOKEN', implemented: true },
   { id: 'eval', aliases: ['star'], displayName: 'EVAL', implemented: true },
-  { id: 'gpu_allocation', aliases: ['fire_flower'], displayName: 'GPU ALLOCATION', implemented: false },
-  { id: 'copilot_mode', aliases: ['power_up'], displayName: 'COPILOT MODE', implemented: false },
-  { id: 'semantic_kernel', aliases: ['assist_bot'], displayName: 'SEMANTIC KERNEL', implemented: false },
-  { id: 'deploy_to_prod', aliases: ['green_button'], displayName: 'DEPLOY TO PROD', implemented: false },
-  { id: 'works_on_my_machine', aliases: ['woom'], displayName: 'WORKS ON MY MACHINE', implemented: false },
+  { id: 'gpu_allocation', aliases: ['fire_flower'], displayName: 'GPU ALLOCATION', implemented: true },
+  { id: 'copilot_mode', aliases: ['power_up'], displayName: 'COPILOT MODE', implemented: true },
+  { id: 'semantic_kernel', aliases: ['assist_bot'], displayName: 'SEMANTIC KERNEL', implemented: true },
+  { id: 'deploy_to_prod', aliases: ['green_button'], displayName: 'DEPLOY TO PROD', implemented: true },
+  { id: 'works_on_my_machine', aliases: ['woom'], displayName: 'WORKS ON MY MACHINE', implemented: true },
 ];
 
 export const ENEMIES: EnemyContract[] = [

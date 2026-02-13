@@ -31,6 +31,58 @@ const DEFAULT_TARGET_TEXT_FILES = [
   'src/scenes/PlayScene.ts',
 ];
 const TARGET_TEXT_FILES = resolveTargetTextFiles(process.env.CONTENT_VALIDATOR_TARGET_PATHS);
+const CAMPAIGN_ARTIFACT_PATH = path.resolve(REPO_ROOT, 'docs/level_specs/campaign_25_levels.json');
+const CHUNK_CATALOG_PATH = path.resolve(REPO_ROOT, 'docs/level_specs/chunk_catalog.json');
+const WORLD_RULES_PATH = path.resolve(REPO_ROOT, 'docs/level_specs/world_rules.json');
+const EXPECTED_PACE_SEQUENCE = ['INTRO', 'PRACTICE', 'VARIATION', 'CHALLENGE', 'COOLDOWN', 'FINALE'] as const;
+const WORLD_HAZARD_TAGS = ['SPIKE_LOW', 'SPIKE_SWEEP', 'THWOMP_DROP'];
+const WORLD_EXPECTED_COUNT = 5;
+const LEVEL_COUNT_EXPECTED = 25;
+
+type CampaignLevelSpec = {
+  world: unknown;
+  level: unknown;
+  title: unknown;
+  sequence: unknown;
+  hardRules: unknown;
+};
+
+type CampaignSequenceItem = {
+  phase: unknown;
+  chunks: unknown;
+};
+
+type CampaignArtifact = {
+  version: unknown;
+  generatedAt: unknown;
+  worldCount: unknown;
+  levels: unknown;
+};
+
+type ChunkCatalog = {
+  entries: unknown;
+};
+
+type ChunkTemplateRecord = {
+  id: unknown;
+  tags: unknown;
+  recoveryAfter: unknown;
+  mechanicsIntroduced: unknown;
+};
+
+type WorldRule = {
+  world: unknown;
+  allowedChunkTags: unknown;
+  allowedHazardTags: unknown;
+  minRecoveryGap: unknown;
+  maxHazardClusters: unknown;
+  maxNewMechanicsPerChunk: unknown;
+};
+
+type WorldRulesArtifact = {
+  worldCount: unknown;
+  worlds: unknown;
+};
 
 function resolveTargetTextFiles(envPaths: string | undefined): string[] {
   if (!envPaths) {
@@ -74,11 +126,9 @@ type LabeledText = {
   source: string;
 };
 
-const FORBIDDEN_HUD_WORDS = /\b(LIVES|STAR|COIN)\b/;
+const FORBIDDEN_HUD_WORDS = /\b(LIVES|LIFE|LEVELS)\b/;
 
 const failures: Failure[] = [];
-const isProduction = process.env.CONTENT_MODE === 'production' || process.env.NODE_ENV === 'production';
-
 function addFailure(f: Failure): void {
   failures.push(f);
 }
@@ -98,6 +148,72 @@ function readSource(filePath: string): ts.SourceFile {
 
 function getSourceText(filePath: string): string {
   return fs.readFileSync(filePath, 'utf-8');
+}
+
+function readJson(filePath: string): unknown | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch (error) {
+    addFailure({
+      id: 'content.json.parseFailure',
+      file: rel(filePath),
+      line: 1,
+      message: `Invalid JSON in ${path.relative(REPO_ROOT, filePath)}: ${(error as Error).message}`,
+      hint: 'Fix JSON syntax before running content validation.',
+    });
+    return null;
+  }
+}
+
+function validateWorldRulesJson(): void {
+  const worldRulesPath = WORLD_RULES_PATH;
+  if (!fs.existsSync(worldRulesPath)) {
+    addFailure({
+      id: 'content.levelspec.worldRulesMissing',
+      file: rel(worldRulesPath),
+      line: 1,
+      message: 'Missing required level world rule artifact: docs/level_specs/world_rules.json',
+      hint: 'Add a world rule JSON contract before final campaign-gating.',
+    });
+    return;
+  }
+
+  const parsed = readJson(worldRulesPath) as WorldRulesArtifact | null;
+  if (!parsed) {
+    addFailure({
+      id: 'content.levelspec.worldRulesInvalidJson',
+      file: rel(worldRulesPath),
+      line: 1,
+      message: `Could not parse world rules JSON.`,
+      hint: 'Fix JSON syntax before running content validation.',
+    });
+    return;
+  }
+
+  const worlds = parsed.worlds;
+  if (!Array.isArray(worlds)) {
+    addFailure({
+      id: 'content.levelspec.worldRulesShape',
+      file: rel(worldRulesPath),
+      line: 1,
+      message: 'docs/level_specs/world_rules.json missing `worlds` array.',
+      hint: 'Populate `worlds` with per-world pacing/fairness constraints.',
+    });
+    return;
+  }
+
+  if (parsed.worldCount != null && parsed.worldCount !== worlds.length) {
+    addFailure({
+      id: 'content.levelspec.worldRulesShape',
+      file: rel(worldRulesPath),
+      line: 1,
+      message: 'world_count does not match number of world rules.',
+      hint: `Expected ${parsed.worldCount} entries, found ${worlds.length}.`,
+    });
+  }
 }
 
 function extractUiTextLiterals(filePath: string): LabeledText[] {
@@ -217,11 +333,557 @@ function validateForbiddenHudWords(): void {
   }
 }
 
-function validateAssetManifestImagesForProduction(): void {
-  if (!ASSET_POLICY.disallowSvgInProduction || !isProduction) {
+function validateCampaignAndChunkArtifacts(): void {
+  const campaignRaw = readJson(CAMPAIGN_ARTIFACT_PATH);
+  if (!campaignRaw) {
+    addFailure({
+      id: 'content.levelspec.campaignMissing',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: 'Missing required campaign artifact: docs/level_specs/campaign_25_levels.json',
+      hint: 'Add campaign artifact before final gating.',
+    });
     return;
   }
 
+  const campaign = campaignRaw as CampaignArtifact;
+  if (typeof campaign.version !== 'string' || !campaign.version.trim()) {
+    addFailure({
+      id: 'content.levelspec.campaignShape',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: 'Campaign artifact should define a non-empty string version.',
+      hint: 'Set a version like "1.0.0".',
+    });
+  }
+  if (typeof campaign.generatedAt !== 'string' || !Date.parse(campaign.generatedAt)) {
+    addFailure({
+      id: 'content.levelspec.campaignShape',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: 'Campaign artifact should define a valid generatedAt timestamp.',
+      hint: 'Set generatedAt to an ISO string.',
+    });
+  }
+
+  const worldCount = typeof campaign.worldCount === 'number' ? campaign.worldCount : WORLD_EXPECTED_COUNT;
+  if (worldCount !== WORLD_EXPECTED_COUNT) {
+    addFailure({
+      id: 'content.levelspec.campaignShape',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: `campaign_25_levels.json worldCount should be ${WORLD_EXPECTED_COUNT}.`,
+      hint: 'Use the authored campaign with five worlds.',
+    });
+  }
+  if (!Array.isArray(campaign.levels)) {
+    addFailure({
+      id: 'content.levelspec.campaignShape',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: 'Campaign artifact must define a `levels` array.',
+      hint: 'Export 25 level entries from campaign_25_levels.json.',
+    });
+    return;
+  }
+  if (campaign.levels.length !== LEVEL_COUNT_EXPECTED) {
+    addFailure({
+      id: 'content.levelspec.campaignCount',
+      file: rel(CAMPAIGN_ARTIFACT_PATH),
+      line: 1,
+      message: `Campaign should have exactly ${LEVEL_COUNT_EXPECTED} levels, found ${campaign.levels.length}.`,
+      hint: 'Regenerate campaign artifact from level-spec pipeline after fixes.',
+    });
+  }
+
+  const chunkCatalogRaw = readJson(CHUNK_CATALOG_PATH);
+  if (!chunkCatalogRaw) {
+    addFailure({
+      id: 'content.levelspec.chunkCatalogMissing',
+      file: rel(CHUNK_CATALOG_PATH),
+      line: 1,
+      message: 'Missing required chunk catalog: docs/level_specs/chunk_catalog.json',
+      hint: 'Add chunk catalog before campaign validation.',
+    });
+    return;
+  }
+  const chunkCatalog = chunkCatalogRaw as ChunkCatalog;
+  if (!Array.isArray(chunkCatalog.entries)) {
+    addFailure({
+      id: 'content.levelspec.chunkCatalogShape',
+      file: rel(CHUNK_CATALOG_PATH),
+      line: 1,
+      message: 'chunk_catalog.json must include an `entries` array.',
+      hint: 'Populate chunk catalog entries for campaign validation.',
+    });
+    return;
+  }
+  const catalogById = new Map<string, ChunkTemplateRecord>();
+  for (const entry of chunkCatalog.entries as unknown[]) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const asObj = entry as Record<string, unknown>;
+    const id = typeof asObj.id === 'string' ? asObj.id : '';
+    if (!id) {
+      continue;
+    }
+    if (catalogById.has(id)) {
+      addFailure({
+        id: 'content.levelspec.chunkCatalogDup',
+        file: rel(CHUNK_CATALOG_PATH),
+        line: 1,
+        message: `chunk_catalog contains duplicate chunk id "${id}".`,
+        hint: 'Deduplicate chunk IDs and rerun generation.',
+      });
+    }
+    catalogById.set(id, {
+      id: asObj.id,
+      tags: asObj.tags,
+      recoveryAfter: asObj.recoveryAfter,
+      mechanicsIntroduced: asObj.mechanicsIntroduced,
+    });
+  }
+
+  const worldRulesRaw = readJson(WORLD_RULES_PATH);
+  if (!worldRulesRaw) {
+    addFailure({
+      id: 'content.levelspec.worldRulesMissing',
+      file: rel(WORLD_RULES_PATH),
+      line: 1,
+      message: 'Missing required level world rules: docs/level_specs/world_rules.json',
+      hint: 'Add world rules before campaign validation.',
+    });
+    return;
+  }
+  const worldRules = worldRulesRaw as WorldRulesArtifact;
+  if (!Array.isArray(worldRules.worlds)) {
+    addFailure({
+      id: 'content.levelspec.worldRulesShape',
+      file: rel(WORLD_RULES_PATH),
+      line: 1,
+      message: 'world_rules.json must define a `worlds` array for campaign validation.',
+      hint: 'Regenerate world_rules.json with all world contracts.',
+    });
+    return;
+  }
+  const worldRulesByWorld = new Map<number, WorldRule>();
+  for (const entry of worldRules.worlds as unknown[]) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const obj = entry as Record<string, unknown>;
+    const world = typeof obj.world === 'number' ? obj.world : NaN;
+    if (!Number.isFinite(world) || !Number.isInteger(world)) {
+      continue;
+    }
+    worldRulesByWorld.set(world, {
+      world: obj.world,
+      allowedChunkTags: obj.allowedChunkTags,
+      allowedHazardTags: obj.allowedHazardTags,
+      minRecoveryGap: obj.minRecoveryGap,
+      maxHazardClusters: obj.maxHazardClusters,
+      maxNewMechanicsPerChunk: obj.maxNewMechanicsPerChunk,
+    });
+  }
+
+  const seenLevels = new Set<string>();
+  let index = 0;
+  for (const rawLevel of campaign.levels as unknown[]) {
+    index += 1;
+    if (!rawLevel || typeof rawLevel !== 'object') {
+      addFailure({
+        id: 'content.levelspec.levelShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Campaign level entry #${index} is not a valid object.`,
+        hint: `Ensure each level has world, level, title, sequence, and hardRules fields.`,
+      });
+      continue;
+    }
+    const level = rawLevel as CampaignLevelSpec;
+
+    if (typeof level.world !== 'number' || !Number.isInteger(level.world) || level.world < 1 || level.world > WORLD_EXPECTED_COUNT) {
+      addFailure({
+        id: 'content.levelspec.levelWorldInvalid',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level entry #${index} has invalid world value ${String(level.world)}.`,
+        hint: 'Use world values from 1 to 5.',
+      });
+      continue;
+    }
+    if (typeof level.level !== 'number' || !Number.isInteger(level.level) || level.level < 1) {
+      addFailure({
+        id: 'content.levelspec.levelIndexInvalid',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level entry #${index} has invalid level value ${String(level.level)}.`,
+        hint: 'Use positive integer level numbers.',
+      });
+      continue;
+    }
+
+    const levelKey = `${level.world}-${level.level}`;
+    if (seenLevels.has(levelKey)) {
+      addFailure({
+        id: 'content.levelspec.levelDuplicate',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Duplicate campaign level key ${levelKey}.`,
+        hint: 'Ensure each world/level appears once.',
+      });
+    }
+    seenLevels.add(levelKey);
+
+    if (typeof level.title !== 'string' || !level.title.trim()) {
+      addFailure({
+        id: 'content.levelspec.levelTitleMissing',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} is missing a title.`,
+        hint: 'Set a non-empty title in each level.',
+      });
+    }
+
+    if (!Array.isArray(level.sequence)) {
+      addFailure({
+        id: 'content.levelspec.sequenceShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} sequence must be an array.`,
+        hint: 'Define sequence as six phase segments.',
+      });
+      continue;
+    }
+    if (level.sequence.length !== EXPECTED_PACE_SEQUENCE.length) {
+      addFailure({
+        id: 'content.levelspec.sequenceShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} sequence should contain ${EXPECTED_PACE_SEQUENCE.length} phases.`,
+        hint: `Include ${EXPECTED_PACE_SEQUENCE.join(' → ')} for every level.`,
+      });
+    }
+
+    const hardRules = level.hardRules ?? {};
+    const hardRuleObj = hardRules as Record<string, unknown>;
+    const maxNewMechanicsPerChunk =
+      typeof hardRuleObj.maxNewMechanicsPerChunk === 'number' ? Math.max(0, hardRuleObj.maxNewMechanicsPerChunk) : 1;
+    const minRecoveryGap = typeof hardRuleObj.minRecoveryGap === 'number' ? Math.max(0, hardRuleObj.minRecoveryGap) : 1;
+    const maxHazardClusters =
+      typeof hardRuleObj.maxHazardClusters === 'number' ? Math.max(0, hardRuleObj.maxHazardClusters) : 1;
+
+    if (typeof hardRuleObj.maxNewMechanicsPerChunk !== 'number' || hardRuleObj.maxNewMechanicsPerChunk < 0) {
+      addFailure({
+        id: 'content.levelspec.hardRuleShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} hardRules.maxNewMechanicsPerChunk must be a non-negative number.`,
+        hint: 'Set level hard-rules to valid limits.',
+      });
+    }
+    if (typeof hardRuleObj.minRecoveryGap !== 'number' || hardRuleObj.minRecoveryGap < 0) {
+      addFailure({
+        id: 'content.levelspec.hardRuleShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} hardRules.minRecoveryGap must be a non-negative number.`,
+        hint: 'Set a valid minimum recovery gap.',
+      });
+    }
+    if (typeof hardRuleObj.maxHazardClusters !== 'number' || hardRuleObj.maxHazardClusters < 0) {
+      addFailure({
+        id: 'content.levelspec.hardRuleShape',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} hardRules.maxHazardClusters must be a non-negative number.`,
+        hint: 'Set a valid hazard cluster limit.',
+      });
+    }
+
+    const worldRule = worldRulesByWorld.get(level.world);
+    if (!worldRule) {
+      addFailure({
+        id: 'content.levelspec.worldRulesMissing',
+        file: rel(WORLD_RULES_PATH),
+        line: 1,
+        message: `Missing world-level contract for world ${level.world}.`,
+        hint: `Add world ${level.world} constraints before campaign gating.`,
+      });
+      continue;
+    }
+
+    const chunkTagsRaw = worldRule.allowedChunkTags;
+    if (!Array.isArray(chunkTagsRaw)) {
+      addFailure({
+        id: 'content.levelspec.worldRulesShape',
+        file: rel(WORLD_RULES_PATH),
+        line: 1,
+        message: `World ${level.world} missing allowedChunkTags array.`,
+        hint: 'Add allowedChunkTags as a string array to world_rules.json.',
+      });
+    }
+    const hazardTagsRaw = worldRule.allowedHazardTags;
+    if (!Array.isArray(hazardTagsRaw)) {
+      addFailure({
+        id: 'content.levelspec.worldRulesShape',
+        file: rel(WORLD_RULES_PATH),
+        line: 1,
+        message: `World ${level.world} missing allowedHazardTags array.`,
+        hint: 'Add allowedHazardTags as a string array to world_rules.json.',
+      });
+    }
+
+    const allowedChunkTags = new Set((Array.isArray(chunkTagsRaw) ? chunkTagsRaw : WORLD_HAZARD_TAGS).map((tag) => String(tag)));
+    const hazardTags = new Set((Array.isArray(hazardTagsRaw) ? hazardTagsRaw : WORLD_HAZARD_TAGS).map((tag) => String(tag)));
+    const worldMinRecoveryGap =
+      typeof worldRule.minRecoveryGap === 'number' ? worldRule.minRecoveryGap : Number.NaN;
+    const worldMaxHazardClusters =
+      typeof worldRule.maxHazardClusters === 'number' ? worldRule.maxHazardClusters : Number.NaN;
+    const worldMaxNewMechanicsPerChunk =
+      typeof worldRule.maxNewMechanicsPerChunk === 'number' ? worldRule.maxNewMechanicsPerChunk : Number.NaN;
+
+    if (!Number.isFinite(worldMinRecoveryGap) || worldMinRecoveryGap > 0 && worldMinRecoveryGap !== minRecoveryGap) {
+      if (!Number.isFinite(worldMinRecoveryGap)) {
+        addFailure({
+          id: 'content.levelspec.worldRulesShape',
+          file: rel(WORLD_RULES_PATH),
+          line: 1,
+          message: `World ${level.world} rule minRecoveryGap is not a number.`,
+          hint: 'Set minRecoveryGap as a number in world_rules.json.',
+        });
+      } else {
+        addFailure({
+          id: 'content.levelspec.levelRecoveryMismatch',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} minRecoveryGap (${minRecoveryGap}) does not match world ${level.world} contract.`,
+          hint: `Match world rule minRecoveryGap: ${String(worldRule.minRecoveryGap)}.`,
+        });
+      }
+    }
+    if (!Number.isFinite(worldMaxHazardClusters) || worldMaxHazardClusters > 0 && worldMaxHazardClusters < maxHazardClusters) {
+      if (!Number.isFinite(worldMaxHazardClusters)) {
+        addFailure({
+          id: 'content.levelspec.worldRulesShape',
+          file: rel(WORLD_RULES_PATH),
+          line: 1,
+          message: `World ${level.world} rule maxHazardClusters is not a number.`,
+          hint: 'Set maxHazardClusters as a number in world_rules.json.',
+        });
+      } else {
+        addFailure({
+          id: 'content.levelspec.levelHazardMismatch',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} maxHazardClusters (${maxHazardClusters}) exceeds world ${level.world} contract.`,
+          hint: `Reduce maxHazardClusters to ≤ ${String(worldRule.maxHazardClusters)}.`,
+        });
+      }
+    }
+    if (!Number.isFinite(worldMaxNewMechanicsPerChunk)) {
+      addFailure({
+        id: 'content.levelspec.worldRulesShape',
+        file: rel(WORLD_RULES_PATH),
+        line: 1,
+        message: `World ${level.world} rule maxNewMechanicsPerChunk is not a number.`,
+        hint: 'Set maxNewMechanicsPerChunk as a number in world_rules.json.',
+      });
+    } else if (worldMaxNewMechanicsPerChunk < maxNewMechanicsPerChunk) {
+      addFailure({
+        id: 'content.levelspec.levelMechanicMismatch',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} maxNewMechanicsPerChunk (${maxNewMechanicsPerChunk}) exceeds world ${level.world} contract (${worldRule.maxNewMechanicsPerChunk}).`,
+        hint: `Reduce maxNewMechanicsPerChunk to ≤ ${String(worldRule.maxNewMechanicsPerChunk)}.`,
+      });
+    }
+
+    let sequenceValid = true;
+    for (let phaseIndex = 0; phaseIndex < EXPECTED_PACE_SEQUENCE.length; phaseIndex += 1) {
+      const expected = EXPECTED_PACE_SEQUENCE[phaseIndex];
+      const segment = level.sequence[phaseIndex];
+      if (!segment || typeof segment !== 'object') {
+        sequenceValid = false;
+        continue;
+      }
+      const seg = segment as CampaignSequenceItem;
+      if (typeof seg.phase !== 'string') {
+        addFailure({
+          id: 'content.levelspec.sequencePhase',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} segment ${phaseIndex} phase must be string.`,
+          hint: `Use ${EXPECTED_PACE_SEQUENCE.join(', ')} phase values.`,
+        });
+        sequenceValid = false;
+        continue;
+      }
+      if (seg.phase !== expected) {
+        addFailure({
+          id: 'content.levelspec.sequencePhase',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} has phase "${seg.phase}" at position ${phaseIndex}; expected "${expected}".`,
+          hint: `Use phase order ${EXPECTED_PACE_SEQUENCE.join(' → ')}.`,
+        });
+        sequenceValid = false;
+      }
+      if (!Array.isArray(seg.chunks) || seg.chunks.length === 0) {
+        addFailure({
+          id: 'content.levelspec.segmentChunkShape',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} segment ${expected} must include at least one chunk id.`,
+          hint: 'Add chunk ids for each phase segment.',
+        });
+        sequenceValid = false;
+      }
+    }
+
+    const seenMechanics = new Set<string>();
+    let openingNewMechanics = 0;
+    let hazardRun = 0;
+    let recoveryDebt = 0;
+    const allChunkIds: string[] = [];
+    for (const segment of level.sequence as unknown[]) {
+      if (!segment || typeof segment !== 'object') {
+        continue;
+      }
+      const seg = segment as CampaignSequenceItem;
+      const chunkIds = Array.isArray(seg.chunks) ? (seg.chunks as unknown[]) : [];
+      for (const chunkRaw of chunkIds) {
+        if (typeof chunkRaw !== 'string' || !chunkRaw.trim()) {
+          addFailure({
+            id: 'content.levelspec.chunkShape',
+            file: rel(CAMPAIGN_ARTIFACT_PATH),
+            line: 1,
+            message: `Level ${levelKey} contains non-string chunk id.`,
+            hint: 'Use string chunk ids from chunk_catalog.json.',
+          });
+          continue;
+        }
+        allChunkIds.push(chunkRaw);
+      }
+    }
+    if (allChunkIds.length < 3) {
+      addFailure({
+        id: 'content.levelspec.sequenceTooShort',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} has too few chunks (${allChunkIds.length}).`,
+        hint: 'Campaign chunks should be sufficiently long to support pacing.',
+      });
+    }
+
+    for (let chunkIndex = 0; chunkIndex < allChunkIds.length; chunkIndex += 1) {
+      const chunkId = allChunkIds[chunkIndex];
+      const chunk = catalogById.get(chunkId);
+      if (!chunk) {
+        addFailure({
+          id: 'content.levelspec.chunkUnknown',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} references unknown chunk "${chunkId}".`,
+          hint: 'Add chunk to chunk_catalog.json before using in campaign artifacts.',
+        });
+        continue;
+      }
+
+      const chunkTags = Array.isArray(chunk.tags) ? (chunk.tags as unknown[]) : [];
+      for (const rawTag of chunkTags) {
+        const tag = String(rawTag);
+        if (!allowedChunkTags.has(tag)) {
+          addFailure({
+            id: 'content.levelspec.chunkTagBlocked',
+            file: rel(CAMPAIGN_ARTIFACT_PATH),
+            line: 1,
+            message: `Level ${levelKey} chunk "${chunkId}" uses tag "${tag}" not allowed in world ${level.world}.`,
+            hint: `Add chunk tags to world ${level.world} rules or move chunk to a later world.`,
+          });
+        }
+      }
+
+      const isHazardChunk = chunkTags.some((rawTag) => hazardTags.has(String(rawTag)));
+      hazardRun = isHazardChunk ? hazardRun + 1 : 0;
+      if (isHazardChunk && hazardRun > maxHazardClusters) {
+        addFailure({
+          id: 'content.levelspec.hazardRun',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} has hazard run of ${hazardRun} chunks > maxHazardClusters=${maxHazardClusters} at "${chunkId}".`,
+          hint: `Reduce consecutive hazard chunks or increase level hard-rule maxHazardClusters.`,
+        });
+      }
+
+      const isRecoveryChunk = chunk.recoveryAfter === true;
+      if (recoveryDebt > 0 && isRecoveryChunk) {
+        recoveryDebt = 0;
+      } else if (recoveryDebt > 0 && !isRecoveryChunk) {
+        recoveryDebt -= 1;
+        if (recoveryDebt === 0) {
+          addFailure({
+            id: 'content.levelspec.recoveryGap',
+            file: rel(CAMPAIGN_ARTIFACT_PATH),
+            line: 1,
+            message: `Level ${levelKey} should include a recoveryAfter chunk within ${minRecoveryGap} chunk(s) after high-risk chunk "${chunkId}".`,
+            hint: 'Insert a recovery chunk (recoveryAfter: true) within the recovery window.',
+          });
+        }
+      }
+      if (isHazardChunk && minRecoveryGap > 0 && !isRecoveryChunk) {
+        recoveryDebt = Math.max(recoveryDebt, minRecoveryGap);
+      }
+
+      const mechanics = Array.isArray(chunk.mechanicsIntroduced) ? (chunk.mechanicsIntroduced as unknown[]) : [];
+      const newMechanics: string[] = [];
+      for (const rawMechanic of mechanics) {
+        const mechanic = String(rawMechanic);
+        if (!seenMechanics.has(mechanic)) {
+          newMechanics.push(mechanic);
+          seenMechanics.add(mechanic);
+        }
+      }
+      if (newMechanics.length > maxNewMechanicsPerChunk) {
+        addFailure({
+          id: 'content.levelspec.newMechanicOverrun',
+          file: rel(CAMPAIGN_ARTIFACT_PATH),
+          line: 1,
+          message: `Level ${levelKey} chunk "${chunkId}" introduces ${newMechanics.length} new mechanics (max ${maxNewMechanicsPerChunk}).`,
+          hint: `Split the chunk or reduce mechanics introduced for one chunk.`,
+        });
+      }
+
+      if (chunkIndex < 2) {
+        openingNewMechanics += newMechanics.length;
+      }
+    }
+
+    if (recoveryDebt > 0) {
+      addFailure({
+        id: 'content.levelspec.recoveryGap',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} should include a recoveryAfter chunk within ${minRecoveryGap} chunk(s) after a high-risk chunk before the level ends.`,
+        hint: 'Append or move a recovery chunk (`recoveryAfter: true`) earlier in sequence.',
+      });
+      recoveryDebt = 0;
+    }
+
+    if (sequenceValid && openingNewMechanics > 1) {
+      addFailure({
+        id: 'content.levelspec.openingMechanicSpike',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} introduces ${openingNewMechanics} new mechanics across first two chunks (limit 1).`,
+        hint: 'Keep opening pacing conservative.',
+      });
+    }
+  }
+}
+
+function validateAssetManifestImagesForProduction(): void {
   const manifestText = getSourceText(path.resolve(REPO_ROOT, 'src/core/assetManifest.ts'));
   const allowed = new Set(ASSET_POLICY.allowedSvgAssetKeysInProduction);
   const imageEntries = Object.entries(ASSET_MANIFEST.images);
@@ -244,7 +906,7 @@ function validateAssetManifestImagesForProduction(): void {
       id: 'content.assets.svgInProduction',
       file: rel(path.resolve(REPO_ROOT, 'src/core/assetManifest.ts')),
       line,
-      message: `Production check: image key "${key}" resolves to ${descriptor.path}`,
+      message: `Runtime manifest image key "${key}" resolves to ${descriptor.path}`,
       hint: `Either rasterize ${key} to PNG/JPG or add it to ASSET_POLICY.allowedSvgAssetKeysInProduction when migration-ready.`,
     });
   }
@@ -379,6 +1041,8 @@ function main(): number {
   validateChunkFamiliesInGenerator();
   validateRuntimeIdentifiers();
   validateHudFormattingRules();
+  validateWorldRulesJson();
+  validateCampaignAndChunkArtifacts();
 
   if (failures.length === 0) {
     console.log('Content validation passed.');

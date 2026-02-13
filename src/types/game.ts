@@ -1,4 +1,10 @@
-export type PlayerForm = 'small' | 'big';
+export type PlayerForm = 'small' | 'big' | 'gpu' | 'companion';
+
+export interface PlayerCombatState {
+  form: PlayerForm;
+  copilotActiveUntilMs?: number;
+  hasCompanionUntilMs?: number;
+}
 
 export type GameMode =
   | 'title'
@@ -30,10 +36,17 @@ export interface ProgressionState {
 
 export interface PlayerRuntimeState {
   form: PlayerForm;
+  combatState: PlayerCombatState;
   lives: number;
   hpTier: 1 | 2;
   invulnMsRemaining: number;
   checkpointId: string;
+}
+
+export interface PerLevelStats {
+  evalsCollected: number;
+  evalsCollectedIds: string[];
+  collectiblesPicked: string[];
 }
 
 export interface RuntimeEntityCounts {
@@ -71,8 +84,9 @@ export interface GameSettings {
 }
 
 export interface SaveGameV3 {
-  schemaVersion: 3;
+  schemaVersion: 4;
   campaign: CampaignState;
   progression: ProgressionState;
   settings: GameSettings;
+  perLevelStats: Record<string, PerLevelStats>;
 }

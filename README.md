@@ -32,6 +32,23 @@ npm test
 npm run build
 ```
 
+Run all required gates in strict order with one command:
+
+```bash
+npm run ci:gates
+```
+
+Run all gates and persist per-gate JSONL telemetry:
+
+```bash
+npm run ci:gates:log
+```
+
+## Clone-feel readiness
+- Contract: `docs/clone_feel_contract.md`
+- Playfeel validation test: `npm run test -- tests/quality.playfeel.test.ts`
+- Status log: `docs/clone_readiness_status.md`
+
 ## Asset Generation Commands
 ```bash
 npm run gen:assets

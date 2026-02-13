@@ -7,6 +7,7 @@ import styleConfig, { stylePalette } from '../style/styleConfig';
 import { campaignOrdinal, campaignRefFromOrdinal, levelKey } from '../systems/progression';
 import { WORLD_NAMES } from '../levelgen/worldRules';
 import { isLevelUnlocked, persistSave, setCurrentLevel } from '../systems/save';
+import { transitionToScene } from './sceneFlow';
 
 interface MapNode {
   key: string;
@@ -205,6 +206,7 @@ export class WorldMapScene extends Phaser.Scene {
     root.sceneReadyFrame = -1;
     root.sceneFrame = this.game.loop.frame;
     root.sceneReadyCounter = 0;
+    root.sceneReadyVersion = styleConfig.contractVersion;
 
     const onPostUpdate = (): void => {
       root.sceneName = this.scene.key;
@@ -269,11 +271,11 @@ export class WorldMapScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-ESC', () => {
       audio.playSfx('menu_confirm');
-      this.scene.start('TitleScene');
+      transitionToScene(this, 'TitleScene');
     });
     this.input.keyboard?.on('keydown-S', () => {
       audio.playSfx('menu_confirm');
-      this.scene.start('SettingsScene', { backScene: 'WorldMapScene' });
+      transitionToScene(this, 'SettingsScene', { backScene: 'WorldMapScene' }, { durationMs: 160 });
     });
     this.input.keyboard?.on('keydown-ENTER', () => {
       const selected = campaignRefFromOrdinal(this.selectedOrdinal);
@@ -284,7 +286,7 @@ export class WorldMapScene extends Phaser.Scene {
       audio.playSfx('menu_confirm');
       runtimeStore.save = setCurrentLevel(runtimeStore.save, selected.world, selected.levelIndex);
       persistSave(runtimeStore.save);
-      this.scene.start('PlayScene', { bonus: false });
+      transitionToScene(this, 'PlayScene', { bonus: false });
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

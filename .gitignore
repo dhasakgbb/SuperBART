@@ -24,6 +24,9 @@ __pycache__/
 output/playwright/
 playwright-report/
 
+# Gate logs
+artifacts/
+
 # Local env
 .env
 .env.*

@@ -1,0 +1,247 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-02-13T00:00:00.000Z",
+  "worldCount": 5,
+  "worlds": [
+    {
+      "world": 1,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 1,
+      "maxHazardClusters": 1,
+      "guidanceWindow": 2,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "COIN_STAIR",
+        "COIN_ARCH",
+        "COIN_RAIL",
+        "COIN_REWARD",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_LOW",
+        "FLYER_DRIFT"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_LOW"
+      ],
+      "hazardMix": {
+        "spike": 0.65,
+        "flying": 0.2,
+        "thwomp": 0.15
+      },
+      "enemyMix": {
+        "walker": 0.82,
+        "shell": 0.18,
+        "flying": 0,
+        "thwomp": 0
+      },
+      "modifiers": {
+        "speedMultiplier": 1,
+        "gravityMultiplier": 1,
+        "tokenBurnRate": 1
+      }
+    },
+    {
+      "world": 2,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 1,
+      "maxHazardClusters": 2,
+      "guidanceWindow": 2,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "COIN_STAIR",
+        "COIN_ARCH",
+        "COIN_RAIL",
+        "COIN_REWARD",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_LOW",
+        "SPIKE_SWEEP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_LOW",
+        "SPIKE_SWEEP"
+      ],
+      "hazardMix": {
+        "spike": 0.74,
+        "flying": 0.18,
+        "thwomp": 0.08
+      },
+      "enemyMix": {
+        "walker": 0.8,
+        "shell": 0.1,
+        "flying": 0.1,
+        "thwomp": 0
+      },
+      "modifiers": {
+        "speedMultiplier": 1.08,
+        "gravityMultiplier": 1,
+        "tokenBurnRate": 1
+      }
+    },
+    {
+      "world": 3,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 1,
+      "maxHazardClusters": 2,
+      "guidanceWindow": 2,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "COIN_STAIR",
+        "COIN_ARCH",
+        "COIN_REWARD",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_LOW",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_LOW",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP"
+      ],
+      "hazardMix": {
+        "spike": 0.55,
+        "flying": 0.2,
+        "thwomp": 0.25
+      },
+      "enemyMix": {
+        "walker": 0.65,
+        "shell": 0.15,
+        "flying": 0.2,
+        "thwomp": 0
+      },
+      "modifiers": {
+        "speedMultiplier": 1,
+        "gravityMultiplier": 1,
+        "tokenBurnRate": 1
+      }
+    },
+    {
+      "world": 4,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 2,
+      "maxHazardClusters": 2,
+      "guidanceWindow": 2,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "COIN_STAIR",
+        "COIN_ARCH",
+        "COIN_RAIL",
+        "COIN_REWARD",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_LOW",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_LOW",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP"
+      ],
+      "hazardMix": {
+        "spike": 0.46,
+        "flying": 0.36,
+        "thwomp": 0.18
+      },
+      "enemyMix": {
+        "walker": 0.55,
+        "shell": 0.2,
+        "flying": 0.25,
+        "thwomp": 0
+      },
+      "modifiers": {
+        "speedMultiplier": 1.03,
+        "gravityMultiplier": 1.15,
+        "tokenBurnRate": 1.2
+      }
+    },
+    {
+      "world": 5,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 2,
+      "maxHazardClusters": 3,
+      "guidanceWindow": 3,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_SWEEP",
+        "THWOMP_DROP"
+      ],
+      "hazardMix": {
+        "spike": 0.35,
+        "flying": 0.35,
+        "thwomp": 0.3
+      },
+      "enemyMix": {
+        "walker": 0.45,
+        "shell": 0.25,
+        "flying": 0.25,
+        "thwomp": 0.05
+      },
+      "modifiers": {
+        "speedMultiplier": 1.08,
+        "gravityMultiplier": 1.25,
+        "tokenBurnRate": 1.3
+      }
+    }
+  ]
+}

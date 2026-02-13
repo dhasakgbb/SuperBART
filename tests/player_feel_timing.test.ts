@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { createFeelState, stepMovement } from '../src/player/movement';
+import { measureJumpCutReapplication } from './helpers/movementAcceptance';
+import {
+  stepMovement,
+  createFeelState,
+} from '../src/player/movement';
 
 describe('player feel timing', () => {
   test('jump buffer triggers shortly after landing', () => {
@@ -44,5 +48,20 @@ describe('player feel timing', () => {
     });
 
     expect(out.vy).toBeGreaterThan(-280);
+  });
+
+  test('jump-cut remains one-shot in a single air arc', () => {
+    const result = measureJumpCutReapplication({
+      dtMs: 16,
+      inputX: 0,
+      holdForFrames: 1,
+      firstReleaseFrames: 3,
+      rePressFrames: 2,
+      secondReleaseFrames: 4,
+    });
+
+    expect(result.cutCount).toBe(1);
+    expect(result.firstCutFrame).toBe(0);
+    expect(result.secondCutFrame).toBeNull();
   });
 });

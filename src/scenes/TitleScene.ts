@@ -3,6 +3,7 @@ import { AudioEngine } from '../audio/AudioEngine';
 import styleConfig, { stylePalette } from '../style/styleConfig';
 import { loadSave, persistSave } from '../systems/save';
 import { runtimeStore } from '../core/runtime';
+import { transitionToScene } from './sceneFlow';
 
 function hexToInt(hex: string): number {
   return Phaser.Display.Color.HexStringToColor(hex).color;
@@ -31,10 +32,11 @@ export class TitleScene extends Phaser.Scene {
     root.sceneReadyFrame = -1;
     root.sceneFrame = this.game.loop.frame;
     root.sceneReadyCounter = 0;
+    root.sceneReadyVersion = styleConfig.contractVersion;
 
     const onPostUpdate = (): void => {
-      root.sceneName = this.scene.key;
-      root.sceneFrame = this.game.loop.frame;
+    root.sceneName = this.scene.key;
+    root.sceneFrame = this.game.loop.frame;
       const stableCounter = Number(root.sceneReadyCounter ?? 0) + 1;
       root.sceneReadyCounter = stableCounter;
       if (stableCounter >= this.sceneReadyStableFrames) {
@@ -125,7 +127,7 @@ export class TitleScene extends Phaser.Scene {
     const goLevelSelect = (): void => {
       audio.unlockFromUserGesture();
       audio.playSfx('menu_confirm');
-      this.scene.start('WorldMapScene');
+      transitionToScene(this, 'WorldMapScene');
     };
 
     this.input.keyboard?.on('keydown-ENTER', () => {
@@ -152,13 +154,13 @@ export class TitleScene extends Phaser.Scene {
         }
       };
       persistSave(runtimeStore.save);
-      this.scene.start('WorldMapScene');
+      transitionToScene(this, 'WorldMapScene');
     });
 
     this.input.keyboard?.on('keydown-S', () => {
       audio.unlockFromUserGesture();
       audio.playSfx('menu_move');
-      this.scene.start('SettingsScene', { backScene: 'TitleScene' });
+      transitionToScene(this, 'SettingsScene', { backScene: 'TitleScene' }, { durationMs: 160 });
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -269,12 +271,12 @@ export class TitleScene extends Phaser.Scene {
     const coinGlows = [];
     for (let i = 0; i < titleLayout.attract.coinLine.count; i += 1) {
       const x = titleLayout.attract.coinLine.startX + i * titleLayout.attract.coinLine.spacingPx;
-      const coin = this.add
-        .image(x, titleLayout.attract.coinLine.y, 'coin')
+      const token = this.add
+        .image(x, titleLayout.attract.coinLine.y, 'pickup_token')
         .setScale(titleLayout.attract.coinLine.scale)
         .setDepth(-98);
       const glow = this.add
-        .image(x, titleLayout.attract.coinLine.y, 'coin')
+        .image(x, titleLayout.attract.coinLine.y, 'pickup_token')
         .setScale(titleLayout.attract.coinLine.scale + 0.25)
         .setTint(palette('bloomWarm'))
         .setAlpha(styleConfig.bloom.strength * 0.42)
@@ -283,7 +285,7 @@ export class TitleScene extends Phaser.Scene {
       coinGlows.push(glow);
 
       this.tweens.add({
-        targets: [coin, glow],
+        targets: [token, glow],
         y: titleLayout.attract.coinLine.y - tileStep / 2,
         duration: titleLayout.attract.coinLine.shimmerMs + i * 80,
         ease: 'Sine.easeInOut',

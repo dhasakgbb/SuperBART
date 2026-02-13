@@ -7,17 +7,31 @@ import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
 import { getWorldRules } from '../levelgen/worldRules';
 import { resolvePlayerDamage } from '../player/powerup';
-import { createFeelState, DEFAULT_WORLD_MODIFIERS, stepMovement, type WorldModifiers } from '../player/movement';
+import {
+  createFeelState,
+  DEFAULT_WORLD_MODIFIERS,
+  stepMovement,
+  type MotionHint,
+  type WorldModifiers,
+} from '../player/movement';
 import { PlayerAnimator } from '../player/PlayerAnimator';
 import { createDustPuff, type DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
 import { renderGameplayBackground } from '../rendering/parallax';
-import styleConfig from '../style/styleConfig';
+import styleConfig, { stylePalette } from '../style/styleConfig';
 import { computeSeed } from '../systems/progression';
 import { persistSave } from '../systems/save';
 import type { PlayerForm, SuperBartRuntimeState } from '../types/game';
 import { createHud, renderHud, updateHudPosition, type HudRefs } from '../ui/hud';
 import { SCENE_TEXT } from '../content/contentManifest';
+import { transitionToScene } from './sceneFlow';
+
+type StompHitstopTelemetry = {
+  lastAppliedStompAtFrame: number;
+  lastAppliedMs: number;
+  currentlyPaused: boolean;
+  history: Array<{ frame: number; appliedMs: number; paused: boolean; resumed: boolean }>;
+};
 
 export class PlayScene extends Phaser.Scene {
   private levelBonus = false;
@@ -51,6 +65,13 @@ export class PlayScene extends Phaser.Scene {
   private feel = createFeelState();
   private levelTimeMs = 0;
   private jumpHeldLast = false;
+  private runHeld = false;
+  private stompHitstop?: Phaser.Time.TimerEvent;
+  private stompHitstopHistory: Array<{ frame: number; appliedMs: number; paused: boolean; resumed: boolean }> = [];
+  private lastAppliedStompAtFrame = -1;
+  private readonly maxStompHitstopHistory = 12;
+  private lastStompFrame = -1;
+  private lastStompHitMs = -Number.MAX_SAFE_INTEGER;
 
   private playerHead!: Phaser.GameObjects.Sprite;
   private animator!: PlayerAnimator;
@@ -143,15 +164,15 @@ export class PlayScene extends Phaser.Scene {
       if (e.type === 'spawn') {
         spawn = { x: e.x, y: e.y };
       } else if (e.type === 'coin') {
-        const coin = this.coins.create(e.x, e.y, 'coin') as Phaser.Physics.Arcade.Sprite;
+        const coin = this.coins.create(e.x, e.y, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
         coin.setScale(actorScale.coin).setDepth(28);
         coin.refreshBody();
-        this.attachCollectibleGlow(coin, 'coin');
+        this.attachCollectibleGlow(coin, 'pickup_token');
       } else if (e.type === 'star') {
-        const star = this.stars.create(e.x, e.y, 'star') as Phaser.Physics.Arcade.Sprite;
+        const star = this.stars.create(e.x, e.y, 'pickup_eval') as Phaser.Physics.Arcade.Sprite;
         star.setScale(actorScale.star).setDepth(28);
         star.refreshBody();
-        this.attachCollectibleGlow(star, 'coin');
+        this.attachCollectibleGlow(star, 'pickup_eval');
       } else if (e.type === 'question_block') {
         const qb = this.questionBlocks.create(e.x, e.y, 'question_block') as Phaser.Physics.Arcade.Sprite;
         qb.setScale(actorScale.questionBlock).setDepth(26);
@@ -187,7 +208,8 @@ export class PlayScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(spawn.x, spawn.y, bodyKey, 0);
     this.player.setCollideWorldBounds(true);
     this.player.setScale(actorScale.player).setDepth(36);
-    this.player.body.setMaxVelocity(PLAYER_CONSTANTS.maxSpeed, PLAYER_CONSTANTS.maxFallSpeed);
+    const maxRunSpeed = PLAYER_CONSTANTS.maxSpeed * PLAYER_CONSTANTS.runSpeedMultiplier * this.worldModifiers.speedMultiplier;
+    this.player.body.setMaxVelocity(maxRunSpeed, PLAYER_CONSTANTS.maxFallSpeed);
     const bodyH = this.playerForm === 'big' ? 30 : 22;
     this.player.body.setSize(12, bodyH).setOffset(2, 1);
 
@@ -250,7 +272,7 @@ export class PlayScene extends Phaser.Scene {
       this.checkpointXY = { x: cp.x, y: cp.y - 20 };
       cp.setTint(0x76ff03);
       if (prevId !== this.checkpointId) {
-        this.showPopUpText(cp.x, cp.y - 24, SCENE_TEXT.gameplay.checkpointSaved);
+        this.showHudToast(SCENE_TEXT.gameplay.checkpointSaved);
       }
     });
 
@@ -281,26 +303,41 @@ export class PlayScene extends Phaser.Scene {
       if (!target) return;
       const result = target.onPlayerCollision(p);
       if (result === 'stomp') {
-        if (p.body.velocity.y > 0) {
-          p.setVelocityY(-220);
-        }
-        if (target.kind === 'shell' && Math.abs(target.sprite.body.velocity.x) >= 150) {
-          this.playSfx('shell');
-        }
-        if (target.kind !== 'shell' || (target.kind === 'shell' && target.sprite.body.velocity.x === 0)) {
-          if (target.kind !== 'shell' || target.sprite.texture.key !== 'enemy_shell_retracted') {
-            target.sprite.disableBody(true, true);
+        const stompFrame = this.game.loop.frame;
+        const shouldProcessStomp = this.lastStompFrame !== stompFrame;
+        if (shouldProcessStomp) {
+          this.lastStompFrame = stompFrame;
+          const canProcessStomp = this.time.now - this.lastStompHitMs >= PLAYER_CONSTANTS.stompCooldownMs;
+          const shouldBouncePlayer = p.body.velocity.y > 0;
+          const targetBody = target.sprite.body as Phaser.Physics.Arcade.Body;
+
+          if (p.body.velocity.y > 0) {
+            p.setVelocityY(-220);
+          }
+
+          const isShell = target.kind === 'shell';
+          const shellIsMoving = isShell && Math.abs(targetBody.velocity.x) >= 150;
+          if (!isShell || targetBody.velocity.x === 0) {
+            if (target.kind !== 'shell' || target.sprite.texture.key !== 'enemy_shell_retracted') {
+              target.sprite.disableBody(true, true);
+            }
+          }
+
+          if (canProcessStomp) {
+            runtimeStore.save.progression.score += SCORE_VALUES.stomp;
+            this.playSfx('stomp');
+            this.showHudToast(SCENE_TEXT.gameplay.correctedSuffix);
+            this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+            this.triggerStompHitstop();
+            if (shouldBouncePlayer && runtimeStore.save.settings.screenShakeEnabled) {
+              this.cameras.main.shake(45, 0.002);
+            }
+            this.lastStompHitMs = this.time.now;
+            if (shellIsMoving) {
+              this.playSfx('shell');
+            }
           }
         }
-        runtimeStore.save.progression.score += SCORE_VALUES.stomp;
-        this.playSfx('stomp');
-        this.showPopUpText(
-          target.sprite.x,
-          target.sprite.y - 16,
-          `${target.displayName} ${SCENE_TEXT.gameplay.correctedSuffix}`
-        );
-        this.physics.world.pause();
-        this.time.delayedCall(PLAYER_CONSTANTS.hitstopMs, () => this.physics.world.resume());
       } else {
         this.damagePlayer('enemy');
       }
@@ -318,6 +355,7 @@ export class PlayScene extends Phaser.Scene {
       d: Phaser.Input.Keyboard.KeyCodes.D,
       up: Phaser.Input.Keyboard.KeyCodes.UP,
       w: Phaser.Input.Keyboard.KeyCodes.W,
+      shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       r: Phaser.Input.Keyboard.KeyCodes.R,
       esc: Phaser.Input.Keyboard.KeyCodes.ESC,
@@ -341,12 +379,15 @@ export class PlayScene extends Phaser.Scene {
   private registerDebugHooks(): void {
     const root = (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ ?? {};
     root.getState = () => this.getRuntimeState();
+    root.getStateWithDebug = () => this.getRuntimeStateWithDebug();
+    root.stompHitstopTelemetry = this.getStompHitstopTelemetry();
     root.scene = this;
     root.sceneName = this.scene.key;
     root.sceneReady = false;
     root.sceneReadyFrame = -1;
     root.sceneFrame = this.game.loop.frame;
     root.sceneReadyCounter = 0;
+    root.sceneReadyVersion = styleConfig.contractVersion;
     (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = root;
 
     (window as Window & { render_game_to_text?: () => string }).render_game_to_text = () => JSON.stringify(this.getRuntimeState());
@@ -369,6 +410,7 @@ export class PlayScene extends Phaser.Scene {
     const onPostUpdate = (): void => {
       root.sceneName = this.scene.key;
       root.sceneFrame = this.game.loop.frame;
+      root.stompHitstopTelemetry = this.getStompHitstopTelemetry();
       const stableCounter = Number(root.sceneReadyCounter ?? 0) + 1;
       root.sceneReadyCounter = stableCounter;
       if (stableCounter >= 2 && !root.sceneReady) {
@@ -381,6 +423,10 @@ export class PlayScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
+      this.stompHitstop?.remove();
+      if (this.physics?.world?.isPaused) {
+        this.physics.world.resume();
+      }
     });
   }
 
@@ -402,10 +448,10 @@ export class PlayScene extends Phaser.Scene {
     for (let i = 0; i < showcase.coinLine.count; i += 1) {
       const coinX = spawn.x + showcase.coinLine.startX + i * showcase.coinLine.spacingPx;
       const coinY = spawn.y + showcase.coinLine.yOffset;
-      const coin = this.coins.create(coinX, coinY, 'coin') as Phaser.Physics.Arcade.Sprite;
+      const coin = this.coins.create(coinX, coinY, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
       coin.setScale(actorScale.coin).setDepth(28);
       coin.refreshBody();
-      this.attachCollectibleGlow(coin, 'coin');
+      this.attachCollectibleGlow(coin, 'pickup_token');
     }
 
     const walker = spawnEnemy(
@@ -451,7 +497,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     // Spawn coin reward that pops out the top
-    const rewardCoin = this.add.image(block.x, block.y - 20, 'coin')
+    const rewardCoin = this.add.image(block.x, block.y - 20, 'pickup_token')
       .setScale(styleConfig.gameplayLayout.actorScale.coin)
       .setDepth(30);
     this.tweens.add({
@@ -504,6 +550,13 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  private getRuntimeStateWithDebug(): SuperBartRuntimeState & { stompHitstopTelemetry: StompHitstopTelemetry } {
+    return {
+      ...this.getRuntimeState(),
+      stompHitstopTelemetry: this.getStompHitstopTelemetry(),
+    };
+  }
+
   private updateEntityCounts(): void {
     const enemies = this.enemyHandles.filter((e) => e.sprite.active);
     runtimeStore.entityCounts.walkers = enemies.filter((e) => e.kind === 'walker').length;
@@ -530,19 +583,59 @@ export class PlayScene extends Phaser.Scene {
     this.audio.playSfx(keyMap[kind]);
   }
 
-  private showPopUpText(x: number, y: number, message: string): void {
-    const popup = this.add.text(x, y, message, {
-      fontSize: '12px',
-      color: '#ffe082',
-      fontFamily: 'monospace',
-      stroke: '#000000',
-      strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(90);
+  private triggerStompHitstop(): void {
+    if (!this.physics?.world || this.physics.world.isPaused) {
+      return;
+    }
+    const record = {
+      frame: this.game.loop.frame,
+      appliedMs: PLAYER_CONSTANTS.stompHitstopMs,
+      paused: true,
+      resumed: false,
+    };
+    this.lastAppliedStompAtFrame = record.frame;
+    this.stompHitstopHistory.push(record);
+    if (this.stompHitstopHistory.length > this.maxStompHitstopHistory) {
+      this.stompHitstopHistory.shift();
+    }
+
+    this.physics.world.pause();
+    this.stompHitstop?.remove();
+    this.stompHitstop = this.time.delayedCall(PLAYER_CONSTANTS.stompHitstopMs, () => {
+      if (this.physics?.world?.isPaused) {
+        this.physics.world.resume();
+        record.resumed = true;
+      }
+    });
+  }
+
+  private getStompHitstopTelemetry(): StompHitstopTelemetry {
+    const isWorldPaused = Boolean(this.physics?.world?.isPaused);
+    return {
+      lastAppliedStompAtFrame: this.lastAppliedStompAtFrame,
+      lastAppliedMs: PLAYER_CONSTANTS.stompHitstopMs,
+      currentlyPaused: isWorldPaused && this.stompHitstop != null,
+      history: [...this.stompHitstopHistory],
+    };
+  }
+
+  private showHudToast(message: string): void {
+    const uiScale = 1 / Math.max(1, this.cameras.main.zoom);
+    const popup = this.add.bitmapText(
+      this.cameras.main.width / 2,
+      38 * uiScale,
+      styleConfig.typography.fontKey,
+      message,
+      styleConfig.hudLayout.leftGroup.fontSizePx,
+    ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(90);
+    popup.setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color);
+    popup.setScale(uiScale);
+    popup.setLetterSpacing(styleConfig.hudLayout.leftGroup.letterSpacingPx);
     this.tweens.add({
       targets: popup,
-      y: y - 28,
+      y: popup.y - 20 * uiScale,
       alpha: 0,
-      duration: 800,
+      duration: 950,
       ease: 'Quad.easeOut',
       onComplete: () => popup.destroy(),
     });
@@ -576,7 +669,7 @@ export class PlayScene extends Phaser.Scene {
       this.animator.triggerDead();
       runtimeStore.mode = 'game_over';
       persistSave(runtimeStore.save);
-      this.scene.start('GameOverScene');
+      transitionToScene(this, 'GameOverScene');
       return;
     }
 
@@ -586,12 +679,11 @@ export class PlayScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.clearTint();
 
-    if (reason === 'pit') {
-      this.showPopUpText(this.player.x, this.player.y - 30, SCENE_TEXT.gameplay.contextWindowExceeded);
-      if (runtimeStore.save.settings.screenShakeEnabled) {
-        this.cameras.main.shake(190, 0.004);
+      if (reason === 'pit') {
+        if (runtimeStore.save.settings.screenShakeEnabled) {
+          this.cameras.main.shake(190, 0.004);
+        }
       }
-    }
   }
 
   private switchPlayerForm(form: PlayerForm): void {
@@ -618,7 +710,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.save.progression.timeMs += this.levelTimeMs;
     persistSave(runtimeStore.save);
     this.audio.stopMusic();
-    this.scene.start('LevelCompleteScene', {
+    transitionToScene(this, 'LevelCompleteScene', {
       stats: {
         timeSec: Math.floor(this.levelTimeMs / 1000),
         coins: runtimeStore.save.progression.coins,
@@ -701,6 +793,7 @@ export class PlayScene extends Phaser.Scene {
     const right = this.keys.right.isDown || this.keys.d.isDown;
     const jumpHeld = this.keys.space.isDown || this.keys.up.isDown || this.keys.w.isDown;
     const jumpPressed = jumpHeld && !this.jumpHeldLast;
+    this.runHeld = this.keys.shift.isDown;
 
     const step = stepMovement({
       dtMs: Math.min(40, delta),
@@ -709,6 +802,7 @@ export class PlayScene extends Phaser.Scene {
       inputX: left === right ? 0 : left ? -1 : 1,
       jumpPressed,
       jumpHeld,
+      runHeld: this.runHeld,
       onGround: this.player.body.blocked.down || this.player.body.touching.down,
       feel: this.feel
     }, this.worldModifiers);
@@ -731,6 +825,7 @@ export class PlayScene extends Phaser.Scene {
       onGround,
       wasOnGround: this.wasOnGround,
       jumped: step.jumped,
+      motionState: step.motionHint,
       form: this.playerForm,
     }, Math.min(40, delta));
     this.wasOnGround = onGround;

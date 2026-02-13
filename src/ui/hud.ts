@@ -4,10 +4,10 @@ import styleConfig, { stylePalette } from '../style/styleConfig';
 
 export interface HudRefs {
   leftText: Phaser.GameObjects.BitmapText;
-  starIcon: Phaser.GameObjects.Image;
-  starText: Phaser.GameObjects.BitmapText;
-  coinIcon: Phaser.GameObjects.Image;
-  coinText: Phaser.GameObjects.BitmapText;
+  evalIcon: Phaser.GameObjects.Image;
+  evalText: Phaser.GameObjects.BitmapText;
+  tokenIcon: Phaser.GameObjects.Image;
+  tokenText: Phaser.GameObjects.BitmapText;
   rightText: Phaser.GameObjects.BitmapText;
   portrait: Phaser.GameObjects.Image;
 }
@@ -21,7 +21,7 @@ export function createHud(scene: Phaser.Scene): HudRefs {
   const hudScale = 1 / Math.max(1, scene.cameras.main.zoom);
   const icons = hud.leftGroupIcons;
 
-  const portrait = scene.add.image(0, 0, 'bart_portrait_96')
+  const portrait = scene.add.image(0, 0, hud.portrait.texture)
     .setOrigin(0, 0)
     .setDepth(2000)
     .setScale(hud.portrait.scale * hudScale);
@@ -33,33 +33,33 @@ export function createHud(scene: Phaser.Scene): HudRefs {
   leftText.setScale(hudScale);
   leftText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
 
-  const starIcon = scene.add
-    .image(0, 0, 'star')
+  const evalIcon = scene.add
+    .image(0, 0, icons.star.texture)
     .setOrigin(0, 0)
     .setDepth(2001)
     .setScale(icons.star.scale);
-  setDefaultTint(starIcon);
+  setDefaultTint(evalIcon);
 
-  const starText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.leftGroup.fontSizePx)
+  const evalText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.leftGroup.fontSizePx)
     .setOrigin(0, 0)
     .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color)
     .setDepth(2000);
-  starText.setScale(hudScale);
-  starText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
+  evalText.setScale(hudScale);
+  evalText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
 
-  const coinIcon = scene.add
-    .image(0, 0, 'coin')
+  const tokenIcon = scene.add
+    .image(0, 0, icons.coin.texture)
     .setOrigin(0, 0)
     .setDepth(2001)
     .setScale(icons.coin.scale);
-  setDefaultTint(coinIcon);
+  setDefaultTint(tokenIcon);
 
-  const coinText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.leftGroup.fontSizePx)
+  const tokenText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.leftGroup.fontSizePx)
     .setOrigin(0, 0)
     .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color)
     .setDepth(2000);
-  coinText.setScale(hudScale);
-  coinText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
+  tokenText.setScale(hudScale);
+  tokenText.setLetterSpacing(hud.leftGroup.letterSpacingPx);
 
   const rightText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.rightGroup.fontSizePx)
     .setOrigin(1, 0)
@@ -68,7 +68,7 @@ export function createHud(scene: Phaser.Scene): HudRefs {
   rightText.setScale(hudScale);
   rightText.setLetterSpacing(hud.rightGroup.letterSpacingPx);
 
-  return { leftText, starIcon, starText, coinIcon, coinText, rightText, portrait };
+  return { leftText, evalIcon, evalText, tokenIcon, tokenText, rightText, portrait };
 }
 
 /** Reposition HUD elements relative to camera worldView each frame. */
@@ -78,19 +78,19 @@ export function updateHudPosition(hud: HudRefs, cam: Phaser.Cameras.Scene2D.Came
 
   hud.portrait.setPosition(wv.x + hLayout.portrait.x / cam.zoom, wv.y + hLayout.portrait.y / cam.zoom);
   hud.leftText.setPosition(wv.x + hLayout.leftGroup.x / cam.zoom, wv.y + hLayout.leftGroup.y / cam.zoom);
-  hud.starIcon.setPosition(
+  hud.evalIcon.setPosition(
     wv.x + hLayout.leftGroupIcons.star.x / cam.zoom,
     wv.y + hLayout.leftGroupIcons.star.y / cam.zoom,
   );
-  hud.starText.setPosition(
+  hud.evalText.setPosition(
     wv.x + (hLayout.leftGroupIcons.star.x + 15) / cam.zoom,
     wv.y + hLayout.leftGroupIcons.star.y / cam.zoom,
   );
-  hud.coinIcon.setPosition(
+  hud.tokenIcon.setPosition(
     wv.x + hLayout.leftGroupIcons.coin.x / cam.zoom,
     wv.y + hLayout.leftGroupIcons.coin.y / cam.zoom,
   );
-  hud.coinText.setPosition(
+  hud.tokenText.setPosition(
     wv.x + (hLayout.leftGroupIcons.coin.x + 15) / cam.zoom,
     wv.y + hLayout.leftGroupIcons.coin.y / cam.zoom,
   );
@@ -112,15 +112,16 @@ export function renderHud(hud: HudRefs, payload: {
   const evals = String(payload.stars).padStart(3, '0');
   const tokens = String(payload.coins).padStart(3, '0');
   const time = String(payload.timeSec).padStart(hudLayout.timeDigits, '0');
+  const tokenMultiplier = HUD_CONTRACT.leftBlock.iconMultiplierGlyph || 'x';
 
   hud.leftText.setText(hudLayout.leftGroup.textFormat.replace('{instances}', instances));
-  hud.starText.setText(evals);
-  hud.coinText.setText(`x${tokens}`);
+  hud.evalText.setText(evals);
+  hud.tokenText.setText(`${tokenMultiplier}${tokens}`);
   hud.rightText.setText(
     hudLayout.rightGroup.textFormat
       .replace('{world}', String(payload.world))
       .replace('{level}', String(payload.level))
       .replace('{time}', time),
   );
-  hud.portrait.setTexture('bart_portrait_96');
+  hud.portrait.setTexture(hudLayout.portrait.texture);
 }

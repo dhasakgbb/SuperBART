@@ -8,15 +8,25 @@ export const PLAYER_CONSTANTS = {
   runAcceleration: 1900,
   runDrag: 1600,
   maxSpeed: 210,
+  runSpeedMultiplier: 1.38,
+  jumpCutWindowMs: 90,
+  runTransitionMs: 120,
+  skidThresholdPxPerSec: 120,
+  skidDurationMs: 96,
+  // 1-2 frames at 60Hz for a tight stomp impact beat.
+  stompHitstopMs: 32,
   jumpVelocity: -420,
   jumpCutMultiplier: 0.52,
+  airControlMultiplier: 0.62,
+  airDragMultiplier: 0.45,
   gravityY: 980,
   coyoteMs: 100,
   jumpBufferMs: 100,
   invulnMs: 1200,
   knockbackX: 180,
   knockbackY: -220,
-  hitstopMs: 50,
+  hitstopMs: 24,
+  stompCooldownMs: 120,
   maxFallSpeed: 650
 } as const;
 

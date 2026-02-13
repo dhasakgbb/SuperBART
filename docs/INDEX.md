@@ -22,12 +22,20 @@ This index is the entry point for Super BART project documentation. It explains 
   Repro-first QA workflow and evidence requirements.
 - `docs/ci_release_notes.md`
   CI and release-stage behavior.
+- `docs/7_gate_runbook.md`
+  Merge-readiness 7-gate process for command/file-only changes.
+- `docs/7_gate_log.md`
+  Canonical 7-gate logging schema and artifact format.
 - `docs/perf_budget.md`
   Performance targets (p50/p95/p99 and memory/load budgets).
 - `docs/perf_regression_checklist.md`
   Regression gate and rollback process.
 
 ## Feature Verification Docs
+- `docs/clone_feel_contract.md`
+  Clone-feel acceptance contract and telemetry schema for movement/pacing.
+- `docs/clone_readiness_status.md`
+  Current subjective+objective clone-feel readiness status and blockers.
 - `docs/verification/scaffold_core.md`
 - `docs/verification/player_movement_jump.md`
 - `docs/verification/level_camera_collision.md`

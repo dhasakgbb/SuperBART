@@ -10,11 +10,14 @@ const repoRoot = path.resolve(__dirname, '..');
 
 describe('boot and config sanity', () => {
   test('asset manifest has required keys', () => {
-    expect(ASSET_MANIFEST.images.player_small).toContain('player_small.svg');
-    expect(ASSET_MANIFEST.images.enemy_walker).toContain('enemy_walker.svg');
+    expect(ASSET_MANIFEST.spritesheets).toHaveProperty('bart_body_small');
+    expect(ASSET_MANIFEST.spritesheets.bart_body_small.path).toContain('bart_body_small.png');
+    const enemyWalker = ASSET_MANIFEST.images.enemy_walker;
+    const enemyWalkerPath = typeof enemyWalker === 'string' ? enemyWalker : enemyWalker.path;
+    expect(enemyWalkerPath).toContain('enemy_walker.png');
     expect(ASSET_MANIFEST.bitmapFonts.hud.texture).toContain('bitmap_font.png');
     expect(ASSET_MANIFEST.bitmapFonts.hud.data).toContain('bitmap_font.fnt');
-    expect(Object.keys(ASSET_MANIFEST.images).length).toBeGreaterThan(10);
+    expect(Object.keys(ASSET_MANIFEST.images).length).toBeGreaterThan(20);
   });
 
   test('main scene wiring includes required flow scenes', () => {

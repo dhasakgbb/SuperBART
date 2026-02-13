@@ -1,7 +1,78 @@
 import { HUD_CONTRACT, SCENE_TEXT } from '../content/contentManifest';
 
+export type StyleReferenceTargetRole = 'primary' | 'secondary' | 'supplemental';
+export type StyleReferenceTarget = {
+  name: string;
+  path: string;
+  scenes: string[];
+  required: boolean;
+  role: StyleReferenceTargetRole;
+  reason?: string;
+  notes?: string;
+};
+
+export type SceneStyleExceptionRationale = 'system-only' | 'transient-ui' | 'non-blocking transition' | 'legacy';
+export type SceneStyleException = {
+  scene: string;
+  rationale: SceneStyleExceptionRationale;
+  approvedBy: string;
+  since: string;
+  notes?: string;
+};
+export type PlayerAnimationContract = {
+  states: readonly string[];
+  source: 'src/player/PlayerAnimator.ts';
+  requireExactStates: boolean;
+};
+
+export const contractVersion = '1.0.0';
+export const sceneLockScope = 'all-user-facing' as const;
+const STYLE_REFERENCE_TARGETS: StyleReferenceTarget[] = [
+  {
+    name: 'primary_reference',
+    path: 'public/assets/target_look.png',
+    scenes: [
+      'BootScene',
+      'TitleScene',
+      'WorldMapScene',
+      'PlayScene',
+      'GameOverScene',
+      'LevelCompleteScene',
+      'FinalVictoryScene',
+      'SettingsScene',
+    ],
+    required: true,
+    role: 'primary',
+    reason: 'Primary NES baseline for all user-facing lock scenes.',
+    notes: 'Used as canonical lock coverage source.',
+  },
+  {
+    name: 'secondary_reference',
+    path: 'public/assets/target_look_2.jpeg',
+    scenes: ['PlayScene', 'WorldMapScene'],
+    required: false,
+    role: 'secondary',
+    reason: 'Supplemental visual parity reference for play/map campaign review.',
+    notes: 'Do not treat as source-of-truth for lock decisions.',
+  },
+];
+
+export const canonicalReferenceTargets: StyleReferenceTarget[] = STYLE_REFERENCE_TARGETS;
+export const sceneStyleExceptions: SceneStyleException[] = [];
+export const playerAnimationContract: PlayerAnimationContract = {
+  states: ['idle', 'walk', 'run', 'skid', 'jump', 'fall', 'land', 'hurt', 'win', 'dead'],
+  source: 'src/player/PlayerAnimator.ts',
+  requireExactStates: true,
+};
+
 export const styleConfig = {
-  referenceImage: 'public/assets/target_look.png',
+  contractVersion,
+  // Canonical reference mapping used by style validation and asset/style gates.
+  // Keep this as the source-of-truth list for acceptance references.
+  referenceTargets: canonicalReferenceTargets,
+  // System font fallback scenes should be empty for NES lock.
+  // Keep this field explicit for future scene exception handling.
+  sceneStyleExceptions,
   palette: {
     swatches: [
       { name: 'inkDark', hex: '#1D1D1D' },
@@ -30,6 +101,11 @@ export const styleConfig = {
     worldPx: 2,
     uiPx: 2,
     maxPx: 3,
+    worldColor: 'inkDark',
+    uiColor: 'inkDark',
+    color: 'inkDark',
+    sourceColor: 'inkDark',
+    sourceAlpha: 220,
   },
   spriteScale: {
     tilePx: 16,
@@ -39,6 +115,7 @@ export const styleConfig = {
   hudLayout: {
     viewport: { width: 960, height: 540 },
     portrait: {
+      texture: 'bart_portrait_96',
       x: 14,
       y: 8,
       anchor: 'top-left',
@@ -62,9 +139,10 @@ export const styleConfig = {
       textFormat: HUD_CONTRACT.rightBlock.line1TextFormat,
     },
     leftGroupIcons: {
-      star: { x: 188, y: 11, scale: 0.9 },
-      coin: { x: 244, y: 11, scale: 0.9 },
+      star: { texture: 'pickup_eval', x: 188, y: 11, scale: 0.9 },
+      coin: { texture: 'pickup_token', x: 244, y: 11, scale: 0.9 },
     },
+    hudMode: 'icon-driven',
     timeDigits: 3,
   },
   gameplayLayout: {
@@ -218,6 +296,11 @@ export const styleConfig = {
         alpha: 1.0,
         scrollFactor: 0.22,
       },
+    },
+    worldSpaceLabelPolicy: {
+      disallowGameplayEntityLabels: true,
+      disallowLabelDebugGlyphs: true,
+      allowedPopupModes: ['hud-counter', 'headless-toast'],
     },
   },
     worldMapLayout: {
@@ -385,6 +468,7 @@ export const styleConfig = {
     dustPuffLifeMs: 220,
     dustPuffCount: 3,
   },
+  playerAnimationContract,
 } as const;
 
 export type StyleConfig = typeof styleConfig;

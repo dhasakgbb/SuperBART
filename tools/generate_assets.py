@@ -85,47 +85,62 @@ def build_sprite_sets() -> OrderedDict[str, OrderedDict[str, str]]:
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
 <rect width='16' height='16' fill='none'/>
 <rect x='0' y='11' width='16' height='2' fill='#1d1d1d'/>
-<rect x='1' y='9' width='14' height='3' fill='#742b01'/>
+<rect x='1' y='9' width='14' height='2' fill='#742b01'/>
 <rect x='1' y='7' width='14' height='2' fill='#dc7c1d'/>
-<rect x='2' y='5' width='12' height='2' fill='#b6560e'/>
-<rect x='2' y='3' width='12' height='2' fill='#dc7c1d'/>
-<rect x='2' y='1' width='12' height='2' fill='#1d1d1d'/>
+<rect x='1' y='5' width='14' height='2' fill='#b6560e'/>
+<rect x='1' y='3' width='14' height='2' fill='#dc7c1d'/>
+<rect x='1' y='1' width='14' height='2' fill='#1d1d1d'/>
+<rect x='1' y='2' width='14' height='1' fill='#f2f8fd'/>
 <rect x='5' y='3' width='6' height='2' fill='#2a2824'/>
-<rect x='5' y='2' width='6' height='1' fill='#f2f8fd'/>
 <rect x='6' y='2' width='1' height='1' fill='#1d1d1d'/>
 <rect x='9' y='2' width='1' height='1' fill='#1d1d1d'/>
-<rect x='1' y='2' width='1' height='10' fill='#1d1d1d'/>
-<rect x='14' y='2' width='1' height='10' fill='#1d1d1d'/>
+<rect x='1' y='4' width='1' height='11' fill='#1d1d1d'/>
+<rect x='14' y='4' width='1' height='11' fill='#1d1d1d'/>
 <rect x='4' y='10' width='1' height='2' fill='#1d1d1d'/>
 <rect x='11' y='10' width='1' height='2' fill='#1d1d1d'/>
+<rect x='1' y='12' width='1' height='1' fill='#f2f8fd'/>
+<rect x='14' y='12' width='1' height='1' fill='#f2f8fd'/>
 </svg>
 """,
         "enemy_shell.svg": """
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
 <rect width='16' height='16' fill='none'/>
 <rect x='0' y='12' width='16' height='3' fill='#1d1d1d'/>
+<rect x='0' y='11' width='16' height='1' fill='#2a2824'/>
 <rect x='1' y='3' width='14' height='8' fill='#dc7c1d'/>
-<rect x='2' y='2' width='12' height='2' fill='#b6560e'/>
+<rect x='2' y='2' width='12' height='1' fill='#b6560e'/>
 <rect x='2' y='11' width='12' height='1' fill='#742b01'/>
-<rect x='3' y='1' width='10' height='1' fill='#1d1d1d'/>
-<rect x='3' y='4' width='10' height='2' fill='#b6560e'/>
-<rect x='6' y='6' width='4' height='1' fill='#f2f8fd'/>
-<rect x='7' y='7' width='2' height='1' fill='#1d1d1d'/>
-<rect x='5' y='12' width='1' height='1' fill='#1d1d1d'/>
-<rect x='10' y='12' width='1' height='1' fill='#1d1d1d'/>
+<rect x='2' y='1' width='12' height='1' fill='#1d1d1d'/>
+<rect x='1' y='3' width='1' height='8' fill='#2a2824'/>
+<rect x='14' y='3' width='1' height='8' fill='#2a2824'/>
+<rect x='2' y='3' width='12' height='1' fill='#f2f8fd'/>
+<rect x='3' y='4' width='10' height='2' fill='#742b01'/>
+<rect x='6' y='7' width='4' height='1' fill='#f2f8fd'/>
+<rect x='3' y='8' width='10' height='1' fill='#2a2824'/>
+<rect x='6' y='6' width='1' height='1' fill='#1d1d1d'/>
+<rect x='9' y='6' width='1' height='1' fill='#1d1d1d'/>
+<rect x='6' y='9' width='2' height='1' fill='#1d1d1d'/>
+<rect x='5' y='12' width='1' height='1' fill='#f2f8fd'/>
+<rect x='10' y='12' width='1' height='1' fill='#f2f8fd'/>
 </svg>
 """,
         "enemy_shell_retracted.svg": """
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
 <rect width='16' height='16' fill='none'/>
 <rect x='0' y='12' width='16' height='3' fill='#1d1d1d'/>
+<rect x='0' y='11' width='16' height='1' fill='#2a2824'/>
 <rect x='2' y='3' width='12' height='7' fill='#dc7c1d'/>
-<rect x='3' y='1' width='10' height='2' fill='#b6560e'/>
+<rect x='2' y='2' width='12' height='1' fill='#b6560e'/>
 <rect x='2' y='10' width='12' height='1' fill='#742b01'/>
-<rect x='4' y='4' width='8' height='2' fill='#1d1d1d'/>
-<rect x='6' y='5' width='4' height='1' fill='#f2f8fd'/>
-<rect x='5' y='12' width='1' height='1' fill='#1d1d1d'/>
-<rect x='10' y='12' width='1' height='1' fill='#1d1d1d'/>
+<rect x='1' y='3' width='1' height='7' fill='#2a2824'/>
+<rect x='14' y='3' width='1' height='7' fill='#2a2824'/>
+<rect x='4' y='3' width='1' height='7' fill='#1d1d1d'/>
+<rect x='11' y='3' width='1' height='7' fill='#1d1d1d'/>
+<rect x='6' y='4' width='4' height='2' fill='#1d1d1d'/>
+<rect x='6' y='6' width='1' height='1' fill='#f2f8fd'/>
+<rect x='9' y='6' width='1' height='1' fill='#f2f8fd'/>
+<rect x='5' y='12' width='1' height='1' fill='#f2f8fd'/>
+<rect x='10' y='12' width='1' height='1' fill='#f2f8fd'/>
 </svg>
 """,
         "enemy_flying.svg": """
@@ -137,28 +152,38 @@ def build_sprite_sets() -> OrderedDict[str, OrderedDict[str, str]]:
 <rect x='0' y='4' width='16' height='1' fill='#2a2824'/>
 <rect x='0' y='10' width='16' height='1' fill='#2a2824'/>
 <rect x='2' y='5' width='12' height='2' fill='#060808'/>
-<rect x='2' y='6' width='2' height='1' fill='#f2f8fd'/>
-<rect x='12' y='6' width='2' height='1' fill='#f2f8fd'/>
+<rect x='1' y='5' width='1' height='2' fill='#2a2824'/>
+<rect x='14' y='5' width='1' height='2' fill='#2a2824'/>
+<rect x='3' y='6' width='1' height='1' fill='#f2f8fd'/>
+<rect x='12' y='6' width='1' height='1' fill='#f2f8fd'/>
 <rect x='4' y='5' width='8' height='1' fill='#b6560e'/>
 <rect x='4' y='8' width='8' height='1' fill='#b6560e'/>
+<rect x='4' y='4' width='2' height='1' fill='#dc7c1d'/>
+<rect x='10' y='4' width='2' height='1' fill='#dc7c1d'/>
+<rect x='4' y='9' width='2' height='1' fill='#dc7c1d'/>
+<rect x='10' y='9' width='2' height='1' fill='#dc7c1d'/>
 </svg>
 """,
         "enemy_spitter.svg": """
 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>
 <rect width='16' height='16' fill='none'/>
 <rect x='0' y='10' width='16' height='2' fill='#1d1d1d'/>
+<rect x='0' y='12' width='16' height='2' fill='#2a2824'/>
 <rect x='1' y='8' width='14' height='4' fill='#dc7c1d'/>
 <rect x='2' y='4' width='12' height='4' fill='#b6560e'/>
 <rect x='2' y='2' width='12' height='2' fill='#742b01'/>
-<rect x='0' y='7' width='2' height='2' fill='#1d1d1d'/>
-<rect x='14' y='7' width='2' height='2' fill='#1d1d1d'/>
+<rect x='0' y='6' width='2' height='2' fill='#111114'/>
+<rect x='14' y='6' width='2' height='2' fill='#111114'/>
+<rect x='2' y='6' width='1' height='2' fill='#1d1d1d'/>
+<rect x='13' y='6' width='1' height='2' fill='#1d1d1d'/>
 <rect x='6' y='11' width='4' height='1' fill='#f2f8fd'/>
-<rect x='6' y='5' width='4' height='1' fill='#f2f8fd'/>
-<rect x='6' y='9' width='4' height='1' fill='#111114'/>
+<rect x='6' y='4' width='4' height='1' fill='#f2f8fd'/>
+<rect x='6' y='3' width='4' height='1' fill='#f2f8fd'/>
+<rect x='2' y='9' width='12' height='1' fill='#111114'/>
 <rect x='7' y='3' width='1' height='1' fill='#dc7c1d'/>
 <rect x='8' y='3' width='1' height='1' fill='#dc7c1d'/>
-<rect x='6' y='6' width='1' height='1' fill='#f2f8fd'/>
-<rect x='9' y='6' width='1' height='1' fill='#f2f8fd'/>
+<rect x='5' y='6' width='1' height='1' fill='#f2f8fd'/>
+<rect x='10' y='6' width='1' height='1' fill='#f2f8fd'/>
 </svg>
 """,
     })

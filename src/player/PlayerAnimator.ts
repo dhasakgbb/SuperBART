@@ -21,6 +21,7 @@ export interface AnimStateInput {
   vx: number;
   vy: number;
   inputX: -1 | 0 | 1;
+  motionState?: 'air' | 'walk' | 'run' | 'skid';
   onGround: boolean;
   wasOnGround: boolean;
   jumped: boolean;
@@ -80,18 +81,23 @@ export function resolveAnimState(
 
   // Ground states
   const absVx = Math.abs(input.vx);
+  if (input.motionState === 'skid' && absVx > 0) {
+    return { state: 'skid', landTimer: 0, hurtTimer: 0 };
+  }
+  if (input.motionState === 'run' && absVx >= config.runThreshold && input.inputX !== 0) {
+    return { state: 'run', landTimer: 0, hurtTimer: 0 };
+  }
+  if (input.motionState === 'walk' && absVx > config.idleThreshold) {
+    return { state: 'walk', landTimer: 0, hurtTimer: 0 };
+  }
 
   // Skid: reversing direction at speed
-  if (
-    input.inputX !== 0 &&
-    Math.sign(input.inputX) !== Math.sign(input.vx) &&
-    absVx > config.skidThreshold
-  ) {
+  if (input.motionState === undefined && input.inputX !== 0 && Math.sign(input.inputX) !== Math.sign(input.vx) && absVx > config.skidThreshold) {
     return { state: 'skid', landTimer: 0, hurtTimer: 0 };
   }
 
   // Run
-  if (absVx > config.runThreshold) {
+  if (absVx > config.runThreshold && input.inputX !== 0 && Math.sign(input.inputX) === Math.sign(input.vx)) {
     return { state: 'run', landTimer: 0, hurtTimer: 0 };
   }
 

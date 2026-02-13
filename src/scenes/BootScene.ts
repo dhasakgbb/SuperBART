@@ -1,7 +1,13 @@
 import Phaser from 'phaser';
 import { ASSET_MANIFEST } from '../core/assetManifest';
 import type { AssetImageSource } from '../core/assetManifest';
+import styleConfig, { stylePalette } from '../style/styleConfig';
 import { SCENE_TEXT } from '../content/contentManifest';
+import { transitionToScene } from './sceneFlow';
+
+function palette(name: string): number {
+  return Phaser.Display.Color.HexStringToColor(stylePalette[name] ?? '#ffffff').color;
+}
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -9,17 +15,6 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const hints = SCENE_TEXT.boot.loadingHints;
-    const loadText = this.add.text(28, 22, hints[0], { color: '#ffffff', fontSize: '20px' });
-    let hintIdx = 0;
-    this.time.addEvent({
-      delay: 600,
-      loop: true,
-      callback: () => {
-        hintIdx = (hintIdx + 1) % hints.length;
-        loadText.setText(hints[hintIdx]);
-      },
-    });
     for (const [key, entry] of Object.entries(ASSET_MANIFEST.images) as Array<[string, AssetImageSource]>) {
       const image = typeof entry === 'string' ? { path: entry } : entry;
       this.load.image(key, image.path);
@@ -36,6 +31,26 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start('TitleScene');
+    const hints = SCENE_TEXT.boot.loadingHints;
+    const loadText = this.add.bitmapText(
+      28,
+      22,
+      styleConfig.typography.fontKey,
+      hints[0],
+      styleConfig.typography.lineHeightPx,
+    );
+    loadText.setTint(palette('hudText'));
+    loadText.setLetterSpacing(styleConfig.typography.letterSpacingPx);
+    let hintIdx = 0;
+    this.time.addEvent({
+      delay: 600,
+      loop: true,
+      callback: () => {
+        hintIdx = (hintIdx + 1) % hints.length;
+        loadText.setText(hints[hintIdx]);
+      },
+    });
+
+    transitionToScene(this, 'TitleScene', undefined, { durationMs: 0 });
   }
 }

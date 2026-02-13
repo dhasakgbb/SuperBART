@@ -1,0 +1,231 @@
+{
+  "version": "1.0.0",
+  "source": "src/levelgen/generator.ts",
+  "description": "Authoring chunk vocabulary used by the 25-level campaign level specs.",
+  "entries": [
+    {
+      "id": "flat_intro_01",
+      "tags": ["FLAT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flat_intro_02",
+      "tags": ["FLAT", "COOLDOWN_LANE"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": true,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "coin_stair_01",
+      "tags": ["COIN_STAIR"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "gap_short_guarded_01",
+      "tags": ["GAP_SHORT", "COOLDOWN_LANE"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": true,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flat_guide_01",
+      "tags": ["FLAT", "POWERUP_HINT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "platform_bubble_01",
+      "tags": ["PLATFORM_BUBBLE"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "platform_bubble_02",
+      "tags": ["PLATFORM_BUBBLE", "COMEDY_VENT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "platform_stack_01",
+      "tags": ["PLATFORM_STACK"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flat_step_01",
+      "tags": ["RISE_STEP", "DROP_STEP"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "rise_step_01",
+      "tags": ["RISE_STEP"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "falloff_step_01",
+      "tags": ["DROP_STEP"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "recovery_lane_01",
+      "tags": ["COOLDOWN_LANE"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": true,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "recovery_lane_02",
+      "tags": ["COOLDOWN_LANE"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": true,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flat_finish_01",
+      "tags": ["FLAT", "COMEDY_VENT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flat_finish_02",
+      "tags": ["FLAT", "COMEDY_VENT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "walker_patrol_01",
+      "tags": ["WALKER_PATROL"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["walker"]
+    },
+    {
+      "id": "walker_patrol_02",
+      "tags": ["WALKER_PATROL"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["walker"]
+    },
+    {
+      "id": "walker_patrol_03",
+      "tags": ["WALKER_PATROL", "TURNAROUND_ENEMY"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["walker"]
+    },
+    {
+      "id": "shell_blocker_01",
+      "tags": ["BLOCKER"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["shell"]
+    },
+    {
+      "id": "spike_low_01",
+      "tags": ["SPIKE_LOW"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["spike"]
+    },
+    {
+      "id": "spike_sweep_01",
+      "tags": ["SPIKE_SWEEP"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["spike"]
+    },
+    {
+      "id": "coin_arch_01",
+      "tags": ["COIN_ARCH"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "coin_rail_01",
+      "tags": ["COIN_RAIL"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "coin_reward_01",
+      "tags": ["COIN_REWARD"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "gap_long_01",
+      "tags": ["GAP_LONG"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": true,
+      "mechanicsIntroduced": []
+    },
+    {
+      "id": "flying_drift_01",
+      "tags": ["FLYER_DRIFT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["flying"]
+    },
+    {
+      "id": "flying_drift_02",
+      "tags": ["FLYER_DRIFT"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["flying"]
+    },
+    {
+      "id": "thwomp_intro_01",
+      "tags": ["THWOMP_DROP"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["thwomp"]
+    }
+  ]
+}

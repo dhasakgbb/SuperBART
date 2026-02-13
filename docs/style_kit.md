@@ -1,17 +1,40 @@
 # Target Look Style Kit
 
-Source reference: `public/assets/target_look.png`
+Source of truth for visual and typography contract decisions.
 
-This style kit is the source-of-truth contract enforced by `tools/style_validate.ts`.
+## Reference Contract
 
-## Palette (Approximate Hex)
+| name | path | role | required | scenes | reason | notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| primary_reference | `public/assets/target_look.png` | primary | true | BootScene,TitleScene,WorldMapScene,PlayScene,GameOverScene,LevelCompleteScene,FinalVictoryScene,SettingsScene | Primary NES baseline for all user-facing lock scenes. | Used as canonical lock coverage source. |
+| secondary_reference | `public/assets/target_look_2.jpeg` | secondary | false | PlayScene,WorldMapScene | Supplemental visual parity reference for play/map campaign review. | Do not treat as source-of-truth for lock decisions. |
+
+## Scene Style Exceptions
+
+No approved scene exceptions are currently documented.
+
+If an exception is approved later, add rows below with the exact columns: `scene`, `rationale`, `approvedBy`, `since`, and `notes`.
+
+## Contract Metadata
+
+- contractVersion: `1.0.0`
+- authoritativeSource: `src/style/styleConfig.ts`
+- referenceTargetSource: `styleConfig.referenceTargets`
+- sceneLockScope: `all-user-facing`
+
+## Contract Scope
+
+- `sceneLockScope` is `all-user-facing`.
+- User-facing scenes: `BootScene`, `TitleScene`, `WorldMapScene`, `PlayScene`, `GameOverScene`, `LevelCompleteScene`, `FinalVictoryScene`, `SettingsScene`.
+
+## Palette
 
 | Name | Hex | Usage |
 | --- | --- | --- |
 | inkDark | `#1D1D1D` | Primary sprite/UI outlines |
 | inkSoft | `#2B2824` | Secondary contours |
-| skyDeep | `#0A121C` | Gameplay/title upper sky |
-| skyMid | `#212826` | Gameplay/title lower sky |
+| skyDeep | `#000000` | Gameplay/title upper sky |
+| skyMid | `#060808` | Gameplay/title lower sky |
 | grassTop | `#46BA4C` | Terrain highlight + map completion accents |
 | grassMid | `#20A36D` | Terrain mids |
 | groundShadow | `#742B01` | Terrain low values |
@@ -21,7 +44,18 @@ This style kit is the source-of-truth contract enforced by `tools/style_validate
 | coinEdge | `#DC7C1D` | Coin edge |
 | hudText | `#F2FDFD` | Primary HUD/map text |
 | hudAccent | `#DED256` | Counters, title accents, selected state |
+| hudPanel | `#1F1F20` | HUD/map dark panel fill |
 | bloomWarm | `#F6D58B` | Additive glow tint |
+
+## HUD Contract
+
+- Gameplay HUD is icon-driven and compact.
+  - Left group: `bart_portrait_96` plus `BART` with life counter text (`BART xNN`).
+  - Right group: world/time text remains compact and bitmap rendered.
+  - Collectible counters use dedicated icons and numeric text (`✦###` for evals, `◎###` for tokens/coins).
+- Gameplay world labels are disallowed on entities.
+  - No gameplay entity names, static title-style copy, or floating `add.text` labels over world actors in `PlayScene.ts`.
+  - Allowed in-play popups are HUD toast messages only (`this.showHudToast`).
 
 ## Pixel Rules
 
@@ -29,48 +63,46 @@ This style kit is the source-of-truth contract enforced by `tools/style_validate
 - World rendering uses nearest-neighbor only.
 - Outline target is `2px` and max allowed is `3px`.
 - Preserve dark silhouette readability for player, enemies, nodes, and blocks.
+- Gameplay must not place world-space labels above entities (enemy, pickup, or block sprites).
+- Allowed gameplay text is transient popup messaging only (`showHudToast`), including short checkpoint notices.
 
-## HUD Layout (960x540)
+## Source Color Baseline
 
-- `portrait`: `x=14`, `y=8`, scale `0.66`.
-- `leftGroup`: `x=84`, `y=11`, font `14`.
-- `rightGroup`: `x=948`, `y=11`, font `14`, right-aligned.
-- Contract text format:
-  - `BART x{instances}  ✦{evals}  ◎{tokens}`
-  - `WORLD W-L  TIME TTT`
-- `TIME` is always 3 digits (`TTT`).
+- `skyDeep`: `#000000`
+- `skyMid`: `#060808`
+- `grassTop`: `#46BA4C`
+- `hudText`: `#F2FDFD`
+- `hudAccent`: `#DED256`
+
+## Player Animation Contract
+
+- `stateContract`: exact state list is `idle`, `walk`, `run`, `skid`, `jump`, `fall`, `land`, `hurt`, `win`, `dead`.
+- Contract source is `src/player/PlayerAnimator.ts` (`STATE_TO_FRAME`), and it must match both the runtime animator state map and the generated animation definitions in `src/anim/playerAnims.ts`.
+- Both `bart_body_small` and `bart_body_big` must define every contract state with matching frame sequences and source mode.
 
 ## Title Screen Contract
 
-- Wordmark uses generated `title_logo.png` and copy must be `SUPER BART`.
-- All title UI elements are camera-fixed (`setScrollFactor(0)`), including:
-  - logo glow, logo, portrait, subtitle, prompt, hints.
-- Title attract-mode keeps gameplay visual language:
-  - dark sky gradient + haze,
-  - drifting clouds,
-  - tiled ground strip,
-  - bobbing question block,
-  - coin shimmer line,
-  - slow horizontal camera pan.
+- World/Title HUD and copy remain defined by `src/style/styleConfig.ts`.
+- All title UI elements remain camera-fixed via `setScrollFactor(0)`.
+- Title render pass is `renderGameplayBackground(...)` for attract sequence background.
+- Title text/labels are bitmap-only and sourced from `scene.fontKey`.
 
 ## Gameplay Background Contract
 
-- `renderGameplayBackground(...)` is the only allowed play-scene renderer.
-- Layers:
+- `renderGameplayBackground(...)` owns play background composition.
+- Required layers:
   - fixed sky + haze,
   - drifting clouds (`scrollFactor` locked within `0.05-0.12`),
   - far hill layer (`hill_far`, `scrollFactor 0.10`),
   - near hill layer (`hill_near`, `scrollFactor 0.22`).
-- Keep warm glow only on highlights; avoid broad washed-out bloom.
+- Gameplay uses no persistent world-space title labels.
 
 ## World Map Contract
 
-- `WorldMapScene` uses bitmap text and sprite-kit visuals only (no system fonts).
+- `WorldMapScene` uses bitmap text and sprite-kit visuals only.
 - Node states use generated sprites:
   - `map_node_open`, `map_node_done`, `map_node_locked`, `map_node_selected`.
-- Path uses generated `map_path_dot`.
-- Layout is style-config driven with explicit coordinates for all 25 campaign nodes.
-- Selected node has bob animation; unlock logic remains save-system controlled.
+- Layout is driven by `styleConfig.worldMapLayout` with all 25 campaign nodes.
 
 ## Visual Regression Gate
 

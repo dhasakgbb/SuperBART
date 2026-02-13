@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import styleConfig, { contractVersion } from '../src/style/styleConfig';
 import {
   cloneImage,
   createImage,
@@ -19,7 +21,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
-const SOURCE = path.join(repoRoot, 'public/assets/target_look.png');
+const REQUIRED_REFERENCE_TARGETS = (styleConfig.referenceTargets ?? []).filter((target) => target.required === true);
+if (REQUIRED_REFERENCE_TARGETS.length !== 1) {
+  throw new Error(
+    `Style contract requires exactly one required reference target, received ${REQUIRED_REFERENCE_TARGETS.length}.`,
+  );
+}
+const PRIMARY_REFERENCE_TARGET = REQUIRED_REFERENCE_TARGETS[0];
+if (!PRIMARY_REFERENCE_TARGET || !PRIMARY_REFERENCE_TARGET.path) {
+  throw new Error('Style contract required reference target entry must define a source image path.');
+}
+const SOURCE = path.join(repoRoot, PRIMARY_REFERENCE_TARGET.path);
 const OUTPUT_DIR = path.join(repoRoot, 'public/assets/sprites');
 
 const OUTPUTS = [
@@ -29,9 +41,32 @@ const OUTPUTS = [
   { file: 'bart_portrait_96.png', size: 96, sample: 24 },
 ] as const;
 
+const OUTLINE_META_PATH = path.join(repoRoot, 'public/assets/style_outline_contract.json');
 const WHITE_THRESHOLD = 244;
 const MARGIN_RATIO = 0.08;
-const OUTLINE: Rgba = [22, 22, 24, 220];
+const STYLE_OUTLINE_SCHEMA_VERSION = '1.1.0';
+const STYLE_OUTLINE_GENERATED_BY = 'make_bart_sprites.ts';
+const STYLE_OUTLINE_SOURCE = 'src/style/styleConfig.ts';
+
+function colorFromSwatch(swatch: string): Rgba {
+  const palette = new Map(styleConfig.palette.swatches.map((entry) => [entry.name, entry.hex]));
+  const hex = palette.get(swatch);
+  if (hex == null) {
+    throw new Error(`Style contract requires outline swatch "${swatch}" in styleConfig.palette.swatches.`);
+  }
+  return [...parseHex(hex).slice(0, 3), STYLE_OUTLINE_ALPHA];
+}
+
+const STYLE_OUTLINE_ALPHA = Number.isFinite(styleConfig.outline.sourceAlpha) ? styleConfig.outline.sourceAlpha : 220;
+const STYLE_OUTLINE_SWATCH = styleConfig.outline.sourceColor ?? styleConfig.outline.color ?? 'inkDark';
+const STYLE_OUTLINE_WORLD_PX = Number.isFinite(styleConfig.outline.worldPx)
+  ? Math.max(1, Math.min(Math.floor(styleConfig.outline.worldPx), Math.max(1, Math.floor(styleConfig.outline.maxPx ?? 3))))
+  : 2;
+const STYLE_OUTLINE_UI_PX = Number.isFinite(styleConfig.outline.uiPx)
+  ? Math.max(1, Math.min(Math.floor(styleConfig.outline.uiPx), Math.max(1, Math.floor(styleConfig.outline.maxPx ?? 3))))
+  : 2;
+
+const OUTLINE: Rgba = colorFromSwatch(STYLE_OUTLINE_SWATCH);
 
 const BART_PALETTE: Rgba[] = [
   parseHex('#101010'),
@@ -142,9 +177,39 @@ function quantizePalette(image: PixelImage): PixelImage {
   return quantized;
 }
 
-function addSubtleOutline(image: PixelImage): PixelImage {
+function writeOutlineContractMetadata(): void {
+  const payload = {
+    schemaVersion: STYLE_OUTLINE_SCHEMA_VERSION,
+    generatedBy: STYLE_OUTLINE_GENERATED_BY,
+    generatedAt: new Date().toISOString(),
+    source: STYLE_OUTLINE_SOURCE,
+    outline: {
+      worldPx: STYLE_OUTLINE_WORLD_PX,
+      uiPx: STYLE_OUTLINE_UI_PX,
+      maxPx: Number.isFinite(styleConfig.outline.maxPx) ? Math.max(1, Math.floor(styleConfig.outline.maxPx)) : 3,
+      worldColor: styleConfig.outline.worldColor ?? styleConfig.outline.sourceColor ?? styleConfig.outline.color ?? 'inkDark',
+      uiColor: styleConfig.outline.uiColor ?? styleConfig.outline.sourceColor ?? styleConfig.outline.color ?? 'inkDark',
+      sourceColor: STYLE_OUTLINE_SWATCH,
+      sourceAlpha: STYLE_OUTLINE_ALPHA,
+      configVersion: contractVersion,
+    },
+  };
+
+  fs.writeFileSync(OUTLINE_META_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
+}
+
+function outlineWidth(raw: number): number {
+  const safeMax = Number.isFinite(styleConfig.outline.maxPx) ? Math.max(1, Math.floor(styleConfig.outline.maxPx)) : 3;
+  if (!Number.isFinite(raw)) {
+    return 1;
+  }
+  return Math.max(1, Math.min(Math.floor(raw), safeMax));
+}
+
+function addSubtleOutline(image: PixelImage, width = STYLE_OUTLINE_UI_PX): PixelImage {
   const outlined = cloneImage(image);
   const snapshot = cloneImage(image);
+  const safeWidth = outlineWidth(width);
 
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
@@ -152,13 +217,18 @@ function addSubtleOutline(image: PixelImage): PixelImage {
       if (alpha > 0) {
         continue;
       }
-      const neighbors = [
-        getPixel(snapshot, x - 1, y),
-        getPixel(snapshot, x + 1, y),
-        getPixel(snapshot, x, y - 1),
-        getPixel(snapshot, x, y + 1),
-      ];
-      if (neighbors.some((neighbor) => neighbor[3] > 0)) {
+      let hasOpaqueNeighbor = false;
+      for (let yOffset = -safeWidth; yOffset <= safeWidth && !hasOpaqueNeighbor; yOffset += 1) {
+        for (let xOffset = -safeWidth; xOffset <= safeWidth && !hasOpaqueNeighbor; xOffset += 1) {
+          if (Math.abs(xOffset) + Math.abs(yOffset) > safeWidth || (xOffset === 0 && yOffset === 0)) {
+            continue;
+          }
+          if (getPixel(snapshot, x + xOffset, y + yOffset)[3] > 0) {
+            hasOpaqueNeighbor = true;
+          }
+        }
+      }
+      if (hasOpaqueNeighbor) {
         setPixel(outlined, x, y, OUTLINE);
       }
     }
@@ -189,6 +259,7 @@ function main(): number {
     writePng(outputPath, outlined);
     console.log(`Wrote ${path.relative(repoRoot, outputPath)} (${output.size}x${output.size})`);
   }
+  writeOutlineContractMetadata();
 
   return 0;
 }

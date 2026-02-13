@@ -1,0 +1,19 @@
+{
+  "run_speed_ratio": 1.35,
+  "air_accel_ratio": 0.70,
+  "air_accel_ratio_max": 0.70,
+  "run_transition_ms": 120,
+  "run_to_walk_speed_ratio_min": 1.35,
+  "run_transition_frames_max": 8,
+  "jump_cut_frames": 1,
+  "jump_cut_window_ms": 90,
+  "stomp_cooldown_ms": 120,
+  "has_stomp_hitstop": true,
+  "stomp_hitstop_ms": 32,
+  "stomp_hitstop_frames_min": 1,
+  "stomp_hitstop_frames_max": 2,
+  "skid_trigger_distance": 120,
+  "skid_duration_ms_max": 96,
+  "world_label_violations": 0,
+  "telegraph_before_lethal_ratio": 1.0
+}

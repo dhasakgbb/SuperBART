@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.1.0",
+  "generatedBy": "make_bart_sprites.ts",
+  "generatedAt": "2026-02-13T18:38:32.374Z",
+  "source": "src/style/styleConfig.ts",
+  "outline": {
+    "worldPx": 2,
+    "uiPx": 2,
+    "maxPx": 3,
+    "worldColor": "inkDark",
+    "uiColor": "inkDark",
+    "sourceColor": "inkDark",
+    "sourceAlpha": 220,
+    "configVersion": "1.0.0"
+  }
+}

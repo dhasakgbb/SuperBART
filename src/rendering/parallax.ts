@@ -77,6 +77,15 @@ type GameplayLayout = StyleConfig['gameplayLayout'] & { parallaxProfile?: Parall
 
 const SKY_DEPTH = -1400;
 const HORIZON_DEPTH = -1394;
+const HAZE_DEPTH = -1389;
+
+function clamp(value: number, min: number, max: number): number {
+  return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : min;
+}
+
+function clamp01(value: number): number {
+  return clamp(value, 0, 1);
+}
 
 function toColor(swatch: string): number {
   return Phaser.Display.Color.HexStringToColor(stylePalette[swatch] ?? '#ffffff').color;
@@ -224,6 +233,57 @@ function renderSky(scene: Phaser.Scene, width: number, height: number, layout: G
   graphics.setDepth(HORIZON_DEPTH);
 }
 
+function renderHaze(scene: Phaser.Scene, width: number, height: number, layout: GameplayLayout): void {
+  const haze = layout.haze;
+  if (!haze) {
+    return;
+  }
+
+  const y = Math.round(clamp(haze.y, 0, height - 1));
+  const bandHeight = Math.max(1, Math.round(clamp(haze.heightPx, 1, Math.max(1, height - y))));
+  const widthFactor = clamp01(haze.widthFactor);
+  const bandWidth = Math.max(1, Math.min(width, Math.round(width * widthFactor)));
+  const left = Math.max(0, Math.floor((width - bandWidth) / 2));
+  const edgeFadeWidth = Math.max(1, Math.round(bandWidth * 0.08));
+  const alpha = clamp01(haze.alpha);
+  if (alpha <= 0) {
+    return;
+  }
+
+  const color = Phaser.Display.Color.ValueToColor(toColor('bloomWarm'));
+  const graphics = scene.add.graphics();
+  graphics.setScrollFactor(0).setDepth(HAZE_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
+
+  for (let row = 0; row < bandHeight; row += 1) {
+    const yPos = y + row;
+    if (yPos >= height) {
+      break;
+    }
+
+    const tRow = bandHeight > 1 ? row / (bandHeight - 1) : 0;
+    const rowFade = 1 - Math.abs(tRow - 0.5) * 2;
+    const localAlpha = alpha * clamp01(rowFade);
+    if (localAlpha <= 0) {
+      continue;
+    }
+
+    for (let col = 0; col < bandWidth; col += 1) {
+      const xPos = left + col;
+      if (xPos >= width) {
+        break;
+      }
+      const distToEdge = Math.min(col, bandWidth - col - 1);
+      const edgeFade = Math.min(1, distToEdge / edgeFadeWidth);
+      const pixelAlpha = localAlpha * edgeFade;
+      if (pixelAlpha <= 0) {
+        continue;
+      }
+      graphics.fillStyle(color.color, pixelAlpha * 0.85);
+      graphics.fillRect(xPos, yPos, 1, 1);
+    }
+  }
+}
+
 function renderLayer(scene: Phaser.Scene, width: number, layer: ParallaxLayer): RenderInstance[] {
   const texture = scene.textures.get(layer.key);
   const source = texture.getSourceImage();
@@ -321,4 +381,5 @@ export function renderGameplayBackground(
   renderSky(scene, width, height, layout as GameplayLayout);
   const layers = resolveLayers(layout as GameplayLayout);
   renderParallaxLayers(scene, width, layers);
+  renderHaze(scene, width, height, layout as GameplayLayout);
 }

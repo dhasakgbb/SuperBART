@@ -56,7 +56,8 @@ export function spawnEnemy(
     sprite.setVelocityX(speed);
     let confusionTimer = 2000 + Math.random() * 2000;
     let thinkingMs = 0;
-    let indicator: Phaser.GameObjects.Text | null = null;
+    let glitchMs = 0;
+    let glitchTint = false;
 
     return {
       kind,
@@ -73,16 +74,7 @@ export function spawnEnemy(
           if (Math.random() < 0.3) {
             thinkingMs = 300;
             sprite.setVelocityX(0);
-            if (!indicator) {
-              indicator = ctx.scene.add.text(sprite.x, sprite.y - 16, '...', {
-                fontSize: '10px',
-                color: '#ffffff',
-                fontFamily: 'monospace',
-                stroke: '#000000',
-                strokeThickness: 2,
-              }).setOrigin(0.5).setDepth(50);
-            }
-            indicator.setVisible(true);
+            glitchMs = 250;
           } else {
             sprite.setVelocityX(-sprite.body.velocity.x || (Math.random() < 0.5 ? speed : -speed));
           }
@@ -90,18 +82,19 @@ export function spawnEnemy(
 
         if (thinkingMs > 0) {
           thinkingMs -= dtMs;
+          glitchMs = Math.max(glitchMs - dtMs, 0);
+          if (glitchMs > 0) {
+            glitchTint = !glitchTint;
+            sprite.setTint(glitchTint ? 0xff6f8f : 0xffffff);
+            sprite.setX(sprite.x + (Math.random() < 0.5 ? -0.7 : 0.7));
+          } else {
+            sprite.clearTint();
+          }
           if (thinkingMs <= 0) {
             sprite.setVelocityX(Math.random() < 0.5 ? speed : -speed);
-            if (indicator) indicator.setVisible(false);
+            sprite.clearTint();
+            sprite.setX(Math.round(sprite.x));
           }
-        }
-
-        if (indicator && sprite.active) {
-          indicator.setPosition(sprite.x, sprite.y - 16);
-        }
-        if (!sprite.active && indicator) {
-          indicator.destroy();
-          indicator = null;
         }
       },
       onPlayerCollision(player) {
