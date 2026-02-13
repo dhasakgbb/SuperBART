@@ -323,10 +323,14 @@ export function measureJumpCutReapplication(
   );
 
   const frames = replay;
+  let previousCutApplied = false;
   replay.forEach((entry) => {
-    if (!entry.output.feel.jumpCutApplied) {
+    const cutApplied = entry.output.feel.jumpCutApplied;
+    if (!cutApplied || previousCutApplied) {
+      previousCutApplied = cutApplied;
       return;
     }
+
     if (firstCutFrame == null) {
       firstCutFrame = entry.frame;
       cutCount += 1;
@@ -334,6 +338,7 @@ export function measureJumpCutReapplication(
       secondCutFrame = entry.frame;
       cutCount += 1;
     }
+    previousCutApplied = cutApplied;
   });
 
   const finalOutput = frames[frames.length - 1]?.output;

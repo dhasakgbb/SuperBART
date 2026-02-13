@@ -9,7 +9,7 @@ Provide deterministic, handoff-friendly repro and evidence steps for campaign pl
 - Browser automation target: `http://127.0.0.1:4173`
 - Start fresh save each run with a bootstrap helper (runner handles this via `--scenario` payload).
 - Ensure input mapping supports run/skid testing by using the local Playwright client:
-  - `scripts/playfeel_web_game_client.js`
+  - `~/.codex/skills/develop-web-game/scripts/web_game_playwright_client.js`
   - This client exposes `ShiftLeft` for run/reversal checks.
 - Keep gameplay audio at defaults unless intentionally testing mix sensitivity.
 
@@ -27,12 +27,12 @@ npm run ci:gates:log
 Precondition bootstrap payload (single use before phase-2 pass):
 ```json
 {
-  "super_bart_save_v3.schemaVersion": 3,
-  "super_bart_save_v3.campaign.world": 1,
-  "super_bart_save_v3.campaign.levelIndex": 1,
-  "super_bart_save_v3.totalLevels": 25,
-  "super_bart_save_v3.worldLayout": [6, 6, 6, 6, 1],
-  "super_bart_save_v3.campaign.unlockedLevelKeys": [
+  "super_bart_save_v4.schemaVersion": 4,
+  "super_bart_save_v4.campaign.world": 1,
+  "super_bart_save_v4.campaign.levelIndex": 1,
+  "super_bart_save_v4.totalLevels": 25,
+  "super_bart_save_v4.worldLayout": [6, 6, 6, 6, 1],
+  "super_bart_save_v4.campaign.unlockedLevelKeys": [
     "1-1", "1-2", "1-3", "1-4", "1-5", "1-6",
     "2-1", "2-2", "2-3", "2-4", "2-5", "2-6",
     "3-1", "3-2", "3-3", "3-4", "3-5", "3-6",
@@ -56,11 +56,31 @@ npm run playfeel:phase2 -- --scenario jump-cut --headless 1 --iterations 1
 npm run playfeel:phase2 -- --scenario run-skid --headless 1 --iterations 1
 npm run playfeel:phase2 -- --scenario stomp --headless 1 --iterations 1
 npm run playfeel:phase2 -- --scenario telegraph --headless 1 --iterations 1
+npm run playfeel:phase2 -- --scenario jump-cut --levels all --headless 1 --iterations 1
 ```
+
+### 3b) Spot-check example (quick validation)
+
+```bash
+npm run dev -- --host 127.0.0.1 --port 4173
+npm run playfeel:phase2 -- --scenario jump-cut --levels 1-1 --headless 1 --iterations 1
+```
+
+- Pass criteria for this spot-check: status `PASS` in the latest run record and `evidence_screenshot`/`evidence_state` files written under `artifacts/playfeel/phase2`.
+- Latest known spot-check pass: `2026-02-13T19:18:04.300Z_43198` (`jump-cut`, `1-1`).
+- Latest locked run-gate baseline: `2026-02-13T19:53:47.690Z_76314` from `npm run ci:gates:log`.
 
 Optional subset by level set:
 ```bash
 npm run playfeel:phase2 -- --scenario jump-cut --levels 1-1,1-2,1-3 --headless 1
+```
+
+Deterministic single-level focus (for the world-map transition blocker):
+```bash
+npm run playfeel:phase2 -- --scenario jump-cut --levels 5-1 --headless 1 --iterations 1
+npm run playfeel:phase2 -- --scenario run-skid --levels 5-1 --headless 1 --iterations 1
+npm run playfeel:phase2 -- --scenario stomp --levels 5-1 --headless 1 --iterations 1
+npm run playfeel:phase2 -- --scenario telegraph --levels 5-1 --headless 1 --iterations 1
 ```
 
 Optional headful pass for visual review:
@@ -134,14 +154,12 @@ Use this schema for each scenario-level row:
 - Merge is blocked until blockers are cleared or intentionally deferred with explicit scope.
 
 ### Known blocker (latest run)
-- Across all scenarios, level `5-1` fails with:
-  `phase2_bootstrap_play_timeout` (`failed transition to play scene`).
-- This indicates a deterministic level-bootstrap/navigation failure on final world-5 entry, not a per-scenario behavior issue.
-- Keep `rollback_required=true` for that finding until resolved and then re-run:
-  - `npm run playfeel:phase2 -- --scenario jump-cut --headless 1 --levels 5-1`
-  - `npm run playfeel:phase2 -- --scenario run-skid --headless 1 --levels 5-1`
-  - `npm run playfeel:phase2 -- --scenario stomp --headless 1 --levels 5-1`
-  - `npm run playfeel:phase2 -- --scenario telegraph --headless 1 --levels 5-1`
+- Across all scenarios, latest sweeps are blocked by harness execution noise:
+  - `phase2_bootstrap_title_timeout`
+  - `phase2_execution_error`
+  - occasional `playfeel_console_error`
+- This indicates a session stability issue in long-horizon phase-2 sweeps (title/play transitions and context loss), not yet a confirmed gameplay-layer blocker.
+- Re-run `5-1` and long-sweep commands only after harness stability is restored.
 
 ### Latest phase-2 evidence bundle
 
@@ -153,3 +171,23 @@ Use this schema for each scenario-level row:
   run_id `2026-02-13T18:32:00.898Z_5243` → 24/25 PASS (`5-1` timeout)
 - `npm run playfeel:phase2 -- --scenario telegraph --headless 1 --levels all`  
   run_id `2026-02-13T18:35:02.694Z_7631` → 24/25 PASS (`5-1` timeout)
+- `npm run playfeel:phase2 -- --scenario jump-cut --headless 1 --levels all`  
+  run_id `2026-02-13T21:00:21.751Z_96151` → 0/25 FAIL (`phase2_execution_error` / bootstrap instability)
+- `npm run playfeel:phase2 -- --scenario jump-cut --headless 1 --levels 1-3 --iterations 1`  
+  run_id `2026-02-13T20:59:55.087Z_94818` → `1-3` FAIL (`playfeel_jump_cut_missing`)
+
+### Focused rerun evidence (phase-2 phase-spot checks)
+
+- `npm run playfeel:phase2 -- --scenario jump-cut --headless 1 --levels 1-3 --iterations 1`
+  - run_id `2026-02-13T19:55:15.737Z_78462` (`1-3`) FAIL, blocker `playfeel_jump_cut_missing`
+- `npm run playfeel:phase2 -- --scenario run-skid --headless 1 --levels 1-6,2-2 --iterations 1`
+  - run_id `2026-02-13T19:55:24.246Z_78602` (`1-6`, `2-2`) FAIL, blocker `playfeel_skid_not_detected`
+- `npm run playfeel:phase2 -- --scenario telegraph --headless 1 --levels 1-4 --iterations 1`
+  - run_id `2026-02-13T19:55:43.234Z_78852` (`1-4`) PASS, telegraph observed.
+
+| Level | Scenario | Observed | Pass? | Screenshot refs | State refs | Next action |
+|---|---|---|---|---|---|---|
+| 1-3 | jump-cut | no jump-cut transition observed | FAIL | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/screenshots/jump-cut/lvl_1_3/shot-0.png | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/states/jump-cut/lvl_1_3/state-0.json | rerun after action tuning |
+| 1-6 | run-skid | skid state not detected | FAIL | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/screenshots/run-skid/lvl_1_6/shot-0.png | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/states/run-skid/lvl_1_6/state-0.json | verify animation state key in telemetry |
+| 2-2 | run-skid | skid state not detected | FAIL | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/screenshots/run-skid/lvl_2_2/shot-0.png | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/states/run-skid/lvl_2_2/state-0.json | verify animation state key in telemetry |
+| 1-4 | telegraph | telegraph cue observed | PASS | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/screenshots/telegraph/lvl_1_4/shot-0.png | /Users/damian/GitHub/NES/SuperBART/artifacts/playfeel/phase2/states/telegraph/lvl_1_4/state-0.json | continue |

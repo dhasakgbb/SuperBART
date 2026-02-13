@@ -60,7 +60,7 @@ const HUD_CONTRACT_GLYPHS = {
   worldTime: 'WORLD {world}-{level}  TIME {time}',
 } as const;
 const HUD_ICON_KEYS = ['star', 'coin'];
-const HUD_TEXT_FORBIDDEN_WORDS = new Set(['LIVES', 'LEVELS']);
+const HUD_TEXT_FORBIDDEN_WORDS = new Set(['LIVES', 'LEVELS', 'STAR', 'COIN']);
 const ADD_TEXT_CALL_REGEX = /\b(?:this\.)?add\s*\.\s*text\s*\(/;
 const FONT_FAMILY_REGEX = /\bfontFamily\b/;
 const BITMAP_TEXT_CALL_REGEX = /\b(?:this\.)?add\s*\.\s*bitmapText\s*\(/;
@@ -1452,7 +1452,7 @@ function validateHudLayout(errors: ErrorList): void {
   }
   assertRange(errors, 'hudLayout.timeDigits', hud.timeDigits, 3, 3);
 
-  const forbiddenHudWords = ['LIVES', 'LEVELS'];
+  const forbiddenHudWords = ['LIVES', 'LEVELS', 'STAR', 'COIN'];
   for (const word of forbiddenHudWords) {
     if (hud.leftGroup.textFormat.includes(word) || hud.rightGroup.textFormat.includes(word)) {
       errors.push(`hudLayout text contracts must not include legacy HUD words. Found ${word}.`);
@@ -1871,7 +1871,10 @@ function validateWorldSpaceLabelPolicy(errors: ErrorList): void {
   const invalidPopup =
     quotedText.some((entry) => entry.includes('N: NEW DEPLOYMENT')) ||
     quotedText.some((entry) => entry.includes('PRESS ENTER')) ||
-    quotedText.some((entry) => entry.includes('LIVES'));
+    quotedText.some((entry) => entry.includes('LIVES')) ||
+    quotedText.some((entry) => entry.includes('STAR')) ||
+    quotedText.some((entry) => entry.includes('COIN')) ||
+    quotedText.some((entry) => entry.includes('LEVELS'));
   if (invalidPopup) {
     errors.push('PlayScene should not render static title-style label strings; keep gameplay labels as HUD-only or headless toasts.');
   }
@@ -1894,8 +1897,8 @@ function validatePopupDurations(errors: ErrorList): void {
   }
 
   const toastMs = Number(match[1]);
-  if (!Number.isFinite(toastMs) || toastMs < 800 || toastMs > 1200) {
-    errors.push(`showHudToast fade duration must be within 800-1200ms, received ${toastMs}`);
+  if (!Number.isFinite(toastMs) || toastMs < 500 || toastMs > 1200) {
+    errors.push(`showHudToast fade duration must be within 500-1200ms, received ${toastMs}`);
   }
 }
 

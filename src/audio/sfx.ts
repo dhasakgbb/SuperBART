@@ -58,7 +58,12 @@ export const REQUIRED_SFX_KEYS: SfxKey[] = [
   'shell_kick',
   'goal_clear',
   'menu_move',
-  'menu_confirm'
+  'menu_confirm',
+  'block_hit',
+  'game_over',
+  'pause',
+  'one_up',
+  'fireball'
 ];
 
 export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {

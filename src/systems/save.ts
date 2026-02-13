@@ -2,8 +2,9 @@ import { CAMPAIGN_WORLD_LAYOUT, DEFAULT_SETTINGS, TOTAL_CAMPAIGN_LEVELS } from '
 import type { SaveGameV3 } from '../types/game';
 import { isValidCampaignLevel, levelKey, nextLevel } from './progression';
 
-const SAVE_KEY_V3 = 'super_bart_save_v3';
+const SAVE_KEY_V4 = 'super_bart_save_v4';
 const SAVE_KEY_V2 = 'super_bart_save_v2';
+const SAVE_KEY_V3 = 'super_bart_save_v3';
 
 function normalizeLevelKeys(levelKeys: string[] | undefined): string[] {
   const unique = new Set<string>();
@@ -40,6 +41,16 @@ function normalizeCurrentLevel(save: SaveGameV3): SaveGameV3 {
   };
 }
 
+function normalizePerLevelStats(levelKeys: string[]): SaveGameV3['perLevelStats'] {
+  const stats = Object.create(null) as Record<string, SaveGameV3['perLevelStats'][string]>;
+  for (const key of levelKeys) {
+    if (!stats[key]) {
+      stats[key] = { evalsCollected: 0, evalsCollectedIds: [], collectiblesPicked: [] };
+    }
+  }
+  return stats;
+}
+
 function normalizeSave(saveLike: Partial<SaveGameV3>): SaveGameV3 {
   const defaults = defaultSave();
   const rawSettings = (saveLike.settings ?? {}) as Partial<SaveGameV3['settings']> & {
@@ -55,7 +66,7 @@ function normalizeSave(saveLike: Partial<SaveGameV3>): SaveGameV3 {
   const merged: SaveGameV3 = {
     ...defaults,
     ...saveLike,
-    schemaVersion: 3,
+    schemaVersion: 4,
     campaign: {
       ...defaults.campaign,
       ...(saveLike.campaign ?? {}),
@@ -74,6 +85,20 @@ function normalizeSave(saveLike: Partial<SaveGameV3>): SaveGameV3 {
 
   merged.campaign.unlockedLevelKeys = normalizeLevelKeys(merged.campaign.unlockedLevelKeys);
   merged.campaign.completedLevelKeys = normalizeLevelKeys(merged.campaign.completedLevelKeys);
+  const perLevelStatsFromSave = (saveLike.perLevelStats ?? defaults.perLevelStats) as SaveGameV3['perLevelStats'];
+  const keysToHydrate = new Set<string>([...merged.campaign.unlockedLevelKeys, ...merged.campaign.completedLevelKeys]);
+  merged.perLevelStats = normalizePerLevelStats([...keysToHydrate]);
+  for (const [key, value] of Object.entries(perLevelStatsFromSave)) {
+    const safeValue = value ?? {};
+    if (!CAMPAIGN_WORLD_LAYOUT[Number(key.split('-')[0]) - 1]) {
+      continue;
+    }
+    merged.perLevelStats[key] = {
+      evalsCollected: Number.isFinite(safeValue.evalsCollected) ? Number(safeValue.evalsCollected) : 0,
+      evalsCollectedIds: Array.isArray(safeValue.evalsCollectedIds) ? safeValue.evalsCollectedIds.filter((item) => typeof item === 'string') : [],
+      collectiblesPicked: Array.isArray(safeValue.collectiblesPicked) ? safeValue.collectiblesPicked.filter((item) => typeof item === 'string') : [],
+    };
+  }
 
   const firstLevel = levelKey(1, 1);
   if (!merged.campaign.unlockedLevelKeys.includes(firstLevel)) {
@@ -85,7 +110,7 @@ function normalizeSave(saveLike: Partial<SaveGameV3>): SaveGameV3 {
 
 export function defaultSave(): SaveGameV3 {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     campaign: {
       world: 1,
       levelIndex: 1,
@@ -93,6 +118,9 @@ export function defaultSave(): SaveGameV3 {
       worldLayout: [...CAMPAIGN_WORLD_LAYOUT],
       unlockedLevelKeys: [levelKey(1, 1)],
       completedLevelKeys: []
+    },
+    perLevelStats: {
+      '1-1': { evalsCollected: 0, evalsCollectedIds: [], collectiblesPicked: [] },
     },
     progression: {
       score: 0,
@@ -107,6 +135,11 @@ export function defaultSave(): SaveGameV3 {
 
 export function loadSave(): SaveGameV3 {
   try {
+    const rawV4 = localStorage.getItem(SAVE_KEY_V4);
+    if (rawV4) {
+      return normalizeSave(JSON.parse(rawV4) as Partial<SaveGameV3>);
+    }
+
     const rawV3 = localStorage.getItem(SAVE_KEY_V3);
     if (rawV3) {
       return normalizeSave(JSON.parse(rawV3) as Partial<SaveGameV3>);
@@ -126,10 +159,13 @@ export function loadSave(): SaveGameV3 {
 }
 
 export function persistSave(save: SaveGameV3): void {
-  localStorage.setItem(SAVE_KEY_V3, JSON.stringify(normalizeSave(save)));
+  localStorage.setItem(SAVE_KEY_V4, JSON.stringify(normalizeSave(save)));
 }
 
 export function migrateSave(legacy: Record<string, unknown>): SaveGameV3 {
+  if (legacy && typeof legacy === 'object' && (legacy as { schemaVersion?: number }).schemaVersion === 4) {
+    return normalizeSave(legacy as Partial<SaveGameV3>);
+  }
   if (legacy && typeof legacy === 'object' && (legacy as { schemaVersion?: number }).schemaVersion === 3) {
     return normalizeSave(legacy as Partial<SaveGameV3>);
   }
@@ -179,6 +215,11 @@ export function migrateSave(legacy: Record<string, unknown>): SaveGameV3 {
 
   migrated.campaign.unlockedLevelKeys = normalizeLevelKeys(unlocked);
   return migrated;
+}
+
+export function ensureSaveDefaults(): void {
+  const loaded = loadSave();
+  persistSave(loaded);
 }
 
 export function isLevelUnlocked(save: SaveGameV3, world: number, levelIndex: number): boolean {

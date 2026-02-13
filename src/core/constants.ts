@@ -60,5 +60,5 @@ export const DISPLAY_NAMES = {
   lives: 'INSTANCES',
   gameOver: '429 TOO MANY REQUESTS',
   levelClear: 'DEPLOYED TO PROD',
-  finalVictory: 'AGI ACHIEVED',
+  finalVictory: 'AGI ACHIEVED!',
 } as const;

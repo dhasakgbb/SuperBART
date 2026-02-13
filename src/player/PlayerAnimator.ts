@@ -84,6 +84,7 @@ export function resolveAnimState(
   if (input.motionState === 'skid' && absVx > 0) {
     return { state: 'skid', landTimer: 0, hurtTimer: 0 };
   }
+  // Run is strictly intent-driven; raw speed alone is never enough without run motion hint.
   if (input.motionState === 'run' && absVx >= config.runThreshold && input.inputX !== 0) {
     return { state: 'run', landTimer: 0, hurtTimer: 0 };
   }
@@ -94,11 +95,6 @@ export function resolveAnimState(
   // Skid: reversing direction at speed
   if (input.motionState === undefined && input.inputX !== 0 && Math.sign(input.inputX) !== Math.sign(input.vx) && absVx > config.skidThreshold) {
     return { state: 'skid', landTimer: 0, hurtTimer: 0 };
-  }
-
-  // Run
-  if (absVx > config.runThreshold && input.inputX !== 0 && Math.sign(input.inputX) === Math.sign(input.vx)) {
-    return { state: 'run', landTimer: 0, hurtTimer: 0 };
   }
 
   // Walk

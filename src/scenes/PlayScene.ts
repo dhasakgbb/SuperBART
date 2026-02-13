@@ -19,7 +19,7 @@ import { createDustPuff, type DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
 import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig, { stylePalette } from '../style/styleConfig';
-import { computeSeed } from '../systems/progression';
+import { computeSeed, setLevelCollectibleStatus, setLevelEvalStatus } from '../systems/progression';
 import { persistSave } from '../systems/save';
 import type { PlayerForm, SuperBartRuntimeState } from '../types/game';
 import { createHud, renderHud, updateHudPosition, type HudRefs } from '../ui/hud';
@@ -32,6 +32,22 @@ type StompHitstopTelemetry = {
   currentlyPaused: boolean;
   history: Array<{ frame: number; appliedMs: number; paused: boolean; resumed: boolean }>;
 };
+
+type MovementDebugState = {
+  vx: number;
+  vy: number;
+  onGround: boolean;
+  desiredState: 'walk' | 'run';
+  runChargeMs: number;
+  jumpCutApplied: boolean;
+  jumpCutWindowMsLeft: number;
+  prevJumpHeld: boolean;
+  skidMsLeft: number;
+};
+
+type CollectibleGlowHandle =
+  | { kind: 'postfx'; fx: Phaser.FX.Glow }
+  | { kind: 'fallback'; image: Phaser.GameObjects.Image };
 
 export class PlayScene extends Phaser.Scene {
   private levelBonus = false;
@@ -51,8 +67,10 @@ export class PlayScene extends Phaser.Scene {
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private damageZones!: Phaser.Physics.Arcade.StaticGroup;
   private enemyHandles: EnemyHandle[] = [];
-  private collectibleGlows = new Map<number, Phaser.GameObjects.Image>();
+  private collectibleGlows = new Map<number, CollectibleGlowHandle>();
   private glowIdCounter = 1;
+  private cameraBloom?: Phaser.FX.Bloom;
+  private canUsePostFx = false;
   private hud!: HudRefs;
   private readonly audio = AudioEngine.shared();
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -94,6 +112,7 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     runtimeStore.mode = 'playing';
     const actorScale = styleConfig.gameplayLayout.actorScale;
+    this.canUsePostFx = this.canUsePostFxRender();
 
     this.world = runtimeStore.save.campaign.world;
     this.levelIndex = runtimeStore.save.campaign.levelIndex;
@@ -165,16 +184,19 @@ export class PlayScene extends Phaser.Scene {
         spawn = { x: e.x, y: e.y };
       } else if (e.type === 'coin') {
         const coin = this.coins.create(e.x, e.y, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
+        coin.setData('collectibleId', e.id);
         coin.setScale(actorScale.coin).setDepth(28);
         coin.refreshBody();
         this.attachCollectibleGlow(coin, 'pickup_token');
       } else if (e.type === 'star') {
         const star = this.stars.create(e.x, e.y, 'pickup_eval') as Phaser.Physics.Arcade.Sprite;
+        star.setData('collectibleId', e.id);
         star.setScale(actorScale.star).setDepth(28);
         star.refreshBody();
         this.attachCollectibleGlow(star, 'pickup_eval');
       } else if (e.type === 'question_block') {
         const qb = this.questionBlocks.create(e.x, e.y, 'question_block') as Phaser.Physics.Arcade.Sprite;
+        qb.setData('collectibleId', e.id);
         qb.setScale(actorScale.questionBlock).setDepth(26);
         qb.setData('state', 'active');
         qb.refreshBody();
@@ -250,18 +272,34 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.physics.add.overlap(this.player, this.coins, (_p, coin) => {
-      this.detachCollectibleGlow(coin as Phaser.Physics.Arcade.Sprite);
-      coin.destroy();
+      const token = coin as Phaser.Physics.Arcade.Sprite;
+      const collectibleId = String(token.getData('collectibleId') ?? '');
+      if (collectibleId) {
+        runtimeStore.save = setLevelCollectibleStatus(runtimeStore.save, this.world, this.levelIndex, collectibleId);
+      }
+      this.flashCollectiblePickup();
+      this.detachCollectibleGlow(token);
+      token.destroy();
       runtimeStore.save.progression.coins += 1;
       runtimeStore.save.progression.score += SCORE_VALUES.coin;
+      this.pulseHudCounter(this.hud.tokenText);
+      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 6);
       this.playSfx('coin');
     });
 
     this.physics.add.overlap(this.player, this.stars, (_p, star) => {
-      this.detachCollectibleGlow(star as Phaser.Physics.Arcade.Sprite);
-      star.destroy();
+      const pickup = star as Phaser.Physics.Arcade.Sprite;
+      const evalId = String(pickup.getData('collectibleId') ?? '');
+      if (evalId) {
+        runtimeStore.save = setLevelEvalStatus(runtimeStore.save, this.world, this.levelIndex, evalId);
+      }
+      this.flashCollectiblePickup(0xffc65a);
+      this.detachCollectibleGlow(pickup);
+      pickup.destroy();
       runtimeStore.save.progression.stars += 1;
       runtimeStore.save.progression.score += SCORE_VALUES.star;
+      this.pulseHudCounter(this.hud.evalText);
+      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 10);
       this.playSfx('power');
     });
 
@@ -317,9 +355,9 @@ export class PlayScene extends Phaser.Scene {
 
           const isShell = target.kind === 'shell';
           const shellIsMoving = isShell && Math.abs(targetBody.velocity.x) >= 150;
-          if (!isShell || targetBody.velocity.x === 0) {
+          if (shouldProcessStomp && (!isShell || targetBody.velocity.x === 0)) {
             if (target.kind !== 'shell' || target.sprite.texture.key !== 'enemy_shell_retracted') {
-              target.sprite.disableBody(true, true);
+              this.squashAndDisableSprite(target.sprite);
             }
           }
 
@@ -327,7 +365,7 @@ export class PlayScene extends Phaser.Scene {
             runtimeStore.save.progression.score += SCORE_VALUES.stomp;
             this.playSfx('stomp');
             this.showHudToast(SCENE_TEXT.gameplay.correctedSuffix);
-            this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+            this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 4);
             this.triggerStompHitstop();
             if (shouldBouncePlayer && runtimeStore.save.settings.screenShakeEnabled) {
               this.cameras.main.shake(45, 0.002);
@@ -345,8 +383,10 @@ export class PlayScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, level.width * TILE_SIZE, level.height * TILE_SIZE);
     this.cameras.main.setZoom(styleConfig.gameplayLayout.cameraZoom);
-    this.cameras.main.startFollow(this.player, false, 0.16, 0.1);
-    this.cameras.main.setDeadzone(170, 90);
+    this.cameras.main.startFollow(this.player, false);
+    this.cameras.main.setLerp(0.16, 0.1);
+    this.cameras.main.setDeadzone(80, 50);
+    this.applyCameraBloom();
 
     this.keys = this.input.keyboard!.addKeys({
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
@@ -424,6 +464,16 @@ export class PlayScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
       this.stompHitstop?.remove();
+      this.cameraBloom?.destroy();
+      this.cameraBloom = undefined;
+      this.collectibleGlows.forEach((glow) => {
+        if (glow.kind === 'postfx') {
+          glow.fx.destroy();
+        } else {
+          glow.image.destroy();
+        }
+      });
+      this.collectibleGlows.clear();
       if (this.physics?.world?.isPaused) {
         this.physics.world.resume();
       }
@@ -441,6 +491,7 @@ export class PlayScene extends Phaser.Scene {
     const blockY = spawn.y + showcase.questionBlockOffset.y;
     const block = this.questionBlocks.create(blockX, blockY, 'question_block') as Phaser.Physics.Arcade.Sprite;
     block.setScale(actorScale.questionBlock).setDepth(26);
+    block.setData('collectibleId', `showcase-${this.world}-${this.levelIndex}-qb`);
     block.setData('state', 'active');
     block.refreshBody();
     this.attachCollectibleGlow(block, 'question_block');
@@ -450,6 +501,7 @@ export class PlayScene extends Phaser.Scene {
       const coinY = spawn.y + showcase.coinLine.yOffset;
       const coin = this.coins.create(coinX, coinY, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
       coin.setScale(actorScale.coin).setDepth(28);
+      coin.setData('collectibleId', `showcase-${this.world}-${this.levelIndex}-coin-${i}`);
       coin.refreshBody();
       this.attachCollectibleGlow(coin, 'pickup_token');
     }
@@ -485,6 +537,10 @@ export class PlayScene extends Phaser.Scene {
     this.detachCollectibleGlow(block);
     block.setTexture('question_block_used');
     block.refreshBody();
+    const collectibleId = String(block.getData('collectibleId') ?? '');
+    if (collectibleId) {
+      runtimeStore.save = setLevelCollectibleStatus(runtimeStore.save, this.world, this.levelIndex, collectibleId);
+    }
 
     // Bump animation
     const origY = block.y;
@@ -502,10 +558,10 @@ export class PlayScene extends Phaser.Scene {
       .setDepth(30);
     this.tweens.add({
       targets: rewardCoin,
-      y: block.y - 48,
+      y: block.y - 56,
       alpha: 0,
-      duration: 400,
-      ease: 'Quad.easeOut',
+      duration: 420,
+      ease: 'Back.easeOut',
       onComplete: () => rewardCoin.destroy(),
     });
 
@@ -518,27 +574,170 @@ export class PlayScene extends Phaser.Scene {
     if (!styleConfig.bloom.enabled) {
       return;
     }
-    const glow = this.add.image(sprite.x, sprite.y, textureKey)
-      .setDepth(sprite.depth - 1)
-      .setAlpha(Math.min(0.8, Math.max(0.22, styleConfig.bloom.strength)))
-      .setTint(Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setScale(1 + styleConfig.bloom.radius * 0.09);
+
+    this.startCollectibleFloatTween(sprite);
     const id = this.glowIdCounter++;
+    const tintColor = Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color;
+
+    const createFallbackGlow = (): CollectibleGlowHandle => ({
+      kind: 'fallback',
+      image: this.add.image(sprite.x, sprite.y, textureKey)
+        .setDepth(sprite.depth - 1)
+        .setAlpha(Math.min(0.8, Math.max(0.22, styleConfig.bloom.strength)))
+        .setTint(tintColor)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setScale(1 + styleConfig.bloom.radius * 0.09),
+    });
+
+    let glow: CollectibleGlowHandle = createFallbackGlow();
+    if (this.canUsePostFx) {
+      const postFx = (sprite as Phaser.GameObjects.Sprite & { postFX?: { addGlow: (...args: unknown[]) => Phaser.FX.Glow } }).postFX;
+      if (postFx) {
+        try {
+          const fx = postFx.addGlow(
+            tintColor,
+            Math.max(2, 8 * styleConfig.bloom.strength),
+            0,
+            false,
+            0.15,
+            Math.max(1, styleConfig.bloom.radius * 1.5),
+          );
+          if (fx) {
+            glow = {
+              kind: 'postfx',
+              fx,
+            };
+          } else {
+            this.canUsePostFx = false;
+            glow = createFallbackGlow();
+          }
+        } catch {
+          this.canUsePostFx = false;
+          glow = createFallbackGlow();
+          // If post-FX failed, keep fallback mode active for remaining collectibles too.
+        }
+      }
+    }
     sprite.setData('collectibleGlowId', id);
+    sprite.setData('collectibleBaseY', sprite.y);
     this.collectibleGlows.set(id, glow);
   }
 
+  private startCollectibleFloatTween(sprite: Phaser.Physics.Arcade.Sprite): void {
+    const existing = sprite.getData('collectibleFloatTween');
+    if (existing instanceof Phaser.Tweens.Tween) {
+      existing.stop();
+      existing.remove();
+    }
+    const baseY = Number(sprite.getData('collectibleBaseY') ?? sprite.y);
+    const bounce = this.tweens.add({
+      targets: sprite,
+      y: { from: baseY, to: baseY - 4 },
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    sprite.setData('collectibleBaseY', baseY);
+    sprite.setData('collectibleFloatTween', bounce);
+  }
+
+  private stopCollectibleFloat(sprite: Phaser.Physics.Arcade.Sprite): void {
+    const floatTween = sprite.getData('collectibleFloatTween');
+    if (floatTween instanceof Phaser.Tweens.Tween) {
+      floatTween.stop();
+      floatTween.remove();
+    }
+    const baseY = sprite.getData('collectibleBaseY');
+    if (Number.isFinite(Number(baseY))) {
+      sprite.setY(Number(baseY));
+    }
+    sprite.setData('collectibleFloatTween', undefined);
+    sprite.setData('collectibleBaseY', undefined);
+  }
+
+  private flashCollectiblePickup(color = 0xffffff): void {
+    this.cameras.main.flash(120, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+  }
+
+  private canUsePostFxRender(): boolean {
+    return this.game.renderer?.type === Phaser.WEBGL && styleConfig.bloom.enabled;
+  }
+
+  private applyCameraBloom(): void {
+    this.cameraBloom?.destroy();
+    this.cameraBloom = undefined;
+    if (!this.canUsePostFx) {
+      return;
+    }
+
+    if (!this.cameras.main.postFX) {
+      this.canUsePostFx = false;
+      return;
+    }
+
+    const color = Phaser.Display.Color.HexStringToColor(styleConfig.bloom.tint).color;
+    const thresholdScale = Phaser.Math.Clamp(1 - styleConfig.bloom.threshold, 0, 1);
+    const blurStrength = Math.max(1, Number(styleConfig.bloom.radius) || 1);
+    const strength = Math.max(0.1, Number(styleConfig.bloom.strength) * (1 + thresholdScale));
+    const steps = Math.max(1, Math.round(Number(styleConfig.bloom.downsample) || 1));
+
+    try {
+      const bloom = this.cameras.main.postFX.addBloom(
+        color,
+        1,
+        1,
+        blurStrength,
+        strength,
+        steps,
+      );
+      this.cameraBloom = bloom;
+    } catch {
+      this.canUsePostFx = false;
+      this.cameraBloom = undefined;
+    }
+  }
+
   private detachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite): void {
+    this.stopCollectibleFloat(sprite);
     const id = Number(sprite.getData('collectibleGlowId'));
     if (!Number.isFinite(id)) {
       return;
     }
     const glow = this.collectibleGlows.get(id);
     if (glow) {
-      glow.destroy();
+      if (glow.kind === 'postfx') {
+        glow.fx.destroy();
+      } else {
+        glow.image.destroy();
+      }
       this.collectibleGlows.delete(id);
     }
+    sprite.setData('collectibleGlowId', undefined);
+    sprite.setData('collectibleBaseY', undefined);
+  }
+
+  private squashAndDisableSprite(sprite: Phaser.Physics.Arcade.Sprite): void {
+    if (!sprite.active) {
+      return;
+    }
+    const scaleX = sprite.scaleX;
+    const scaleY = sprite.scaleY;
+    const baselineY = sprite.y;
+    const baselineX = sprite.x;
+    this.tweens.add({
+      targets: sprite,
+      scaleX: scaleX * 1.05,
+      scaleY: Math.max(0.18, scaleY * 0.2),
+      duration: 80,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        if (sprite.active) {
+          sprite.setPosition(baselineX, baselineY);
+          sprite.disableBody(true, true);
+        }
+      },
+    });
   }
 
   private getRuntimeState(): SuperBartRuntimeState {
@@ -550,10 +749,34 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private getRuntimeStateWithDebug(): SuperBartRuntimeState & { stompHitstopTelemetry: StompHitstopTelemetry } {
+  private getRuntimeStateWithDebug(): SuperBartRuntimeState & {
+    stompHitstopTelemetry: StompHitstopTelemetry;
+    movement: MovementDebugState;
+    animState: string;
+    sceneFrame: number;
+    feel: FeelState;
+  } {
+    const onGround = this.player?.body.blocked.down || this.player?.body.touching.down;
+    const movement: MovementDebugState = {
+      vx: this.player.body.velocity.x,
+      vy: this.player.body.velocity.y,
+      onGround,
+      desiredState: this.feel.desiredState,
+      runChargeMs: this.feel.runChargeMs,
+      jumpCutApplied: this.feel.jumpCutApplied,
+      jumpCutWindowMsLeft: this.feel.jumpCutWindowMsLeft,
+      prevJumpHeld: this.feel.prevJumpHeld,
+      skidMsLeft: this.feel.skidMsLeft,
+    };
+
     return {
       ...this.getRuntimeState(),
       stompHitstopTelemetry: this.getStompHitstopTelemetry(),
+      movement,
+      animState: this.animator.getState(),
+      sceneFrame: this.game.loop.frame,
+      // Non-serialized feel contract state for deterministic feel telemetry in QA harnesses.
+      feel: this.feel,
     };
   }
 
@@ -584,7 +807,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private triggerStompHitstop(): void {
-    if (!this.physics?.world || this.physics.world.isPaused) {
+    if (!this.physics?.world || this.physics?.world?.isPaused) {
       return;
     }
     const record = {
@@ -633,12 +856,35 @@ export class PlayScene extends Phaser.Scene {
     popup.setLetterSpacing(styleConfig.hudLayout.leftGroup.letterSpacingPx);
     this.tweens.add({
       targets: popup,
-      y: popup.y - 20 * uiScale,
+      y: popup.y - 40 * uiScale,
       alpha: 0,
-      duration: 950,
-      ease: 'Quad.easeOut',
+      duration: 600,
+      ease: 'Cubic.easeOut',
       onComplete: () => popup.destroy(),
     });
+  }
+
+  private pulseHudCounter(text: Phaser.GameObjects.BitmapText): void {
+    const existing = text.getData('counterPulse');
+    if (existing instanceof Phaser.Tweens.Tween) {
+      existing.stop();
+      existing.remove();
+    }
+    const baseScaleX = text.scaleX;
+    const baseScaleY = text.scaleY;
+    const pulse = this.tweens.add({
+      targets: text,
+      scaleX: baseScaleX * 1.12,
+      scaleY: baseScaleY * 1.12,
+      duration: 80,
+      yoyo: true,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        text.setScale(baseScaleX, baseScaleY);
+        text.setData('counterPulse', undefined);
+      },
+    });
+    text.setData('counterPulse', pulse);
   }
 
   private damagePlayer(reason: string): void {
@@ -717,7 +963,7 @@ export class PlayScene extends Phaser.Scene {
         stars: runtimeStore.save.progression.stars,
         deaths: runtimeStore.save.progression.deaths
       }
-    });
+    }, { durationMs: 150, fadeInMs: 180 });
   }
 
   private simulateStep(dtMs: number): void {

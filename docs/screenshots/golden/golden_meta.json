@@ -1,36 +1,36 @@
 {
   "schema": "visual-regression-v1",
-  "generatedAt": "2026-02-13T16:29:01.086Z",
+  "generatedAt": "2026-02-13T18:54:01.913Z",
   "layoutVersion": "1.0.0",
   "scenes": [
     {
       "scene": "title",
       "sourceScene": "TitleScene",
       "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/title_scene_golden.png",
-      "captureHash": "dc8ec90a0e5b7776cb5d402d7f43b1ff3643a5ea6cf80ad324b0600425abb7c6",
+      "captureHash": "e7f3da727c257cc7f149b449bfe98bd776f2b24cfbb7724ea60cd50c42c36a04",
       "width": 966,
       "height": 546,
-      "createdAt": "2026-02-13T16:29:01.086Z",
+      "createdAt": "2026-02-13T18:54:01.913Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "map",
       "sourceScene": "WorldMapScene",
       "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/map_scene_golden.png",
-      "captureHash": "7c2770e3cda32a318684de02b75688d3fc6f3d3fe3afce2e74e950e4fe15e2c6",
+      "captureHash": "d83c100d716481d7a2913a2629ca3454a6460e07d613ffdf786349c84db91c69",
       "width": 966,
       "height": 546,
-      "createdAt": "2026-02-13T16:29:01.086Z",
+      "createdAt": "2026-02-13T18:54:01.913Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "play",
       "sourceScene": "PlayScene",
       "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/play_scene_golden.png",
-      "captureHash": "06572725c36f659487fb038c721595d7f24996c25a9de94df08eed5829d35824",
+      "captureHash": "4bb878b1f11f62180be8c1b92b4b9beda34f57a5fee175f67595dc633fd3b7a5",
       "width": 966,
       "height": 546,
-      "createdAt": "2026-02-13T16:29:01.086Z",
+      "createdAt": "2026-02-13T18:54:01.913Z",
       "layoutVersion": "1.0.0"
     }
   ]

@@ -226,6 +226,22 @@
       "lengthPx": 24,
       "recoveryAfter": false,
       "mechanicsIntroduced": ["thwomp"]
+    },
+    {
+      "id": "benchmark_sprint_01",
+      "tags": ["FLAT", "BENCHMARK_AUTO_SCROLL"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": ["walker"]
+    },
+    {
+      "id": "vanish_platform_01",
+      "tags": ["PLATFORM_BUBBLE", "VANISH_PLATFORM"],
+      "weight": 1,
+      "lengthPx": 24,
+      "recoveryAfter": false,
+      "mechanicsIntroduced": []
     }
   ]
 }

@@ -3,9 +3,9 @@ import { completeCurrentLevel, defaultSave, migrateSave, setCurrentLevel } from 
 import { TOTAL_CAMPAIGN_LEVELS } from '../src/core/constants';
 
 describe('save progression and migration', () => {
-  test('legacy migration yields schema v3', () => {
+  test('legacy migration yields schema v4', () => {
     const migrated = migrateSave({ schemaVersion: 2, campaign: { world: 2, levelIndex: 3 } });
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(4);
     expect(migrated.campaign.worldLayout).toEqual([6, 6, 6, 6, 1]);
     expect(migrated.campaign.totalLevels).toBe(TOTAL_CAMPAIGN_LEVELS);
     expect(migrated.campaign.unlockedLevelKeys).toContain('1-1');

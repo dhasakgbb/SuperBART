@@ -2,7 +2,7 @@ export type WorldIndex = 1 | 2 | 3 | 4 | 5;
 
 export type WorldTheme = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark';
 
-export type ChunkFamily = 'server_room' | 'training_run' | 'rag_pipeline' | 'rate_limiter';
+export type ChunkFamily = 'azure_walkway' | 'server_room' | 'training_run' | 'rag_pipeline' | 'rate_limiter' | 'benchmark_sprint';
 
 export interface WorldPhysicsMultipliers {
   frictionMultiplier: number;
@@ -138,11 +138,11 @@ export interface ManifestSummary {
 }
 
 export const WORLD_CHUNK_FAMILIES: Record<WorldIndex, ChunkFamily[]> = {
-  1: ['server_room'],
-  2: ['server_room', 'training_run'],
-  3: ['training_run', 'rag_pipeline'],
-  4: ['rag_pipeline', 'rate_limiter'],
-  5: ['rate_limiter', 'training_run'],
+  1: ['azure_walkway', 'server_room'],
+  2: ['training_run', 'rag_pipeline'],
+  3: ['rag_pipeline', 'training_run'],
+  4: ['rate_limiter', 'rag_pipeline'],
+  5: ['benchmark_sprint', 'rate_limiter', 'training_run'],
 };
 
 export const CONTENT_WORLD_THEME_NAMES: Record<WorldIndex, string> = {
@@ -206,9 +206,9 @@ export const CONTENT_WORLD_MAP: Array<WorldContract> = [
       gapFrequency: 0.14,
       enemyDensity: 0.45,
       projectileCadenceMs: 1900,
-      movingPlatformFrequency: 0.13,
+      movingPlatformFrequency: 0.16,
       checkpointSpacingChunks: 3,
-      coinDensity: 0.5,
+      coinDensity: 0.42,
       starTarget: 3,
       palette: { skyTop: 0xf9d976, skyBottom: 0xf39f86, accent: 0xc97d10 },
       audio: { tempo: 126, scale: [0, 2, 3, 7, 10] },
@@ -254,11 +254,11 @@ export const CONTENT_WORLD_MAP: Array<WorldContract> = [
     generation: {
       groundVariance: 2,
       gapFrequency: 0.2,
-      enemyDensity: 0.6,
+      enemyDensity: 0.62,
       projectileCadenceMs: 1600,
       movingPlatformFrequency: 0.23,
       checkpointSpacingChunks: 2,
-      coinDensity: 0.48,
+      coinDensity: 0.40,
       starTarget: 3,
       palette: { skyTop: 0x101423, skyBottom: 0x2b2d42, accent: 0xff8c42 },
       audio: { tempo: 138, scale: [0, 1, 5, 7, 8] },
@@ -341,8 +341,15 @@ export const ENEMIES: EnemyContract[] = [
     id: 'technical_debt',
     aliases: ['tethered_debt'],
     displayName: 'TECHNICAL DEBT',
-    implemented: false,
+    implemented: true,
     behaviorNotes: 'Chain-chomp style anchor-and-lunge with late-stage pursuit.',
+  },
+  {
+    id: 'compliance_officer',
+    aliases: ['compliance'],
+    displayName: 'COMPLIANCE OFFICER',
+    implemented: true,
+    behaviorNotes: 'Stomp-gated platform converter with temporary persistence.',
   },
 ];
 
@@ -364,8 +371,8 @@ export const SCENE_TEXT: SceneText = {
     loadingHints: [
       'FINE-TUNING...',
       'REDUCING HALLUCINATIONS...',
-      'PROVISIONING...',
-      'WARMING CACHE...',
+      'PROVISIONING GPUS...',
+      'WARMING INFERENCE CACHE...',
     ],
   },
   title: {
@@ -374,7 +381,7 @@ export const SCENE_TEXT: SceneText = {
     hints: 'N: NEW DEPLOYMENT   L: SERVICE MAP   S: SETTINGS',
   },
   levelComplete: {
-    heading: 'DEPLOYED TO PROD',
+    heading: 'DEPLOYED TO PROD!',
     hint: 'ENTER: NEXT DEPLOY   ESC: SERVICE MAP',
     statsTemplate: 'Latency: {time}s\nTokens: {coins}\nEvals: {evals}\nRollbacks: {deaths}',
   },
@@ -383,8 +390,8 @@ export const SCENE_TEXT: SceneText = {
     hint: 'R: RESTART   ESC: TITLE',
   },
   finalVictory: {
-    heading: 'BENCHMARKS IMPROVED',
-    subheading: 'shipping still pending',
+    heading: 'AGI ACHIEVED!',
+    subheading: 'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
     hint: 'ENTER: SERVICE MAP   R: RESET DEPLOYMENT   ESC: TITLE',
     statsTemplate: 'Tokens: {coins}\nEvals: {evals}\nRollbacks: {deaths}\nLatency: {time}s',
   },
@@ -420,6 +427,8 @@ export const APPROVED_UI_TEXT: ApprovedUiTextRule = {
     SCENE_TEXT.levelComplete.heading,
     SCENE_TEXT.finalVictory.heading,
     SCENE_TEXT.finalVictory.subheading,
+    'AGI ACHIEVED!',
+    'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
     SCENE_TEXT.pause.heading,
     SCENE_TEXT.worldMap.title,
     SCENE_TEXT.worldMap.subtitle,
@@ -446,10 +455,26 @@ export const APPROVED_UI_TEXT: ApprovedUiTextRule = {
     'WORLD MAP',
     'ARROWS: SELECT',
     'DEPLOYED TO PROD',
+    'DEPLOYED TO PROD!',
     '429: TOO MANY REQUESTS',
-    'BENCHMARKS IMPROVED',
+    'AGI ACHIEVED!',
+    'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
+    'BENCHMARK IN PROGRESS',
     'PAUSED',
     'SETTINGS',
+    'MUTED',
+    'PENDING REVIEW',
+    'CONTEXT WINDOW EXCEEDED',
+    'SEGFAULT',
+    'SAVED TO BLOB STORAGE',
+    'WORKS ON MY MACHINE',
+    'MICROSERVICES DEPLOYED',
+    'DEBT CALLED',
+    'COPILOT ENGAGED',
+    'AGENT ONLINE',
+    'AGENT TIMED OUT',
+    'INFERENCE HIT',
+    'BENCHMARKS IMPROVED',
   ],
   patterns: [
     { id: 'HUD_WORLD', regex: '^WORLD [1-5]-[1-9]$' },

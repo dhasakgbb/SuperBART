@@ -1,4 +1,5 @@
 import { CAMPAIGN_WORLD_LAYOUT, TOTAL_CAMPAIGN_LEVELS } from '../core/constants';
+import type { SaveGameV3 } from '../types/game';
 
 export interface CampaignLevelRef {
   world: number;
@@ -73,4 +74,84 @@ export function campaignRefFromOrdinal(ordinal: number): CampaignLevelRef {
 export function computeSeed(world: number, levelIndex: number): number {
   const ordinal = campaignOrdinal(world, levelIndex);
   return world * 100_003 + levelIndex * 9_973 + ordinal * 379;
+}
+
+const MAX_EVALS_PER_LEVEL = 3;
+
+function normalizeEvalList(values: string[] | undefined): string[] {
+  return Array.from(new Set((values ?? []).filter((value) => typeof value === 'string')).values()).slice(0, MAX_EVALS_PER_LEVEL);
+}
+
+export function getPerLevelStats(
+  save: SaveGameV3,
+  world: number,
+  levelIndex: number,
+): { evalsCollected: number; evalsCollectedIds: string[]; collectiblesPicked: string[] } {
+  const key = levelKey(world, levelIndex);
+  const raw = save.perLevelStats[key] ?? {
+    evalsCollected: 0,
+    evalsCollectedIds: [],
+    collectiblesPicked: [],
+  };
+  const evalsCollectedIds = normalizeEvalList(Array.isArray(raw.evalsCollectedIds) ? raw.evalsCollectedIds : []);
+  return {
+    evalsCollected: Math.min(MAX_EVALS_PER_LEVEL, Math.max(0, Number(raw.evalsCollected) || 0)),
+    evalsCollectedIds,
+    collectiblesPicked: Array.isArray(raw.collectiblesPicked) ? raw.collectiblesPicked.filter((v) => typeof v === 'string') : [],
+  };
+}
+
+export function isLevelEvalComplete(save: SaveGameV3, world: number, levelIndex: number): boolean {
+  return getPerLevelStats(save, world, levelIndex).evalsCollected >= MAX_EVALS_PER_LEVEL;
+}
+
+export function setLevelEvalStatus(
+  save: SaveGameV3,
+  world: number,
+  levelIndex: number,
+  evalId: string,
+): SaveGameV3 {
+  const key = levelKey(world, levelIndex);
+  if (!isValidCampaignLevel(world, levelIndex)) {
+    return save;
+  }
+  const existing = getPerLevelStats(save, world, levelIndex);
+  const nextEvalIds = normalizeEvalList([...[...existing.evalsCollectedIds, evalId]]);
+  return {
+    ...save,
+    perLevelStats: {
+      ...save.perLevelStats,
+      [key]: {
+        ...existing,
+        evalsCollectedIds: nextEvalIds,
+        evalsCollected: Math.min(MAX_EVALS_PER_LEVEL, nextEvalIds.length),
+      },
+    },
+  };
+}
+
+export function setLevelCollectibleStatus(
+  save: SaveGameV3,
+  world: number,
+  levelIndex: number,
+  collectibleId: string,
+): SaveGameV3 {
+  const key = levelKey(world, levelIndex);
+  if (!isValidCampaignLevel(world, levelIndex)) {
+    return save;
+  }
+  const existing = getPerLevelStats(save, world, levelIndex);
+  const collectiblesPicked = Array.from(new Set([...existing.collectiblesPicked, collectibleId])).filter(
+    (value) => typeof value === 'string',
+  );
+  return {
+    ...save,
+    perLevelStats: {
+      ...save.perLevelStats,
+      [key]: {
+        ...existing,
+        collectiblesPicked,
+      },
+    },
+  };
 }

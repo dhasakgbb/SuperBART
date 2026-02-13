@@ -51,7 +51,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -104,7 +104,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -156,7 +156,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -210,7 +210,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -264,7 +264,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -318,7 +318,7 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
+        "minRecoveryGap": 2,
         "maxHazardClusters": 1
       }
     },
@@ -371,8 +371,8 @@
       ],
       "hardRules": {
         "maxNewMechanicsPerChunk": 1,
-        "minRecoveryGap": 1,
-        "maxHazardClusters": 1
+        "minRecoveryGap": 2,
+        "maxHazardClusters": 2
       }
     },
     {
@@ -401,11 +401,10 @@
             "platform_stack_01"
           ]
         },
-      {
+        {
           "phase": "CHALLENGE",
           "chunks": [
             "walker_patrol_02",
-            "recovery_lane_01",
             "walker_patrol_03"
           ]
         },
@@ -1319,9 +1318,9 @@
         "maxHazardClusters": 2
       }
     },
-    {
-      "world": 5,
-      "level": 1,
+      {
+        "world": 5,
+        "level": 1,
       "title": "Finale Mastery",
       "sequence": [
         {
@@ -1335,19 +1334,19 @@
           "phase": "PRACTICE",
           "chunks": [
             "gap_short_guarded_01",
-            "thwomp_intro_01",
-            "recovery_lane_01"
+            "thwomp_intro_01"
           ]
         },
         {
           "phase": "VARIATION",
           "chunks": [
+            "recovery_lane_01",
             "rise_step_01",
             "falloff_step_01",
             "gap_long_01"
           ]
         },
-      {
+        {
           "phase": "CHALLENGE",
           "chunks": [
             "flat_guide_01",
@@ -1358,7 +1357,8 @@
             "spike_sweep_01",
             "recovery_lane_01",
             "flying_drift_02",
-            "shell_blocker_01"
+            "shell_blocker_01",
+            "benchmark_sprint_01"
           ]
         },
         {

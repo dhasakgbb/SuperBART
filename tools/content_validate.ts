@@ -644,24 +644,22 @@ function validateCampaignAndChunkArtifacts(): void {
     const worldMaxNewMechanicsPerChunk =
       typeof worldRule.maxNewMechanicsPerChunk === 'number' ? worldRule.maxNewMechanicsPerChunk : Number.NaN;
 
-    if (!Number.isFinite(worldMinRecoveryGap) || worldMinRecoveryGap > 0 && worldMinRecoveryGap !== minRecoveryGap) {
-      if (!Number.isFinite(worldMinRecoveryGap)) {
-        addFailure({
-          id: 'content.levelspec.worldRulesShape',
-          file: rel(WORLD_RULES_PATH),
-          line: 1,
-          message: `World ${level.world} rule minRecoveryGap is not a number.`,
-          hint: 'Set minRecoveryGap as a number in world_rules.json.',
-        });
-      } else {
-        addFailure({
-          id: 'content.levelspec.levelRecoveryMismatch',
-          file: rel(CAMPAIGN_ARTIFACT_PATH),
-          line: 1,
-          message: `Level ${levelKey} minRecoveryGap (${minRecoveryGap}) does not match world ${level.world} contract.`,
-          hint: `Match world rule minRecoveryGap: ${String(worldRule.minRecoveryGap)}.`,
-        });
-      }
+    if (!Number.isFinite(worldMinRecoveryGap)) {
+      addFailure({
+        id: 'content.levelspec.worldRulesShape',
+        file: rel(WORLD_RULES_PATH),
+        line: 1,
+        message: `World ${level.world} rule minRecoveryGap is not a number.`,
+        hint: 'Set minRecoveryGap as a number in world_rules.json.',
+      });
+    } else if (minRecoveryGap < worldMinRecoveryGap) {
+      addFailure({
+        id: 'content.levelspec.levelRecoveryMismatch',
+        file: rel(CAMPAIGN_ARTIFACT_PATH),
+        line: 1,
+        message: `Level ${levelKey} minRecoveryGap (${minRecoveryGap}) is below world ${level.world} contract (${worldRule.minRecoveryGap}).`,
+        hint: `Use minRecoveryGap >= ${String(worldRule.minRecoveryGap)}.`,
+      });
     }
     if (!Number.isFinite(worldMaxHazardClusters) || worldMaxHazardClusters > 0 && worldMaxHazardClusters < maxHazardClusters) {
       if (!Number.isFinite(worldMaxHazardClusters)) {

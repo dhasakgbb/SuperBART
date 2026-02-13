@@ -27,10 +27,12 @@ const DEFAULT_HARD_RULES: LevelHardRules = {
 };
 
 export const FAMILY_TEMPLATES: Record<ChunkFamily, ChunkTemplateType[]> = {
+  azure_walkway: ['mid_flat', 'moving_platform', 'coin_arc'],
   server_room: ['mid_flat', 'mid_flat', 'coin_arc'],
   training_run: ['coin_arc', 'vertical_climb', 'enemy_gauntlet'],
   rag_pipeline: ['moving_platform', 'vertical_climb', 'enemy_gauntlet'],
   rate_limiter: ['moving_platform', 'enemy_gauntlet', 'coin_arc'],
+  benchmark_sprint: ['benchmark_sprint'],
 };
 
 const PHASE_ORDER: PacingPhase[] = [
@@ -41,6 +43,138 @@ const PHASE_ORDER: PacingPhase[] = [
   'COOLDOWN',
   'FINALE',
 ];
+
+type FamilyBiasTable = Partial<Record<ChunkFamily, number>>;
+
+const WORLD_FAMILY_BIAS: Record<number, FamilyBiasTable> = {
+  2: {
+    rag_pipeline: 3,
+    training_run: 2,
+    server_room: 1,
+  },
+  4: {
+    rate_limiter: 3,
+    rag_pipeline: 2,
+    training_run: 1,
+  },
+};
+
+const BENCHMARK_SCROLL_DURATION_MS = 8_000;
+const BENCHMARK_SCROLL_SPEED_PX_PER_SEC = 220;
+const VANISH_OFFSET_RANDOM_MAX_MS = 1_000;
+
+const WORLD_BONUS_POWERUP_CHANCE = [
+  0.16,
+  0.14,
+  0.12,
+  0.10,
+  0.10,
+];
+
+const WORLD_COMPLIANCE_CHANCE = [0.0, 0.0, 0.06, 0.09, 0.06];
+const WORLD_DEBT_CHANCE = [0.0, 0.0, 0.02, 0.05, 0.10];
+
+const WORLD_SPECIAL_ENEMY_WEIGHT = {
+  compliance: [0, 0, 1, 2, 2],
+  debt: [0, 0, 1, 2, 3],
+};
+
+type SpawnEnemyKind = 'walker' | 'shell' | 'flying' | 'spitter' | 'compliance_officer' | 'technical_debt';
+
+type SpawnPowerupKind = 'gpu_allocation' | 'copilot_mode' | 'semantic_kernel' | 'deploy_to_prod' | 'works_on_my_machine';
+
+function clampChance(raw: number): number {
+  if (!Number.isFinite(raw)) {
+    return 0;
+  }
+  return Math.min(0.98, Math.max(0, raw));
+}
+
+function clampMs(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) {
+    return 1;
+  }
+  return Math.max(1, Math.floor(raw));
+}
+
+function pickWorldPowerup(world: number, rng: ReturnType<typeof createRng>): SpawnPowerupKind | null {
+  const bucket = Math.min(world - 1, WORLD_BONUS_POWERUP_CHANCE.length - 1);
+  const chance = WORLD_BONUS_POWERUP_CHANCE[bucket] ?? WORLD_BONUS_POWERUP_CHANCE[WORLD_BONUS_POWERUP_CHANCE.length - 1];
+  if (!rng.chance(chance)) {
+    return null;
+  }
+
+  const roll = rng.nextInt(1, 100);
+  if (roll <= 34) {
+    return 'gpu_allocation';
+  }
+  if (roll <= 50) {
+    return 'copilot_mode';
+  }
+  if (roll <= 63) {
+    return 'semantic_kernel';
+  }
+  if (roll <= 77) {
+    return 'works_on_my_machine';
+  }
+  return 'deploy_to_prod';
+}
+
+function pickEnemyTypeForChunk(world: number, rng: ReturnType<typeof createRng>): SpawnEnemyKind {
+  const idx = Math.max(0, Math.min(world - 1, WORLD_SPECIAL_ENEMY_WEIGHT.compliance.length - 1));
+  const c = WORLD_COMPLIANCE_CHANCE[idx] ?? 0;
+  const d = WORLD_DEBT_CHANCE[idx] ?? 0;
+  const base = {
+    base: [{ kind: 'walker', weight: 56 }, { kind: 'shell', weight: 18 }, { kind: 'flying', weight: 12 }, { kind: 'spitter', weight: 14 }],
+  } as const;
+  const pools = [...base.base];
+  const addCompliance = c > 0 ? Math.round(25 * c) : 0;
+  const addDebt = d > 0 ? Math.round(18 * d) : 0;
+  if (addCompliance > 0) {
+    pools.push({ kind: 'compliance_officer', weight: addCompliance });
+  }
+  if (addDebt > 0) {
+    pools.push({ kind: 'technical_debt', weight: addDebt });
+  }
+
+  const total = pools.reduce((sum, entry) => sum + entry.weight, 0);
+  const roll = rng.nextInt(1, total);
+  let cursor = 0;
+  for (const entry of pools) {
+    cursor += entry.weight;
+    if (roll <= cursor) {
+      return entry.kind;
+    }
+  }
+  return 'walker';
+}
+
+function pickChunkPowerup(world: number, rng: ReturnType<typeof createRng>): SpawnPowerupKind | null {
+  return pickWorldPowerup(world, rng);
+}
+
+function addChunkPowerup(
+  world: number,
+  rng: ReturnType<typeof createRng>,
+  tagWeightedChance: number,
+  x: number,
+  y: number,
+  entities: Parameters<typeof addEntity>[0],
+): void {
+  if (!rng.chance(tagWeightedChance)) {
+    return;
+  }
+
+  const powerup = pickChunkPowerup(world, rng);
+  if (powerup) {
+    addEntity(entities, powerup, x, y, { spawnReason: 'chunk_powerup' });
+  }
+}
+type BenchmarkAutoScroll = {
+  speedPxPerSec: number;
+  durationMs: number;
+  startX: number;
+};
 
 const HAZARD_TAGS = new Set([
   'SPIKE_LOW',
@@ -284,6 +418,30 @@ const CHUNK_LIBRARY: Record<string, ChunkTemplate> = {
     recoveryAfter: false,
     mechanicsIntroduced: ['thwomp'],
   },
+  benchmark_sprint_01: {
+    id: 'benchmark_sprint_01',
+    tags: ['FLAT', 'BENCHMARK_AUTO_SCROLL'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: ['walker'],
+    benchmark_auto_scroll: {
+      speedPxPerSec: BENCHMARK_SCROLL_SPEED_PX_PER_SEC,
+      durationMs: BENCHMARK_SCROLL_DURATION_MS,
+    },
+  },
+  vanish_platform_01: {
+    id: 'vanish_platform_01',
+    tags: ['PLATFORM_BUBBLE', 'VANISH_PLATFORM'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: [],
+    vanish_platform: {
+      visibleMs: 1_000,
+      hiddenMs: 1_000,
+    },
+  },
 };
 
 function makeGrid(width: number, height: number): number[][] {
@@ -323,6 +481,45 @@ function addEntity(
     x: xTile * TILE_SIZE + TILE_SIZE / 2,
     y: yTile * TILE_SIZE + TILE_SIZE / 2,
     data,
+  });
+}
+
+function weightedIndex(rng: ReturnType<typeof createRng>, weights: Array<{ value: ChunkFamily; weight: number }>): ChunkFamily {
+  const total = weights.reduce((sum, entry) => sum + Math.max(1, Math.floor(entry.weight || 0)), 0);
+  const roll = rng.nextInt(0, total);
+  let cursor = 0;
+  for (const entry of weights) {
+    const weight = Math.max(1, Math.floor(entry.weight || 0));
+    if (roll < cursor + weight) {
+      return entry.value;
+    }
+    cursor += weight;
+  }
+  return weights[0]!.value;
+}
+
+function pickFamily(world: number, allowed: ChunkFamily[], rng: ReturnType<typeof createRng>): ChunkFamily {
+  const raw = allowed.filter((family) => family);
+  if (raw.length <= 1) {
+    return raw[0] ?? 'azure_walkway';
+  }
+  const bias = WORLD_FAMILY_BIAS[world] ?? {};
+  const weighted = raw.map((family) => ({ value: family, weight: bias[family] ?? 1 }));
+  return weightedIndex(rng, weighted);
+}
+
+function parseBenchmarkTriggers(levelMetadata: {
+  chunkStartX: number;
+  chunkTemplate: ChunkTemplate;
+  benchmarkAutoScroll: BenchmarkAutoScroll[];
+}): void {
+  if (!levelMetadata.chunkTemplate.benchmark_auto_scroll) {
+    return;
+  }
+  levelMetadata.benchmarkAutoScroll.push({
+    speedPxPerSec: levelMetadata.chunkTemplate.benchmark_auto_scroll.speedPxPerSec,
+    durationMs: levelMetadata.chunkTemplate.benchmark_auto_scroll.durationMs,
+    startX: levelMetadata.chunkStartX,
   });
 }
 
@@ -428,7 +625,7 @@ function hasNearbyGuidance(chunkIds: string[], centerChunkIndex: number, radius 
   return false;
 }
 
-function validateCampaignSpec(levelSpec: LevelSpec): string[] {
+export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
   const errors: string[] = [];
   const chunks = levelSpec.sequence.flatMap((segment) => segment.chunks);
   if (chunks.length < 4) {
@@ -441,7 +638,9 @@ function validateCampaignSpec(levelSpec: LevelSpec): string[] {
   const maxNewMechanicsPerChunk = campaignRules
     ? Math.min(levelSpec.hardRules.maxNewMechanicsPerChunk, campaignRules.maxNewMechanicsPerChunk)
     : levelSpec.hardRules.maxNewMechanicsPerChunk;
-  const recoveryWindow = campaignRules ? campaignRules.minRecoveryGap : levelSpec.hardRules.minRecoveryGap;
+  const recoveryWindow = campaignRules
+    ? Math.max(levelSpec.hardRules.minRecoveryGap, campaignRules.minRecoveryGap)
+    : levelSpec.hardRules.minRecoveryGap;
   const maxHazardClusters = campaignRules
     ? Math.min(levelSpec.hardRules.maxHazardClusters, campaignRules.maxHazardClusters)
     : levelSpec.hardRules.maxHazardClusters;
@@ -631,7 +830,7 @@ function addChunkDecorations(
     rules: ReturnType<typeof getWorldRules>;
     rng: ReturnType<typeof createRng>;
     entities: Parameters<typeof addEntity>[0];
-    oneWayPlatforms: Array<{ x: number; y: number; w: number }>;
+    oneWayPlatforms: Array<{ x: number; y: number; w: number; vanish?: { visibleMs: number; hiddenMs: number } }>;
     movingPlatforms: Array<{ id: string; x: number; y: number; minX: number; maxX: number; speed: number }>;
   },
 ): void {
@@ -667,6 +866,11 @@ function addChunkDecorations(
 
   if (tags.has('POWERUP_HINT') || tags.has('PRACTICE_PAD')) {
     addEntity(entities, 'question_block', x0 + 9, groundY - 4, { variant: 'practice' });
+    const powerupChance = clampChance(0.45 * (world >= 4 ? 1.12 : 1));
+    addChunkPowerup(world, rng, powerupChance, x0 + 11, groundY - 4, entities);
+  }
+  if (tags.has('COIN_REWARD') && rng.chance(clampChance(0.2 * (rules.campaign?.tokenSpawnMultiplier ?? 1)))) {
+    addChunkPowerup(world, rng, 0.4, chunkMid, groundY - 6, entities);
   }
   if (tags.has('COIN_STAIR')) {
     for (let i = 0; i < 5; i += 1) {
@@ -687,11 +891,27 @@ function addChunkDecorations(
     addEntity(entities, 'token', chunkMid, groundY - 4);
   }
 
+  const vanishTemplate = chunkTemplate.vanish_platform
+    ? {
+      ...chunkTemplate.vanish_platform,
+      phaseOffsetMs: rng.nextInt(0, VANISH_OFFSET_RANDOM_MAX_MS - 1),
+    }
+    : { visibleMs: 1000, hiddenMs: 1000, phaseOffsetMs: rng.nextInt(0, VANISH_OFFSET_RANDOM_MAX_MS - 1) };
+
   if (tags.has('PLATFORM_BUBBLE')) {
     oneWayPlatforms.push({
       x: chunkMid - 2,
       y: groundY - 5,
       w: 4,
+      vanish: tags.has('VANISH_PLATFORM') ? vanishTemplate : undefined,
+    });
+  }
+  if (tags.has('VANISH_PLATFORM') && !tags.has('PLATFORM_BUBBLE')) {
+    oneWayPlatforms.push({
+      x: chunkMid - 1,
+      y: groundY - 6,
+      w: 4,
+      vanish: vanishTemplate,
     });
   }
   if (tags.has('PLATFORM_STACK')) {
@@ -709,6 +929,7 @@ function addChunkDecorations(
     const gapCenter = Math.floor((x0 + x1) / 2);
     clearTileRange(grid, gapCenter - 2, gapCenter + 2, groundY);
     addEntity(entities, 'spring', gapCenter, groundY - 1);
+    addChunkPowerup(world, rng, 0.06, gapCenter + 1, groundY - 5, entities);
   }
 
   if (tags.has('WALKER_PATROL') || tags.has('GOOMBA_SPAWN') || tags.has('TURNAROUND_ENEMY')) {
@@ -729,7 +950,21 @@ function addChunkDecorations(
     addEntity(entities, 'spike', x1 - 4, groundY - 1);
   }
   if (tags.has('THWOMP_DROP')) {
-    addEntity(entities, 'thwomp', x1 - 2, groundY - 7, { topY: groundY - 12, bottomY: groundY - 1 });
+      addEntity(entities, 'thwomp', x1 - 2, groundY - 7, { topY: groundY - 12, bottomY: groundY - 1 });
+    }
+
+  const hazardOffset = (chunkIndex + (world * 7)) % 7;
+  if (hazardOffset === 0 && rng.chance(clampChance((rules.campaign?.tokenSpawnMultiplier ?? 1) * 0.08))) {
+    const enemy = pickEnemyTypeForChunk(world, rng);
+    addEntity(
+      entities,
+      enemy,
+      x0 + 15 + (hazardOffset % 4),
+      groundY - 1,
+      enemy === 'compliance_officer' || enemy === 'technical_debt'
+        ? { behaviorBias: enemy === 'compliance_officer' ? 3 : 2 }
+        : undefined,
+    );
   }
 }
 
@@ -748,6 +983,7 @@ function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, r
   const movingPlatforms: ReturnType<typeof emitAuthoringLevel>['movingPlatforms'] = [];
   const checkpoints: ReturnType<typeof emitAuthoringLevel>['checkpoints'] = [];
   const chunksUsed: string[] = ['start'];
+  const benchmarkAutoScroll: BenchmarkAutoScroll[] = [];
 
   for (let x = 0; x < CHUNK_WIDTH; x += 1) {
     fillColumn(grid, x, BASE_GROUND);
@@ -782,6 +1018,7 @@ function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, r
       clearTileRange(grid, x0 + 8, x0 + 14, groundY);
       addEntity(entities, 'spring', x0 + 11, groundY - 1);
     }
+    parseBenchmarkTriggers({ chunkStartX: x0 * TILE_SIZE, chunkTemplate: template, benchmarkAutoScroll });
 
     addChunkDecorations({
       grid,
@@ -846,6 +1083,7 @@ function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, r
       chunksUsed,
       pacing: levelSpec.sequence.map((segment) => segment.phase),
       seed: input.seed,
+      benchmarkAutoScroll: benchmarkAutoScroll.length > 0 ? benchmarkAutoScroll : undefined,
     },
   };
 }
@@ -861,6 +1099,13 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
   const chunksUsed: ChunkType[] = ['start'];
   const rng = createRng(input.seed ^ (input.world << 7) ^ (input.levelIndex << 13));
   const finalCastle = !input.bonus && input.world === 5 && input.levelIndex === 1;
+  const benchmarkAutoScroll: BenchmarkAutoScroll[] = [];
+  const tokenSpawnMultiplier = rules.campaign?.tokenSpawnMultiplier ?? 1;
+  const hazardDensityMultiplier = rules.campaign?.hazardDensityMultiplier ?? 1;
+  const clampChance = (raw: number): number => {
+    if (!Number.isFinite(raw)) return 0;
+    return Math.min(0.98, Math.max(0, raw));
+  };
 
   let groundY = BASE_GROUND;
 
@@ -885,18 +1130,29 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       continue;
     }
 
-    const family = rules.allowedChunkFamilies[chunk % rules.allowedChunkFamilies.length]!;
+    const family = pickFamily(input.world, rules.allowedChunkFamilies, rng);
     const templates = FAMILY_TEMPLATES[family];
     const template = rng.pick([...templates, ...templates]);
-    chunksUsed.push(family);
+    const usedChunkId = template === 'benchmark_sprint' ? 'benchmark_sprint_01' : family;
+    chunksUsed.push(usedChunkId);
 
     const variance = rng.nextInt(-rules.groundVariance, rules.groundVariance);
     groundY = Math.max(21, Math.min(28, groundY + variance));
     for (let x = x0; x <= x1; x += 1) {
       fillColumn(grid, x, groundY);
     }
+    if (template === 'benchmark_sprint') {
+      parseBenchmarkTriggers({
+        chunkStartX: x0 * TILE_SIZE,
+        chunkTemplate: CHUNK_LIBRARY.benchmark_sprint_01!,
+        benchmarkAutoScroll,
+      });
+      continue;
+    }
 
-    const hasGap = rng.chance(finalCastle ? rules.gapFrequency + 0.08 : rules.gapFrequency);
+    const hasGap = rng.chance(
+      clampChance((finalCastle ? rules.gapFrequency + 0.08 : rules.gapFrequency) * hazardDensityMultiplier),
+    );
     if (hasGap) {
       const gapWidth = rng.nextInt(2, finalCastle ? 5 : 4);
       const gapStart = x0 + rng.nextInt(6, 13);
@@ -920,24 +1176,24 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       for (let i = 0; i < 5; i += 1) {
         addEntity(entities, 'token', x0 + 5 + i, groundY - 4);
       }
-      if (rng.chance(0.6)) {
+      if (rng.chance(clampChance(0.08 * tokenSpawnMultiplier))) {
+        addChunkPowerup(input.world, rng, 0.9, x0 + 5 + 2, groundY - 4, entities);
+      }
+      if (rng.chance(clampChance(0.6 * tokenSpawnMultiplier))) {
         addEntity(entities, 'question_block', x0 + 7, groundY - 4);
       }
-      if (rng.chance(0.45)) {
+      if (rng.chance(clampChance(0.45 * tokenSpawnMultiplier))) {
         addEntity(entities, 'star', x0 + 11, groundY - 6);
       }
     }
 
-    if (template === 'enemy_gauntlet' || rng.chance(finalCastle ? rules.enemyDensity + 0.1 : rules.enemyDensity)) {
-      addEntity(entities, 'walker', x0 + 8, groundY - 1, { patrol: 4 });
-      if (rng.chance(finalCastle ? 0.78 : 0.5)) {
-        addEntity(entities, 'shell', x0 + 14, groundY - 1, { patrol: 4 });
-      }
-      if (rng.chance(finalCastle ? 0.58 : 0.35)) {
-        addEntity(entities, 'flying', x0 + 17, groundY - 6, { amp: 20 });
-      }
-      if (rng.chance((finalCastle ? 0.62 : 0.3) + input.world * 0.06)) {
-        addEntity(entities, 'spitter', x0 + 20, groundY - 1, { cadenceMs: rules.projectileCadenceMs });
+    if (template === 'enemy_gauntlet' || rng.chance(clampChance((finalCastle ? rules.enemyDensity + 0.1 : rules.enemyDensity) * hazardDensityMultiplier))) {
+      const spawnCount = 1 + (rng.chance(0.6) ? 1 : 0) + (rng.chance(0.45) ? 1 : 0);
+      for (let spawnIndex = 0; spawnIndex < spawnCount; spawnIndex += 1) {
+        const enemy = pickEnemyTypeForChunk(input.world, rng);
+        const xPos = x0 + 8 + spawnIndex * 6;
+        const baseData = enemy === 'flying' ? { amp: 18 + spawnIndex } : enemy === 'spitter' ? { cadenceMs: rules.projectileCadenceMs } : {};
+        addEntity(entities, enemy, xPos, groundY - 1, baseData);
       }
     }
 
@@ -955,7 +1211,7 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       addEntity(entities, 'spike', x0 + 5, groundY - 1);
     }
 
-    if (template === 'moving_platform' || rng.chance(finalCastle ? rules.movingPlatformFrequency + 0.12 : rules.movingPlatformFrequency)) {
+    if (template === 'moving_platform' || rng.chance(clampChance((finalCastle ? rules.movingPlatformFrequency + 0.12 : rules.movingPlatformFrequency) * hazardDensityMultiplier))) {
       const platformY = groundY - 6;
       movingPlatforms.push({
         id: `mp_${chunk}`,
@@ -967,15 +1223,18 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       });
       addEntity(entities, 'thwomp', x0 + 18, groundY - 6, { topY: groundY - 10, bottomY: groundY - 2 });
       addEntity(entities, 'spike', x0 + 12, groundY - 1);
-      if (finalCastle && rng.chance(0.5)) {
+      if (finalCastle && rng.chance(clampChance(0.5 * hazardDensityMultiplier))) {
         addEntity(entities, 'spike', x0 + 8, groundY - 1);
       }
     }
 
     for (let tx = x0 + 2; tx < x1 - 1; tx += 3) {
-      if (rng.chance(rules.coinDensity * (finalCastle ? 0.14 : 0.25))) {
+      if (rng.chance(clampChance(rules.coinDensity * tokenSpawnMultiplier * (finalCastle ? 0.14 : 0.25)))) {
         addEntity(entities, 'token', tx, groundY - rng.nextInt(2, 3));
       }
+    }
+    if (template === 'moving_platform' && rng.chance(clampChance(0.06 * hazardDensityMultiplier))) {
+      addChunkPowerup(input.world, rng, 0.55, x0 + 15, groundY - 4, entities);
     }
     if (template === 'mid_flat' && rng.chance(0.35)) {
       addEntity(entities, 'question_block', x0 + rng.nextInt(8, 16), groundY - 4);
@@ -1003,6 +1262,7 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       chunksUsed,
       pacing: ['INTRO', 'PRACTICE', 'VARIATION', 'CHALLENGE', 'COOLDOWN', 'FINALE'],
       seed: input.seed,
+      benchmarkAutoScroll: benchmarkAutoScroll.length > 0 ? benchmarkAutoScroll : undefined,
     },
   };
 }

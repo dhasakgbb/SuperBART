@@ -168,7 +168,16 @@ export interface GeneratedLevel {
   width: number;
   height: number;
   tileGrid: number[][];
-  oneWayPlatforms: Array<{ x: number; y: number; w: number; vanish?: { visibleMs: number; hiddenMs: number } }>;
+  oneWayPlatforms: Array<{
+    x: number;
+    y: number;
+    w: number;
+    vanish?: {
+      visibleMs: number;
+      hiddenMs: number;
+      phaseOffsetMs?: number;
+    };
+  }>;
   movingPlatforms: Array<{ id: string; x: number; y: number; minX: number; maxX: number; speed: number }>;
   entities: LevelEntity[];
   checkpoints: Array<{ id: string; x: number; y: number }>;
@@ -181,6 +190,11 @@ export interface GeneratedLevel {
     chunksUsed: string[];
     pacing: PacingPhase[];
     seed: number;
+    benchmarkAutoScroll?: Array<{
+      speedPxPerSec: number;
+      durationMs: number;
+      startX: number;
+    }>;
   };
 }
 

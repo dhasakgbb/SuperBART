@@ -36,7 +36,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_01', 'flat_step_01'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01'] },
       { phase: 'FINALE', chunks: ['flat_finish_01'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(1, 2, 'Boot Camp II', [
       { phase: 'INTRO', chunks: ['flat_intro_02', 'flat_guide_01'] },
       { phase: 'PRACTICE', chunks: ['gap_short_guarded_01', 'coin_arch_01'] },
@@ -44,7 +44,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_01', 'walker_patrol_02'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01', 'flat_guide_01'] },
       { phase: 'FINALE', chunks: ['flat_finish_01'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(1, 3, 'Basic Coins I', [
       { phase: 'INTRO', chunks: ['flat_intro_01', 'coin_stair_01'] },
       { phase: 'PRACTICE', chunks: ['coin_rail_01', 'coin_arch_01'] },
@@ -52,7 +52,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_02', 'coin_reward_01'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01'] },
       { phase: 'FINALE', chunks: ['flat_finish_02'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(1, 4, 'Safety Lanes', [
       { phase: 'INTRO', chunks: ['flat_intro_01', 'gap_short_guarded_01'] },
       { phase: 'PRACTICE', chunks: ['platform_bubble_01', 'platform_stack_01'] },
@@ -60,7 +60,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_01', 'flat_guide_01', 'spike_low_01'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01', 'platform_bubble_02'] },
       { phase: 'FINALE', chunks: ['flat_finish_01'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(1, 5, 'Mini Boss Gate', [
       { phase: 'INTRO', chunks: ['flat_intro_01', 'flat_intro_02'] },
       { phase: 'PRACTICE', chunks: ['flat_guide_01', 'gap_short_guarded_01'] },
@@ -68,7 +68,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_02', 'shell_blocker_01', 'spike_low_01'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01', 'coin_rail_01'] },
       { phase: 'FINALE', chunks: ['flat_finish_02'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(1, 6, 'Run Onset', [
       { phase: 'INTRO', chunks: ['flat_intro_02', 'flat_guide_01'] },
       { phase: 'PRACTICE', chunks: ['coin_rail_01', 'rise_step_01'] },
@@ -76,7 +76,7 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
       { phase: 'CHALLENGE', chunks: ['walker_patrol_01', 'walker_patrol_02', 'flying_drift_01'] },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_01', 'flat_guide_01'] },
       { phase: 'FINALE', chunks: ['flat_finish_02'] },
-    ], { minRecoveryGap: 2, maxHazardClusters: 2 }),
+    ], { minRecoveryGap: 2, maxHazardClusters: 1 }),
     level(2, 1, 'Boot Camp II', [
       { phase: 'INTRO', chunks: ['flat_intro_01', 'rise_step_01'] },
       { phase: 'PRACTICE', chunks: ['gap_short_guarded_01', 'platform_stack_01'] },
@@ -267,10 +267,21 @@ export const CAMPAIGN_25_LEVELS: CampaignArtifact = {
     level(5, 1, 'Finale Mastery', [
       { phase: 'INTRO', chunks: ['flat_intro_01', 'flat_guide_01'] },
       { phase: 'PRACTICE', chunks: ['gap_short_guarded_01', 'thwomp_intro_01'] },
-      { phase: 'VARIATION', chunks: ['rise_step_01', 'falloff_step_01', 'gap_long_01'] },
+      { phase: 'VARIATION', chunks: ['recovery_lane_01', 'rise_step_01', 'falloff_step_01', 'gap_long_01'] },
       {
         phase: 'CHALLENGE',
-        chunks: ['flat_guide_01', 'thwomp_intro_01', 'walker_patrol_03', 'flat_guide_01', 'spike_sweep_01', 'recovery_lane_01', 'flying_drift_02', 'shell_blocker_01'],
+        chunks: [
+          'flat_guide_01',
+          'thwomp_intro_01',
+          'recovery_lane_01',
+          'walker_patrol_03',
+          'flat_guide_01',
+          'spike_sweep_01',
+          'recovery_lane_01',
+          'flying_drift_02',
+          'shell_blocker_01',
+          'benchmark_sprint_01',
+        ],
       },
       { phase: 'COOLDOWN', chunks: ['recovery_lane_02', 'platform_bubble_02'] },
       { phase: 'FINALE', chunks: ['flat_finish_02'] },

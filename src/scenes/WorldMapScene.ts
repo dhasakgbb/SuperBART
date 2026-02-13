@@ -4,7 +4,7 @@ import { CAMPAIGN_WORLD_LAYOUT, TOTAL_CAMPAIGN_LEVELS } from '../core/constants'
 import { runtimeStore } from '../core/runtime';
 import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig, { stylePalette } from '../style/styleConfig';
-import { campaignOrdinal, campaignRefFromOrdinal, levelKey } from '../systems/progression';
+import { campaignOrdinal, campaignRefFromOrdinal, isLevelEvalComplete, levelKey } from '../systems/progression';
 import { WORLD_NAMES } from '../levelgen/worldRules';
 import { isLevelUnlocked, persistSave, setCurrentLevel } from '../systems/save';
 import { transitionToScene } from './sceneFlow';
@@ -31,6 +31,7 @@ export class WorldMapScene extends Phaser.Scene {
   private selectedOrdinal = 1;
   private nodeSprites = new Map<string, Phaser.GameObjects.Image>();
   private nodeLabels = new Map<string, Phaser.GameObjects.BitmapText>();
+  private nodeGlows = new Map<string, Phaser.GameObjects.Image>();
   private selectedBobTween: Phaser.Tweens.Tween | null = null;
   private sceneReadyStableFrames = 2;
 
@@ -115,6 +116,7 @@ export class WorldMapScene extends Phaser.Scene {
   private renderNodes(): void {
     this.nodeSprites.clear();
     this.nodeLabels.clear();
+    this.nodeGlows.clear();
 
     const layout = styleConfig.worldMapLayout;
     const font = styleConfig.typography.fontKey;
@@ -125,6 +127,14 @@ export class WorldMapScene extends Phaser.Scene {
         .setDepth(64);
       sprite.setData('baseY', node.y);
       this.nodeSprites.set(node.key, sprite);
+      const glow = this.add
+        .image(node.x, node.y, layout.nodeSpriteKeys.done)
+        .setScale(layout.nodeScale.base)
+        .setAlpha(0)
+        .setTint(color('hudAccent'))
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(63);
+      this.nodeGlows.set(node.key, glow);
 
       const label = this.add
         .bitmapText(node.x, node.y + 14, font, node.key, 10)
@@ -145,6 +155,8 @@ export class WorldMapScene extends Phaser.Scene {
       const selected = ordinal === this.selectedOrdinal;
       const unlocked = isLevelUnlocked(runtimeStore.save, ref.world, ref.levelIndex);
       const done = completed.has(node.key);
+      const evalComplete = isLevelEvalComplete(runtimeStore.save, ref.world, ref.levelIndex);
+      const glow = this.nodeGlows.get(node.key);
 
       const sprite = this.nodeSprites.get(node.key);
       const label = this.nodeLabels.get(node.key);
@@ -165,12 +177,25 @@ export class WorldMapScene extends Phaser.Scene {
 
       const labelTint = selected
         ? color('hudAccent')
-        : done
+        : evalComplete
+          ? color('hudAccent')
+          : done
           ? color('grassTop')
           : unlocked
             ? color('hudText')
             : color('inkSoft');
       label.setTint(labelTint);
+
+      if (glow) {
+        if (evalComplete) {
+          glow.setVisible(true);
+          glow.setScale(selected ? layout.nodeScale.selected * 1.06 : layout.nodeScale.base * 1.01);
+          glow.setAlpha(selected ? 0.62 : 0.38);
+        } else {
+          glow.setVisible(false);
+          glow.setAlpha(0);
+        }
+      }
 
       if (selected) {
         selectedSprite = sprite;

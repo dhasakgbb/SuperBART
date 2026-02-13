@@ -18,6 +18,8 @@ type SceneRegressionProfile = {
   minMeanLuma?: number;
 };
 
+// Scene profile contracts used by regression: keep these intentionally strict for target look consistency.
+
 interface BaselineMeta {
   scene: SceneName;
   sourceScene: string;

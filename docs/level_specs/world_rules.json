@@ -123,7 +123,8 @@
         "SPIKE_SWEEP",
         "THWOMP_DROP",
         "TURNAROUND_ENEMY",
-        "FLYER_DRIFT"
+        "FLYER_DRIFT",
+        "BENCHMARK_AUTO_SCROLL"
       ],
       "allowedHazardTags": [
         "SPIKE_LOW",
@@ -174,7 +175,9 @@
         "SPIKE_SWEEP",
         "THWOMP_DROP",
         "TURNAROUND_ENEMY",
-        "FLYER_DRIFT"
+        "FLYER_DRIFT",
+        "BENCHMARK_AUTO_SCROLL",
+        "VANISH_PLATFORM"
       ],
       "allowedHazardTags": [
         "SPIKE_LOW",
@@ -220,7 +223,9 @@
         "SPIKE_SWEEP",
         "THWOMP_DROP",
         "TURNAROUND_ENEMY",
-        "FLYER_DRIFT"
+        "FLYER_DRIFT",
+        "BENCHMARK_AUTO_SCROLL",
+        "VANISH_PLATFORM"
       ],
       "allowedHazardTags": [
         "SPIKE_SWEEP",

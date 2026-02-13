@@ -1,4 +1,4 @@
-import type { GameMode, SaveGameV3, SuperBartRuntimeState } from '../types/game';
+import type { GameMode, PlayerForm, PlayerRuntimeState, SaveGameV3, SuperBartRuntimeState } from '../types/game';
 import { defaultSave } from '../systems/save';
 
 export interface RuntimeStore {
@@ -31,18 +31,25 @@ export const runtimeStore: RuntimeStore = {
 };
 
 export function buildRuntimeState(extra: {
-  playerForm: 'small' | 'big';
+  playerForm: PlayerForm;
+  combatState?: Partial<PlayerRuntimeState> & { form?: PlayerForm };
   lives: number;
   invulnMsRemaining: number;
   checkpointId: string;
 }): SuperBartRuntimeState {
+  const hpTier: 1 | 2 = extra.playerForm === 'small' ? 1 : 2;
   return {
     mode: runtimeStore.mode,
     campaign: runtimeStore.save.campaign,
     player: {
       form: extra.playerForm,
+      combatState: {
+        form: extra.combatState?.form ?? extra.playerForm,
+        copilotActiveUntilMs: extra.combatState?.copilotActiveUntilMs,
+        hasCompanionUntilMs: extra.combatState?.hasCompanionUntilMs
+      },
       lives: extra.lives,
-      hpTier: extra.playerForm === 'big' ? 2 : 1,
+      hpTier,
       invulnMsRemaining: extra.invulnMsRemaining,
       checkpointId: extra.checkpointId
     },

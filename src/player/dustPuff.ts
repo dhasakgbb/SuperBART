@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import styleConfig from '../style/styleConfig';
 
 export interface DustPuffEmitter {
-  emitAt(x: number, y: number): void;
+  emitAt(x: number, y: number, count?: number): void;
 }
 
 export function createDustPuff(scene: Phaser.Scene): DustPuffEmitter {
@@ -19,8 +19,8 @@ export function createDustPuff(scene: Phaser.Scene): DustPuffEmitter {
   emitter.setDepth(999);
 
   return {
-    emitAt(x: number, y: number): void {
-      emitter.emitParticle(config.dustPuffCount, x, y);
+    emitAt(x: number, y: number, count = config.dustPuffCount): void {
+      emitter.emitParticle(Math.max(1, count), x, y);
     },
   };
 }

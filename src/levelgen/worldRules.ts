@@ -42,6 +42,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
     speedMultiplier: 1,
     gravityMultiplier: 1,
     tokenBurnRate: 1,
+    tokenSpawnMultiplier: 1,
+    hazardDensityMultiplier: 1,
   },
   2: {
     allowedChunkTags: [
@@ -86,6 +88,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
     speedMultiplier: 1.08,
     gravityMultiplier: 1,
     tokenBurnRate: 1,
+    tokenSpawnMultiplier: 0.78,
+    hazardDensityMultiplier: 1.18,
   },
   3: {
     allowedChunkTags: [
@@ -130,6 +134,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
     speedMultiplier: 1,
     gravityMultiplier: 1,
     tokenBurnRate: 1,
+    tokenSpawnMultiplier: 0.95,
+    hazardDensityMultiplier: 1,
   },
   4: {
     allowedChunkTags: [
@@ -154,6 +160,7 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
       'THWOMP_DROP',
       'TURNAROUND_ENEMY',
       'FLYER_DRIFT',
+      'VANISH_PLATFORM',
     ],
     allowedHazardTags: ['SPIKE_LOW', 'SPIKE_SWEEP', 'THWOMP_DROP'],
     allowedEnemyTags: ['walker', 'shell', 'flying', 'spike', 'thwomp'],
@@ -175,6 +182,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
     speedMultiplier: 1.03,
     gravityMultiplier: 1.15,
     tokenBurnRate: 1.2,
+    tokenSpawnMultiplier: 0.72,
+    hazardDensityMultiplier: 1.22,
   },
   5: {
     allowedChunkTags: [
@@ -194,6 +203,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
       'THWOMP_DROP',
       'TURNAROUND_ENEMY',
       'FLYER_DRIFT',
+      'BENCHMARK_AUTO_SCROLL',
+      'VANISH_PLATFORM',
     ],
     allowedHazardTags: ['SPIKE_SWEEP', 'THWOMP_DROP'],
     allowedEnemyTags: ['walker', 'shell', 'flying', 'spike', 'thwomp'],
@@ -215,6 +226,8 @@ const WORLD_CAMPAIGN_RULES: Record<number, WorldLevelConstraint> = {
     speedMultiplier: 1.08,
     gravityMultiplier: 1.25,
     tokenBurnRate: 1.3,
+    tokenSpawnMultiplier: 0.64,
+    hazardDensityMultiplier: 1.34,
   },
 };
 

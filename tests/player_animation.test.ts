@@ -49,7 +49,7 @@ describe('player animation state machine', () => {
   });
 
   test('run when moving fast on ground', () => {
-    const r = resolve({ vx: 180, inputX: 1 });
+    const r = resolve({ vx: 180, inputX: 1, motionState: 'run' });
     expect(r.state).toBe('run');
   });
 
@@ -57,7 +57,7 @@ describe('player animation state machine', () => {
     const r = resolve({ vx: 240, inputX: 0 });
     expect(r.state).toBe('walk');
 
-    const r2 = resolve({ vx: 240, inputX: 1 });
+    const r2 = resolve({ vx: 240, inputX: 1, motionState: 'run' });
     expect(r2.state).toBe('run');
   });
 
@@ -123,12 +123,12 @@ describe('player animation state machine', () => {
     const r1 = resolve({ vx: 100, inputX: 1 });
     expect(r1.state).toBe('walk');
 
-    const r2 = resolve({ vx: 180, inputX: 1 });
+    const r2 = resolve({ vx: 180, inputX: 1, motionState: 'run' });
     expect(r2.state).toBe('run');
   });
 
   test('run to skid transition when reversing', () => {
-    const r1 = resolve({ vx: 180, inputX: 1 });
+    const r1 = resolve({ vx: 180, inputX: 1, motionState: 'run' });
     expect(r1.state).toBe('run');
 
     const r2 = resolve({ vx: 180, inputX: -1 });

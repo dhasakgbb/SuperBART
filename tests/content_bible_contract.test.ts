@@ -116,7 +116,10 @@ describe('content bible manifest contract', () => {
       .map((entry) => entry.world)
       .sort((a, b) => a - b);
     expect(manifestWorldKeys).toEqual([1, 2, 3, 4, 5]);
+    expect(WORLD_CHUNK_FAMILY_NAMES).toContain('azure_walkway');
     expect(WORLD_CHUNK_FAMILY_NAMES.sort()).toContain('server_room');
+    expect(WORLD_CHUNK_FAMILY_NAMES).toContain('benchmark_sprint');
+    expect(CONTENT_WORLD_MAP[4].allowedChunkFamilies).toContain('benchmark_sprint');
   });
 
   test('approved UI text includes canonical labels and regex patterns', () => {

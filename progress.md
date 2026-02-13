@@ -117,3 +117,23 @@ Original prompt: Build a complete, playable Mario-style 2D platformer web game c
   - `tests/player_feel_timing.test.ts`
   - `tests/quality.playfeel.test.ts`
 - Next step recorded: isolate and fix `5-1` bootstrap timeout during play entry and re-run full phase-2 sweep before reattempting 7-gate close.
+
+## 2026-02-13 - Phase 2 slice (requested GDD implementation)
+- Updated generation contracts and metadata to support benchmark auto-scroll zones:
+  - `GeneratedLevel.metadata.benchmarkAutoScroll` now carries auto-scroll trigger zones.
+  - `CHUNK_LIBRARY` benchmark entry already present and now hooked through generator metadata emission.
+  - Added explicit parse/collect behavior in `emitAuthoringLevel` and legacy generation.
+- Added weighted family sampling in legacy generation and applied world7? (No) style modifiers in spawn/chance gates:
+  - `generateLegacyLevel` now uses `pickFamily(...)` with world-biased family weights.
+  - Added world-specific token spawn and hazard density multipliers to legacy chunk decisions.
+  - Added benchmark metadata emission when benchmark chunks are generated.
+- Added benchmark chunk to final level sequence:
+  - `5-1` now includes `benchmark_sprint_01`.
+- Contract/test alignment updates:
+  - Added benchmark visibility assertions to `tests/level_generator_validity.test.ts`.
+  - Added `world5`/`benchmark_sprint_01` checks and fixed migration schema expectation to v4.
+  - Added required SFX contract keys in `src/audio/sfx.ts` and `tests/audio_contract.test.ts`.
+  - Marked `PlayerForm` import in `src/core/runtime.ts`.
+- Remaining risks/next tasks:
+  - `PlayScene` currently does not yet consume `benchmarkAutoScroll` or one-way platform `vanish` metadata; gameplay effects remain to be implemented in Phase 6/7.
+  - `content_bible_contract` and world-map/service-map updates are still partially doc/test-only and may need full gameplay verification in next slice.

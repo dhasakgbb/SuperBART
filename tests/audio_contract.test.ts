@@ -16,7 +16,12 @@ const REQUIRED_SFX_KEYS_CONTRACT = [
   'shell_kick',
   'goal_clear',
   'menu_move',
-  'menu_confirm'
+  'menu_confirm',
+  'game_over',
+  'pause',
+  'block_hit',
+  'one_up',
+  'fireball'
 ] as const;
 
 const __filename = fileURLToPath(import.meta.url);

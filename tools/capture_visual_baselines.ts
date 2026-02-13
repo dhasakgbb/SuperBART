@@ -279,6 +279,14 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
     const expectedVersion = styleConfig.contractVersion;
     try {
       const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+      await page.addInitScript(() => {
+        try {
+          localStorage.removeItem('super_bart_save_v3');
+          localStorage.removeItem('super_bart_save_v2');
+        } catch {
+          // keep capture pipeline resilient in restricted environments
+        }
+      });
       await page.goto(DEV_URL, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('canvas');
       await waitForSceneReadyMarker(page, 'TitleScene', expectedVersion);
