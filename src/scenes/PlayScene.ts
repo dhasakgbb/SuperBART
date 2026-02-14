@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
-import { PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
+import { DISPLAY_NAMES, PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
 import { buildRuntimeState, runtimeStore } from '../core/runtime';
-import { spawnEnemy, type EnemyHandle } from '../enemies/registry';
+import { spawnEnemy } from '../enemies/registry';
+import type { EnemyHandle, EnemyContext } from '../enemies/types';
 import { updateMovingPlatforms, updateThwomps } from '../hazards/systems';
 import { generateLevel, validateGeneratedLevel } from '../levelgen/generator';
 import { getWorldRules } from '../levelgen/worldRules';
@@ -13,9 +14,12 @@ import {
   stepMovement,
   type MotionHint,
   type WorldModifiers,
+  type FeelState,
 } from '../player/movement';
 import { PlayerAnimator } from '../player/PlayerAnimator';
-import { createDustPuff, type DustPuffEmitter } from '../player/dustPuff';
+import { EffectManager } from '../systems/EffectManager';
+import { PopupManager } from '../systems/PopupManager';
+import { createDustPuff, DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
 import { renderGameplayBackground } from '../rendering/parallax';
 import styleConfig, { stylePalette } from '../style/styleConfig';
@@ -93,6 +97,8 @@ export class PlayScene extends Phaser.Scene {
 
   private playerHead!: Phaser.GameObjects.Sprite;
   private animator!: PlayerAnimator;
+  private effects!: EffectManager;
+  private popups!: PopupManager;
   private dustPuff!: DustPuffEmitter;
   private wasOnGround = true;
 
@@ -100,6 +106,19 @@ export class PlayScene extends Phaser.Scene {
   private world = 1;
   private levelIndex = 1;
   private worldModifiers: WorldModifiers = { ...DEFAULT_WORLD_MODIFIERS };
+
+  /** Auto-scroll segment definitions from level metadata. */
+  private autoScrollSegments: Array<{
+    startX: number;
+    speedPxPerSec: number;
+    durationMs: number;
+  }> = [];
+  /** Index of current active auto-scroll segment (-1 = none). */
+  private autoScrollActiveIndex = -1;
+  /** Elapsed ms within current auto-scroll segment. */
+  private autoScrollElapsedMs = 0;
+  /** Camera X position at start of auto-scroll. */
+  private autoScrollCameraStartX = 0;
 
   constructor() {
     super('PlayScene');
@@ -131,6 +150,11 @@ export class PlayScene extends Phaser.Scene {
 
     const rules = getWorldRules(this.world);
     this.worldModifiers = { ...DEFAULT_WORLD_MODIFIERS, ...rules.modifiers };
+
+    // Store auto-scroll segments from level metadata (World 5 benchmark)
+    this.autoScrollSegments = level.metadata.benchmarkAutoScroll ?? [];
+    this.autoScrollActiveIndex = -1;
+    this.autoScrollElapsedMs = 0;
 
     runtimeStore.levelSeed = seed;
     runtimeStore.levelTheme = level.metadata.theme;
@@ -174,7 +198,9 @@ export class PlayScene extends Phaser.Scene {
       platform.setData('minX', mp.minX);
       platform.setData('maxX', mp.maxX);
       platform.setData('speed', mp.speed);
-      platform.body.allowGravity = false;
+      if (platform.body) {
+        (platform.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+      }
       platform.setImmovable(true);
     }
 
@@ -188,6 +214,7 @@ export class PlayScene extends Phaser.Scene {
         coin.setScale(actorScale.coin).setDepth(28);
         coin.refreshBody();
         this.attachCollectibleGlow(coin, 'pickup_token');
+        this.startCoinSpin(coin);
       } else if (e.type === 'star') {
         const star = this.stars.create(e.x, e.y, 'pickup_eval') as Phaser.Physics.Arcade.Sprite;
         star.setData('collectibleId', e.id);
@@ -216,8 +243,27 @@ export class PlayScene extends Phaser.Scene {
         thwomp.setData('topY', Number(e.data?.topY ?? e.y - 60));
         thwomp.setData('bottomY', Number(e.data?.bottomY ?? e.y + 30));
         thwomp.setData('state', 'idle');
-      } else if (e.type === 'walker' || e.type === 'shell' || e.type === 'flying' || e.type === 'spitter') {
-        const handle = spawnEnemy(e.type, this, e.x, e.y, this.buildEnemyContext(), e.data);
+      } else if (e.type === 'token') {
+        // Generator uses 'token' as canonical collectible ID for coins
+        const coin = this.coins.create(e.x, e.y, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
+        coin.setData('collectibleId', e.id);
+        coin.setScale(actorScale.coin).setDepth(28);
+        coin.refreshBody();
+        this.attachCollectibleGlow(coin, 'pickup_token');
+        this.startCoinSpin(coin);
+      } else if (e.type === 'eval') {
+        // Generator uses 'eval' as canonical collectible ID for stars
+        const star = this.stars.create(e.x, e.y, 'pickup_eval') as Phaser.Physics.Arcade.Sprite;
+        star.setData('collectibleId', e.id);
+        star.setScale(actorScale.star).setDepth(28);
+        star.refreshBody();
+        this.attachCollectibleGlow(star, 'pickup_eval');
+      } else if (
+        e.type === 'walker' || e.type === 'shell' || e.type === 'flying' || e.type === 'spitter'
+        || e.type === 'compliance_officer' || e.type === 'technical_debt'
+        || e.type === 'hallucination' || e.type === 'legacy_system' || e.type === 'hot_take' || e.type === 'analyst'
+      ) {
+        const handle = spawnEnemy(e.type as import('../enemies/types').EnemyKind, this, e.x, e.y, this.buildEnemyContext(), e.data);
         this.enemyHandles.push(handle);
         this.enemiesGroup.add(handle.sprite);
       }
@@ -230,10 +276,11 @@ export class PlayScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(spawn.x, spawn.y, bodyKey, 0);
     this.player.setCollideWorldBounds(true);
     this.player.setScale(actorScale.player).setDepth(36);
-    const maxRunSpeed = PLAYER_CONSTANTS.maxSpeed * PLAYER_CONSTANTS.runSpeedMultiplier * this.worldModifiers.speedMultiplier;
-    this.player.body.setMaxVelocity(maxRunSpeed, PLAYER_CONSTANTS.maxFallSpeed);
+    if (this.player.body) {
+      (this.player.body as Phaser.Physics.Arcade.Body).setMaxVelocity(PLAYER_CONSTANTS.maxSpeed * 3, PLAYER_CONSTANTS.maxFallSpeed);
+    }
     const bodyH = this.playerForm === 'big' ? 30 : 22;
-    this.player.body.setSize(12, bodyH).setOffset(2, 1);
+    this.player.body?.setSize(12, bodyH).setOffset(2, 1);
 
     // Head sprite (visual overlay, no physics)
     const headKey = this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48';
@@ -247,6 +294,8 @@ export class PlayScene extends Phaser.Scene {
     // Animation system
     createPlayerAnimations(this);
     this.animator = new PlayerAnimator(this, this.player, this.playerForm);
+    this.effects = new EffectManager({ scene: this });
+    this.popups = new PopupManager(this);
     this.dustPuff = createDustPuff(this);
     this.wasOnGround = true;
 
@@ -266,24 +315,28 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.physics.add.collider(this.player, this.oneWay, undefined, (_player, platform) => {
-      const p = _player.body as Phaser.Physics.Arcade.Body;
-      const f = (platform as Phaser.Physics.Arcade.Sprite).body as Phaser.Physics.Arcade.StaticBody;
-      return p.velocity.y >= 0 && p.bottom <= f.top + 10;
+      const p = _player as Phaser.Physics.Arcade.Sprite;
+      const f = platform as Phaser.Physics.Arcade.Sprite;
+      if (!p.body || !f.body) return false;
+      return p.body.velocity.y >= 0 && p.y + (p.height * p.scaleY) / 2 <= f.y - (f.height * f.scaleY) / 2 + 4;
     });
 
     this.physics.add.overlap(this.player, this.coins, (_p, coin) => {
       const token = coin as Phaser.Physics.Arcade.Sprite;
-      const collectibleId = String(token.getData('collectibleId') ?? '');
+      const pickup = coin as Phaser.Physics.Arcade.Sprite;
+      const collectibleId = String(pickup.getData('collectibleId') ?? '');
       if (collectibleId) {
         runtimeStore.save = setLevelCollectibleStatus(runtimeStore.save, this.world, this.levelIndex, collectibleId);
       }
-      this.flashCollectiblePickup();
-      this.detachCollectibleGlow(token);
-      token.destroy();
+      const amount = SCORE_VALUES.coin;
       runtimeStore.save.progression.coins += 1;
-      runtimeStore.save.progression.score += SCORE_VALUES.coin;
-      this.pulseHudCounter(this.hud.tokenText);
+      runtimeStore.save.progression.score += amount;
+      this.renderHud();
+      this.popups.spawn(pickup.x, pickup.y, `+${amount} ${DISPLAY_NAMES.coin}`);
+      this.collectItem(pickup);
       this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 6);
+      // Sparkle effect
+      this.effects.emitSparkle(pickup.x, pickup.y, 0xffd700, 5); // Gold sparkles
       this.playSfx('coin');
     });
 
@@ -293,24 +346,25 @@ export class PlayScene extends Phaser.Scene {
       if (evalId) {
         runtimeStore.save = setLevelEvalStatus(runtimeStore.save, this.world, this.levelIndex, evalId);
       }
-      this.flashCollectiblePickup(0xffc65a);
-      this.detachCollectibleGlow(pickup);
-      pickup.destroy();
+      const amount = SCORE_VALUES.star;
       runtimeStore.save.progression.stars += 1;
-      runtimeStore.save.progression.score += SCORE_VALUES.star;
-      this.pulseHudCounter(this.hud.evalText);
-      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 10);
+      runtimeStore.save.progression.score += amount;
+      this.renderHud();
+      this.popups.spawn(pickup.x, pickup.y, `+${amount} ${DISPLAY_NAMES.star}`, 0xffd700);
+      this.collectItem(pickup);
+      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 10);
       this.playSfx('power');
     });
 
     this.physics.add.overlap(this.player, this.checkpoints, (_p, cpObj) => {
-      const cp = cpObj as Phaser.Physics.Arcade.Sprite;
+      const point = cpObj as Phaser.Physics.Arcade.Sprite;
       const prevId = this.checkpointId;
-      this.checkpointId = String(cp.getData('checkpointId'));
-      this.checkpointXY = { x: cp.x, y: cp.y - 20 };
-      cp.setTint(0x76ff03);
+      this.checkpointId = String(point.getData('checkpointId'));
+      this.checkpointXY = { x: point.x, y: point.y - 20 };
+      point.setTint(0x76ff03);
       if (prevId !== this.checkpointId) {
-        this.showHudToast(SCENE_TEXT.gameplay.checkpointSaved);
+        this.popups.spawn(point.x, point.y, SCENE_TEXT.gameplay.checkpointSaved);
+        this.effects.flash(150, 0x5cb85c);
       }
     });
 
@@ -327,11 +381,12 @@ export class PlayScene extends Phaser.Scene {
       this.playSfx('jump');
     });
 
-    this.physics.add.collider(this.player, this.questionBlocks, (_pObj, blockObj) => {
-      const p = _pObj as Phaser.Physics.Arcade.Sprite;
-      const block = blockObj as Phaser.Physics.Arcade.Sprite;
-      if (p.body.velocity.y < 0 && p.body.touching.up) {
-        this.hitQuestionBlock(block);
+    this.physics.add.collider(this.player, this.solids, (_p, obj) => {
+      const platform = obj as Phaser.Physics.Arcade.Sprite;
+      if (platform.body && (platform.body as Phaser.Physics.Arcade.Body).touching.up && this.player.body?.touching.down) {
+        if (this.player.body instanceof Phaser.Physics.Arcade.Body) {
+          this.player.body.setAllowGravity(false);
+        }
       }
     });
 
@@ -346,13 +401,14 @@ export class PlayScene extends Phaser.Scene {
         if (shouldProcessStomp) {
           this.lastStompFrame = stompFrame;
           const canProcessStomp = this.time.now - this.lastStompHitMs >= PLAYER_CONSTANTS.stompCooldownMs;
-          const shouldBouncePlayer = p.body.velocity.y > 0;
+          const shouldBouncePlayer = p.body!.velocity.y > 0;
           const targetBody = target.sprite.body as Phaser.Physics.Arcade.Body;
 
-          if (p.body.velocity.y > 0) {
+          if (p.body!.velocity.y > 0) {
             p.setVelocityY(-220);
           }
 
+          this.effects.emitSparkle(target.sprite.x, target.sprite.y, 0xffffff, 6);
           const isShell = target.kind === 'shell';
           const shellIsMoving = isShell && Math.abs(targetBody.velocity.x) >= 150;
           if (shouldProcessStomp && (!isShell || targetBody.velocity.x === 0)) {
@@ -364,11 +420,9 @@ export class PlayScene extends Phaser.Scene {
           if (canProcessStomp) {
             runtimeStore.save.progression.score += SCORE_VALUES.stomp;
             this.playSfx('stomp');
-            this.showHudToast(SCENE_TEXT.gameplay.correctedSuffix);
-            this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 4);
             this.triggerStompHitstop();
             if (shouldBouncePlayer && runtimeStore.save.settings.screenShakeEnabled) {
-              this.cameras.main.shake(45, 0.002);
+              this.effects.shake('light');
             }
             this.lastStompHitMs = this.time.now;
             if (shellIsMoving) {
@@ -417,7 +471,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private registerDebugHooks(): void {
-    const root = (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ ?? {};
+    const root = (window as any).__SUPER_BART__ ?? {};
     root.getState = () => this.getRuntimeState();
     root.getStateWithDebug = () => this.getRuntimeStateWithDebug();
     root.stompHitstopTelemetry = this.getStompHitstopTelemetry();
@@ -504,6 +558,7 @@ export class PlayScene extends Phaser.Scene {
       coin.setData('collectibleId', `showcase-${this.world}-${this.levelIndex}-coin-${i}`);
       coin.refreshBody();
       this.attachCollectibleGlow(coin, 'pickup_token');
+      this.startCoinSpin(coin);
     }
 
     const walker = spawnEnemy(
@@ -518,10 +573,15 @@ export class PlayScene extends Phaser.Scene {
     this.enemiesGroup.add(walker.sprite);
   }
 
-  private buildEnemyContext(): import('../enemies/registry').EnemyContext {
+  private buildEnemyContext(): EnemyContext {
     return {
       scene: this,
       projectiles: this.projectiles,
+      getPlayerPosition: () => {
+        if (!this.player || !this.player.active) return null;
+        return { x: this.player.x, y: this.player.y };
+      },
+      nowMs: () => this.time.now,
       onSpawnEnemy: (handle) => {
         this.enemyHandles.push(handle);
         this.enemiesGroup.add(handle.sprite);
@@ -656,8 +716,43 @@ export class PlayScene extends Phaser.Scene {
     sprite.setData('collectibleBaseY', undefined);
   }
 
+  /** NES-style coin spin: scale X oscillates 1 → 0.15 → 1 to fake rotation. */
+  private startCoinSpin(coin: Phaser.Physics.Arcade.Sprite): void {
+    const baseScaleX = coin.scaleX;
+    // Stagger start time per coin so they don't all sync
+    const delay = Math.floor(Math.random() * 500);
+    const spinTween = this.tweens.add({
+      targets: coin,
+      scaleX: { from: baseScaleX, to: baseScaleX * 0.15 },
+      duration: 250,
+      yoyo: true,
+      repeat: -1,
+      delay,
+      ease: 'Sine.easeInOut',
+    });
+    coin.setData('coinSpinTween', spinTween);
+  }
+
   private flashCollectiblePickup(color = 0xffffff): void {
-    this.cameras.main.flash(120, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+    this.effects.flash(120, color);
+  }
+
+  private collectItem(pickup: Phaser.Physics.Arcade.Sprite): void {
+    this.detachCollectibleGlow(pickup);
+    pickup.destroy();
+  }
+
+  private renderHud(): void {
+    renderHud(this.hud, {
+      world: this.world,
+      level: this.levelIndex,
+      score: runtimeStore.save.progression.score,
+      coins: runtimeStore.save.progression.coins,
+      stars: runtimeStore.save.progression.stars,
+      lives: this.lives,
+      form: this.playerForm,
+      timeSec: Math.floor(this.levelTimeMs / 1000)
+    });
   }
 
   private canUsePostFxRender(): boolean {
@@ -756,10 +851,10 @@ export class PlayScene extends Phaser.Scene {
     sceneFrame: number;
     feel: FeelState;
   } {
-    const onGround = this.player?.body.blocked.down || this.player?.body.touching.down;
+    const onGround = this.player?.body?.blocked.down || this.player?.body?.touching.down || false;
     const movement: MovementDebugState = {
-      vx: this.player.body.velocity.x,
-      vy: this.player.body.velocity.y,
+      vx: this.player?.body?.velocity.x ?? 0,
+      vy: this.player?.body?.velocity.y ?? 0,
       onGround,
       desiredState: this.feel.desiredState,
       runChargeMs: this.feel.runChargeMs,
@@ -792,7 +887,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.entityCounts.movingPlatforms = this.movingPlatforms.countActive(true);
   }
 
-  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'block_hit'): void {
+  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'block_hit' | 'land' | 'skid' | 'death_jingle' | 'victory_fanfare'): void {
     const keyMap = {
       jump: 'jump',
       coin: 'coin',
@@ -801,7 +896,11 @@ export class PlayScene extends Phaser.Scene {
       power: 'power_up',
       shell: 'shell_kick',
       flag: 'goal_clear',
-      block_hit: 'block_hit'
+      block_hit: 'block_hit',
+      land: 'land',
+      skid: 'skid',
+      death_jingle: 'death_jingle',
+      victory_fanfare: 'victory_fanfare'
     } as const;
     this.audio.playSfx(keyMap[kind]);
   }
@@ -822,13 +921,13 @@ export class PlayScene extends Phaser.Scene {
       this.stompHitstopHistory.shift();
     }
 
-    this.physics.world.pause();
-    this.stompHitstop?.remove();
-    this.stompHitstop = this.time.delayedCall(PLAYER_CONSTANTS.stompHitstopMs, () => {
-      if (this.physics?.world?.isPaused) {
-        this.physics.world.resume();
-        record.resumed = true;
-      }
+    const amount = SCORE_VALUES.stomp;
+    this.popups.spawn(this.player.x, this.player.y - 12, `+${amount} ${DISPLAY_NAMES.stomp}`);
+    this.effects.hitStop(PLAYER_CONSTANTS.stompHitstopMs);
+    // Note: Record resume status is now decoupled from the actual resume in EffectManager
+    // but we can still track it for telemetry if needed by passing a callback.
+    this.time.delayedCall(PLAYER_CONSTANTS.stompHitstopMs, () => {
+      record.resumed = true;
     });
   }
 
@@ -887,8 +986,11 @@ export class PlayScene extends Phaser.Scene {
     text.setData('counterPulse', pulse);
   }
 
+  /** Whether a death animation is currently playing. Blocks input during sequence. */
+  private deathAnimPlaying = false;
+
   private damagePlayer(reason: string): void {
-    if (this.invulnMsRemaining > 0 || this.completed) {
+    if (this.invulnMsRemaining > 0 || this.completed || this.deathAnimPlaying) {
       return;
     }
 
@@ -901,38 +1003,77 @@ export class PlayScene extends Phaser.Scene {
       this.player.setVelocity(this.player.flipX ? PLAYER_CONSTANTS.knockbackX : -PLAYER_CONSTANTS.knockbackX, PLAYER_CONSTANTS.knockbackY);
       this.playSfx('hurt');
       if (runtimeStore.save.settings.screenShakeEnabled) {
-        this.cameras.main.shake(140, 0.003);
+        this.effects.shake('medium');
       }
       return;
     }
 
+    // -- Iconic death animation: freeze, jump up, fall off screen --
     runtimeStore.save.progression.deaths += 1;
     this.lives -= 1;
-    this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
-    this.playSfx('hurt');
+    this.deathAnimPlaying = true;
 
-    if (this.lives <= 0) {
-      this.animator.triggerDead();
-      runtimeStore.mode = 'game_over';
-      persistSave(runtimeStore.save);
-      transitionToScene(this, 'GameOverScene');
-      return;
+    this.audio.stopMusic();
+    this.playSfx('death_jingle');
+    this.animator.triggerDead();
+
+    // Disable physics so the player floats during the animation
+    if (this.player.body && 'setAllowGravity' in this.player.body) { (this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(false); }
+    this.player.setVelocity(0, 0);
+    // Disable collisions by removing from physics
+    if (this.player.body) {
+      (this.player.body as Phaser.Physics.Arcade.Body).enable = false;
     }
 
-    this.playerForm = 'small';
-    this.switchPlayerForm('small');
-    this.player.setPosition(this.checkpointXY.x, this.checkpointXY.y);
-    this.player.setVelocity(0, 0);
-    this.player.clearTint();
-
-      if (reason === 'pit') {
-        if (runtimeStore.save.settings.screenShakeEnabled) {
-          this.cameras.main.shake(190, 0.004);
-        }
+    // Phase 1: Brief freeze (400ms) then jump upward
+    this.time.delayedCall(400, () => {
+      if (!this.player.active) return;
+      if (this.player.body && 'setAllowGravity' in this.player.body) { (this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(true); }
+      if (this.player.body) {
+        (this.player.body as Phaser.Physics.Arcade.Body).enable = true;
+        // Disable ALL collisions during death fall
+        (this.player.body as Phaser.Physics.Arcade.Body).checkCollision.none = true;
       }
+      this.player.setVelocityY(-350); // Jump upward
+    });
+
+    // Phase 2: After enough time for the arc + fall off screen, transition
+    this.time.delayedCall(2200, () => {
+      this.deathAnimPlaying = false;
+      persistSave(runtimeStore.save);
+
+      if (this.lives <= 0) {
+        runtimeStore.mode = 'game_over';
+        transitionToScene(this, 'GameOverScene');
+      } else {
+        // Respawn at checkpoint
+        this.playerForm = 'small';
+        this.switchPlayerForm('small');
+        if (this.player.body) {
+          (this.player.body as Phaser.Physics.Arcade.Body).checkCollision.none = false;
+          (this.player.body as Phaser.Physics.Arcade.Body).enable = true;
+        }
+        if (this.player.body && 'setAllowGravity' in this.player.body) { (this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(true); }
+        this.player.setPosition(this.checkpointXY.x, this.checkpointXY.y);
+        this.player.setVelocity(0, 0);
+        this.player.setAlpha(1);
+        this.player.clearTint();
+        this.playerHead.setAlpha(1);
+        this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
+        this.audio.startWorldMusic(this.world);
+      }
+
+      if (reason === 'pit' && runtimeStore.save.settings.screenShakeEnabled) {
+        this.effects.shake('heavy');
+      }
+    });
   }
 
+  /** Tracks if a form-switch animation is active (blocks additional form switches). */
+  private formTransitioning = false;
+
   private switchPlayerForm(form: PlayerForm): void {
+    const oldForm = this.animator.getForm();
     const bodyKey = form === 'big' ? 'bart_body_big' : 'bart_body_small';
     const headKey = form === 'big' ? 'bart_head_64' : 'bart_head_48';
     const headScale = form === 'big'
@@ -940,30 +1081,161 @@ export class PlayScene extends Phaser.Scene {
       : styleConfig.playerAnimation.headScaleSmall;
     const bodyH = form === 'big' ? 30 : 22;
 
-    this.player.setTexture(bodyKey, 0);
-    this.player.body.setSize(12, bodyH).setOffset(2, 1);
-    this.playerHead.setTexture(headKey);
-    this.playerHead.setScale(headScale);
-    this.animator.setForm(form);
+    const isGrowing = (oldForm === 'small' && (form === 'big' || form === 'gpu'));
+    const isShrinking = ((oldForm === 'big' || oldForm === 'gpu') && form === 'small');
+
+    if ((isGrowing || isShrinking) && !this.formTransitioning && !this.deathAnimPlaying) {
+      this.formTransitioning = true;
+
+      // Brief invulnerability during transformation
+      this.invulnMsRemaining = Math.max(this.invulnMsRemaining, 800);
+
+      // Flicker effect: rapidly toggle scaleY between small/big sizes (NES-style)
+      const flickerCount = 6;
+      const flickerDuration = 100; // ms per flicker
+      const smallScaleY = this.player.scaleY;
+      const targetScaleY = isGrowing ? smallScaleY * 1.35 : smallScaleY * 0.7;
+
+      const baseScaleX = this.player.scaleX;
+      let flick = 0;
+      const flickerEvent = this.time.addEvent({
+        delay: flickerDuration,
+        repeat: flickerCount - 1,
+        callback: () => {
+          flick++;
+          if (flick % 2 === 1) {
+            this.player.setScale(baseScaleX, targetScaleY);
+            this.playerHead.setScale(headScale);
+          } else {
+            this.player.setScale(baseScaleX, smallScaleY);
+            this.playerHead.setScale(
+              oldForm === 'big' ? styleConfig.playerAnimation.headScaleBig : styleConfig.playerAnimation.headScaleSmall
+            );
+          }
+        },
+      });
+
+      // After flicker, apply the real form change
+      this.time.delayedCall(flickerCount * flickerDuration + 50, () => {
+        this.player.setTexture(bodyKey, 0);
+        this.player.body?.setSize(12, bodyH).setOffset(2, 1);
+        this.player.setScale(styleConfig.gameplayLayout.actorScale.player);
+        this.playerHead.setTexture(headKey);
+        this.playerHead.setScale(headScale);
+        this.animator.setForm(form);
+        this.formTransitioning = false;
+
+        // Small dust burst on transformation complete
+        this.effects.emitDust(this.player.x, this.player.y, 6);
+      });
+    } else {
+      // Instant switch (no animation) for non-grow/shrink or during death
+      this.player.setTexture(bodyKey, 0);
+      this.player.body?.setSize(12, bodyH).setOffset(2, 1);
+      this.playerHead.setTexture(headKey);
+      this.playerHead.setScale(headScale);
+      this.animator.setForm(form);
+    }
   }
 
   private onGoalReached(): void {
     if (this.completed) return;
     this.completed = true;
     this.animator.triggerWin();
-    this.playSfx('flag');
+    this.audio.stopMusic();
+    this.playSfx('victory_fanfare');
+
+    // Stop player movement for the celebration
+    this.player.setVelocityX(0);
+
     runtimeStore.save.progression.score += SCORE_VALUES.completeBonus;
     runtimeStore.save.progression.timeMs += this.levelTimeMs;
     persistSave(runtimeStore.save);
-    this.audio.stopMusic();
-    transitionToScene(this, 'LevelCompleteScene', {
-      stats: {
-        timeSec: Math.floor(this.levelTimeMs / 1000),
-        coins: runtimeStore.save.progression.coins,
-        stars: runtimeStore.save.progression.stars,
-        deaths: runtimeStore.save.progression.deaths
+
+    // Celebration effects: sparkle burst around goal
+    if (this.goal) {
+      for (let i = 0; i < 3; i++) {
+        this.time.delayedCall(i * 300, () => {
+          this.effects.emitSparkle(
+            this.goal.x + (Math.random() - 0.5) * 40,
+            this.goal.y - 10 + (Math.random() - 0.5) * 30,
+            0xffd700,
+            8,
+          );
+        });
       }
-    }, { durationMs: 150, fadeInMs: 180 });
+    }
+
+    // Delay transition so the fanfare plays out (~2.5s)
+    this.time.delayedCall(2600, () => {
+      transitionToScene(this, 'LevelCompleteScene', {
+        stats: {
+          timeSec: Math.floor(this.levelTimeMs / 1000),
+          coins: runtimeStore.save.progression.coins,
+          stars: runtimeStore.save.progression.stars,
+          deaths: runtimeStore.save.progression.deaths
+        }
+      }, { durationMs: 150, fadeInMs: 180 });
+    });
+  }
+
+  /**
+   * Auto-scroll system for World 5 benchmark segments.
+   * When active, the camera scrolls rightward at a fixed speed.
+   * The player must keep up or die (pushed off left edge of screen).
+   */
+  private updateAutoScroll(dtMs: number): void {
+    if (this.autoScrollSegments.length === 0 || this.deathAnimPlaying) return;
+
+    const cam = this.cameras.main;
+    const playerX = this.player.x;
+
+    // Check if we should START a new auto-scroll segment
+    if (this.autoScrollActiveIndex === -1) {
+      for (let i = 0; i < this.autoScrollSegments.length; i++) {
+        const seg = this.autoScrollSegments[i]!;
+        if (playerX >= seg.startX && playerX < seg.startX + seg.speedPxPerSec * (seg.durationMs / 1000)) {
+          this.autoScrollActiveIndex = i;
+          this.autoScrollElapsedMs = 0;
+          this.autoScrollCameraStartX = cam.scrollX;
+          // Detach camera from player follow
+          cam.stopFollow();
+          break;
+        }
+      }
+    }
+
+    // Update active auto-scroll
+    if (this.autoScrollActiveIndex >= 0) {
+      const seg = this.autoScrollSegments[this.autoScrollActiveIndex]!;
+      this.autoScrollElapsedMs += dtMs;
+
+      if (this.autoScrollElapsedMs >= seg.durationMs) {
+        // Segment complete, return to normal camera follow
+        this.autoScrollActiveIndex = -1;
+        this.autoScrollElapsedMs = 0;
+        cam.startFollow(this.player, false);
+        cam.setLerp(0.16, 0.1);
+        cam.setDeadzone(80, 50);
+        return;
+      }
+
+      // Scroll camera rightward at fixed speed
+      const scrollDelta = seg.speedPxPerSec * (dtMs / 1000);
+      cam.scrollX += scrollDelta;
+
+      // Kill player if they fall behind the left edge of the camera viewport
+      const cameraLeftEdge = cam.scrollX;
+      if (playerX < cameraLeftEdge - 8) {
+        this.damagePlayer('autoscroll');
+      }
+
+      // Prevent player from moving past the right edge of camera
+      const cameraRightEdge = cam.scrollX + cam.width / cam.zoom;
+      if (playerX > cameraRightEdge - 16) {
+        this.player.setX(cameraRightEdge - 16);
+      }
+    }
   }
 
   private simulateStep(dtMs: number): void {
@@ -979,6 +1251,9 @@ export class PlayScene extends Phaser.Scene {
       this.playerHead.setAlpha(1);
     }
 
+    // -- Auto-scroll logic (World 5 benchmark segments) --
+    this.updateAutoScroll(dtMs);
+
     updateMovingPlatforms(this.movingPlatforms);
     updateThwomps(this.thwomps, this.player.x);
 
@@ -986,16 +1261,17 @@ export class PlayScene extends Phaser.Scene {
       if (handle.sprite.active) handle.update(dtMs);
     }
 
-    this.projectiles.children.each((c) => {
+    const projectiles = this.projectiles.getChildren();
+    for (const c of projectiles) {
       const p = c as Phaser.Physics.Arcade.Sprite;
       if (p.active && (p.x < 0 || p.x > this.physics.world.bounds.width + 30)) {
         p.destroy();
       }
-    });
+    }
 
     this.enemyHandles.forEach((shell) => {
       if (shell.kind !== 'shell' || !shell.sprite.active) return;
-      if (Math.abs(shell.sprite.body.velocity.x) < 150) return;
+      if (!shell.sprite.body || Math.abs(shell.sprite.body.velocity.x) < 150) return;
       this.enemyHandles.forEach((other) => {
         if (other === shell || !other.sprite.active) return;
         if (Phaser.Math.Distance.Between(shell.sprite.x, shell.sprite.y, other.sprite.x, other.sprite.y) < 20) {
@@ -1018,12 +1294,26 @@ export class PlayScene extends Phaser.Scene {
       stars: runtimeStore.save.progression.stars,
       lives: this.lives,
       form: this.playerForm,
+      modifiers: this.worldModifiers,
       timeSec: Math.floor(this.levelTimeMs / 1000)
     });
     updateHudPosition(this.hud, this.cameras.main);
   }
 
   update(_time: number, delta: number): void {
+    // During death animation, only tick physics (for the fall arc) - no input
+    if (this.deathAnimPlaying) {
+      this.simulateStep(Math.min(40, delta));
+      // Keep head synced during death fall
+      const headOffset = this.animator.getCurrentHeadOffset();
+      const flipSign = this.player.flipX ? -1 : 1;
+      this.playerHead.setPosition(
+        this.player.x + headOffset.dx * flipSign,
+        this.player.y + headOffset.dy,
+      );
+      return;
+    }
+
     if (Phaser.Input.Keyboard.JustDown(this.keys.r)) {
       this.scene.restart({ bonus: this.levelBonus });
       return;
@@ -1043,13 +1333,13 @@ export class PlayScene extends Phaser.Scene {
 
     const step = stepMovement({
       dtMs: Math.min(40, delta),
-      vx: this.player.body.velocity.x,
-      vy: this.player.body.velocity.y,
+      vx: this.player.body?.velocity.x ?? 0,
+      vy: this.player.body?.velocity.y ?? 0,
       inputX: left === right ? 0 : left ? -1 : 1,
       jumpPressed,
       jumpHeld,
       runHeld: this.runHeld,
-      onGround: this.player.body.blocked.down || this.player.body.touching.down,
+      onGround: this.player.body?.blocked.down || this.player.body?.touching.down || false,
       feel: this.feel
     }, this.worldModifiers);
     this.feel = step.feel;
@@ -1058,15 +1348,15 @@ export class PlayScene extends Phaser.Scene {
     this.player.setVelocityY(step.vy);
     if (step.jumped) this.playSfx('jump');
 
-    if (this.player.body.velocity.x > 0) this.player.setFlipX(false);
-    if (this.player.body.velocity.x < 0) this.player.setFlipX(true);
+    if ((this.player.body?.velocity.x ?? 0) > 0) this.player.setFlipX(false);
+    if ((this.player.body?.velocity.x ?? 0) < 0) this.player.setFlipX(true);
 
     // Update animation state machine
-    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const onGround = this.player.body?.blocked.down || this.player.body?.touching.down || false;
     const inputX: -1 | 0 | 1 = left === right ? 0 : left ? -1 : 1;
     this.animator.update({
-      vx: this.player.body.velocity.x,
-      vy: this.player.body.velocity.y,
+      vx: this.player.body?.velocity.x ?? 0,
+      vy: this.player.body?.velocity.y ?? 0,
       inputX,
       onGround,
       wasOnGround: this.wasOnGround,
@@ -1085,12 +1375,17 @@ export class PlayScene extends Phaser.Scene {
     );
     this.playerHead.setFlipX(this.player.flipX);
 
-    // Dust puff on skid/land
-    if (this.animator.justEntered('skid') || this.animator.justEntered('land')) {
-      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+    // Dust puff + SFX on skid/land
+    if (this.animator.justEntered('land')) {
+      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+      this.playSfx('land');
+    }
+    if (this.animator.justEntered('skid')) {
+      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+      this.playSfx('skid');
     }
 
-    const lookAhead = Phaser.Math.Clamp(this.player.body.velocity.x * 0.18, -90, 90);
+    const lookAhead = Phaser.Math.Clamp((this.player.body?.velocity.x ?? 0) * 0.18, -90, 90);
     this.cameras.main.followOffset.x = lookAhead;
 
     this.jumpHeldLast = jumpHeld;

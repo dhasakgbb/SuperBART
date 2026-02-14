@@ -1,5 +1,5 @@
 :root {
-  font-family: 'Courier New', 'Lucida Console', monospace;
+  font-family: "Courier New", "Lucida Console", monospace;
   color: #f2fdfd;
   background:
     radial-gradient(circle at 30% 10%, rgb(246 213 139 / 18%), transparent 42%),
@@ -31,3 +31,5 @@ canvas {
     0 24px 48px rgb(0 0 0 / 55%);
   image-rendering: pixelated;
 }
+
+

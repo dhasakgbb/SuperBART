@@ -18,6 +18,6 @@ describe('renderer config', () => {
     expect(config.render?.pixelArt).toBe(true);
     expect(config.render?.roundPixels).toBe(true);
     expect(config.render?.batchSize).toBe(8192);
-    expect(config.render?.maxLights).toBe(1);
+    expect(config.render?.maxLights).toBe(0);
   });
 });

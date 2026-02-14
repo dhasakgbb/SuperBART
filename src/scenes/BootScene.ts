@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ScanlinePipeline } from '../rendering/ScanlinePipeline';
 import { ASSET_MANIFEST } from '../core/assetManifest';
 import type { AssetImageSource } from '../core/assetManifest';
 import styleConfig, { stylePalette } from '../style/styleConfig';
@@ -14,6 +15,8 @@ export class BootScene extends Phaser.Scene {
     super('BootScene');
   }
 
+  init(): void {}
+
   preload(): void {
     for (const [key, entry] of Object.entries(ASSET_MANIFEST.images) as Array<[string, AssetImageSource]>) {
       const image = typeof entry === 'string' ? { path: entry } : entry;
@@ -28,6 +31,10 @@ export class BootScene extends Phaser.Scene {
     for (const [key, font] of Object.entries(ASSET_MANIFEST.bitmapFonts)) {
       this.load.bitmapFont(key, font.texture, font.data);
     }
+
+    // if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+    //   (this.game.renderer.pipelines as any).addPostFX('ScanlinePipeline', ScanlinePipeline);
+    // }
   }
 
   create(): void {
@@ -51,6 +58,10 @@ export class BootScene extends Phaser.Scene {
       },
     });
 
+    this.transitionToTitle();
+  }
+
+  private transitionToTitle() {
     transitionToScene(this, 'TitleScene', undefined, { durationMs: 0 });
   }
 }

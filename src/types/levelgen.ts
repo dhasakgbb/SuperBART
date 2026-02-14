@@ -70,7 +70,7 @@ export interface LevelHardRules {
   maxHazardClusters: number;
 }
 
-export type ChunkFamily = CanonicalChunkFamily | 'azure_walkway' | 'benchmark_sprint';
+export type ChunkFamily = CanonicalChunkFamily | 'azure_walkway' | 'benchmark_sprint' | 'technical_debt_sprint';
 
 export type StructuralChunkType = 'start' | 'checkpoint' | 'end';
 
@@ -80,7 +80,11 @@ export type ChunkTemplateType =
   | 'coin_arc'
   | 'enemy_gauntlet'
   | 'moving_platform'
-  | 'benchmark_sprint';
+  | 'benchmark_sprint'
+  | 'technical_debt_sprint'
+  | 'analyst_tower'
+  | 'hot_take_gauntlet'
+  | 'legacy_slide_01';
 
 export type ChunkType = StructuralChunkType | ChunkFamily;
 

@@ -24,7 +24,7 @@ describe('scene flow transitions', () => {
 
     const targetScene = {
       cameras: { main: targetCamera },
-    } as Record<string, unknown>;
+    } as any;
 
     const getScene = vi.fn(() => targetScene);
     const sourceScene = {
@@ -45,12 +45,12 @@ describe('scene flow transitions', () => {
           callback();
         }),
       },
-    } as Record<string, unknown>;
+    } as any;
 
     let capturedFadeOutComplete: (() => void) | undefined;
     const sceneMain = sourceScene.cameras.main as unknown as {
-      once: (event: string, cb: () => void) => void;
-      fadeOut: (...args: unknown[]) => void;
+      once: import('vitest').Mock;
+      fadeOut: import('vitest').Mock;
     };
     sceneMain.once.mockImplementation((event: string, cb: () => void) => {
       if (event === FADE_OUT_COMPLETE) {
@@ -77,7 +77,7 @@ describe('scene flow transitions', () => {
 
     const targetScene = {
       cameras: { main: targetCamera },
-    } as Record<string, unknown>;
+    } as any;
 
     const getScene = vi.fn(() => targetScene);
     const sourceScene = {
@@ -95,7 +95,7 @@ describe('scene flow transitions', () => {
           callback();
         }),
       },
-      } as Record<string, unknown>;
+      } as any;
 
     transitionToScene(sourceScene, 'TargetImmediate', undefined, { durationMs: 0, fadeInMs: 64 });
 

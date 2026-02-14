@@ -45,7 +45,7 @@ const STYLE_OUTLINE_SOURCE = 'src/style/styleConfig.ts';
 const STYLE_OUTLINE_CONTRACT_PATH = path.join(repoRoot, 'public/assets/style_outline_contract.json');
 
 function swatchColor(swatch: string): Rgba {
-  const hex = SWATCH_BY_NAME.get(swatch);
+  const hex = SWATCH_BY_NAME.get(swatch as any);
   if (hex == null) {
     throw new Error(`Style contract requires swatch "${swatch}" in styleConfig.palette.swatches.`);
   }
@@ -53,8 +53,8 @@ function swatchColor(swatch: string): Rgba {
   return [r, g, b, 255] as Rgba;
 }
 
-const STYLE_OUTLINE_WORLD: Rgba = [...swatchColor(STYLE_OUTLINE_WORLD_SWATCH).slice(0, 3), STYLE_OUTLINE_ALPHA] as Rgba;
-const STYLE_OUTLINE_UI: Rgba = [...swatchColor(STYLE_OUTLINE_UI_SWATCH).slice(0, 3), STYLE_OUTLINE_ALPHA] as Rgba;
+const STYLE_OUTLINE_WORLD: Rgba = [...swatchColor(STYLE_OUTLINE_WORLD_SWATCH).slice(0, 3), STYLE_OUTLINE_ALPHA] as unknown as Rgba;
+const STYLE_OUTLINE_UI: Rgba = [...swatchColor(STYLE_OUTLINE_UI_SWATCH).slice(0, 3), STYLE_OUTLINE_ALPHA] as unknown as Rgba;
 const STYLE_OUTLINE: Rgba = STYLE_OUTLINE_WORLD;
 
 const COLORS = {
@@ -145,7 +145,38 @@ function outlinePx(raw: number): number {
   return Math.max(1, Math.min(Math.floor(raw), STYLE_OUTLINE_MAX_PX));
 }
 
-function drawGroundTile(tile: PixelImage): void {
+function outlineOpaquePixels(image: PixelImage, outline: Rgba, width = STYLE_OUTLINE_WORLD_PX): void {
+  const safeWidth = outlinePx(width);
+  const snapshot = createImage(image.width, image.height, [0, 0, 0, 0]);
+  blit(snapshot, image, 0, 0);
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      const px = getPixel(snapshot, x, y);
+      if (px[3] !== 0) {
+        continue;
+      }
+      let hasOpaqueNeighbor = false;
+      for (let yOffset = -safeWidth; yOffset <= safeWidth && !hasOpaqueNeighbor; yOffset += 1) {
+        for (let xOffset = -safeWidth; xOffset <= safeWidth && !hasOpaqueNeighbor; xOffset += 1) {
+          if (Math.abs(xOffset) + Math.abs(yOffset) > safeWidth || (xOffset === 0 && yOffset === 0)) {
+            continue;
+          }
+          if (getPixel(snapshot, x + xOffset, y + yOffset)[3] > 0) {
+            hasOpaqueNeighbor = true;
+          }
+        }
+      }
+      if (hasOpaqueNeighbor) {
+        setPixel(image, x, y, outline);
+      }
+    }
+  }
+}
+
+// --- Task 1: Ground Tiles Variants ---
+
+function drawGroundTileW1(tile: PixelImage): void {
+  // W1 Azure: green grass top + warm brown earth (current tile)
   fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundMid);
   for (let y = 4; y < TILE_SIZE; y += 1) {
     for (let x = 0; x < TILE_SIZE; x += 1) {
@@ -153,13 +184,81 @@ function drawGroundTile(tile: PixelImage): void {
       setPixel(tile, x, y, tone === 0 ? COLORS.groundWarm : tone === 1 ? COLORS.groundMid : COLORS.groundShadow);
     }
   }
-
   fillRect(tile, 0, 0, TILE_SIZE, 2, COLORS.grassTop);
   fillRect(tile, 0, 2, TILE_SIZE, 2, COLORS.grassMid);
   for (let x = 0; x < TILE_SIZE; x += 2) {
     setPixel(tile, x, 3, COLORS.mossDark);
   }
   strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawGroundTileW2(tile: PixelImage): void {
+  // W2 Pipeline: copper/bronze metallic surface, rivet dots
+  // Palette: #3B2007 (sky), #C97D10 (accent) -> Use groundWarm/groundMid/groundShadow + accent?
+  // Using generic "copper" feel from existing palette or accent if possible.
+  // Using: groundWarm (copper), groundShadow (dark), sand (rivets/highlight)
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundWarm);
+  strokeRect(tile, 1, 1, 14, 14, COLORS.groundMid);
+  // Rivets
+  setPixel(tile, 2, 2, COLORS.sand);
+  setPixel(tile, 13, 2, COLORS.sand);
+  setPixel(tile, 2, 13, COLORS.sand);
+  setPixel(tile, 13, 13, COLORS.sand);
+  // Industrial texture
+  for(let i=4; i<12; i+=2) {
+    drawLine(tile, i, 4, i, 11, COLORS.groundShadow);
+  }
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawGroundTileW3(tile: PixelImage): void {
+  // W3 Enterprise: gray concrete, blue trim line at top
+  // Colors: steel, steelDark, hudBlue
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.steel);
+  // Noise
+  for(let y=0; y<TILE_SIZE; y+=2) {
+    for(let x=0; x<TILE_SIZE; x+=2) {
+      if ((x+y)%4 === 0) setPixel(tile, x, y, COLORS.steelDark);
+    }
+  }
+  // Blue trim
+  fillRect(tile, 0, 0, 16, 2, COLORS.hudBlue);
+  fillRect(tile, 0, 2, 16, 1, COLORS.hudBlueLight);
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawGroundTileW4(tile: PixelImage): void {
+  // W4 GPU: dark basalt/volcanic, NVIDIA green crystal veins
+  // Colors: inkSoft (basalt), inkDark, grassTop (green crystal), grassMid
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkSoft);
+  // Cracks/Veins
+  drawLine(tile, 2, 2, 8, 8, COLORS.grassMid);
+  drawLine(tile, 8, 8, 14, 4, COLORS.grassMid);
+  drawLine(tile, 8, 8, 6, 14, COLORS.grassMid);
+  // Crystals
+  setPixel(tile, 8, 8, COLORS.grassTop);
+  setPixel(tile, 3, 3, COLORS.grassTop);
+  setPixel(tile, 13, 5, COLORS.grassTop);
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawGroundTileW5(tile: PixelImage): void {
+  // W5 Benchmark: deep purple base, neon pink/magenta circuit traces
+  // Colors: We don't have deep purple/magenta in CONSTANTS.
+  // Using mapped values from provided W5 Palette in prompt:
+  // #0D0221 (sky), #FF2D55 (accent).
+  // I will use 'glitch' (#ff6e7a - close to pink) and 'hudBlue' mixed for "purple" feel?
+  // Or just use inkDeep/inkSoft and Glitch.
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDeep); // Deep base
+  // Circuit traces
+  drawLine(tile, 2, 8, 13, 8, COLORS.glitch);
+  drawLine(tile, 8, 2, 8, 13, COLORS.glitch);
+  drawDisk(tile, 8, 8, 2, COLORS.chipBlue); // Node
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+}
+
+function drawGroundTile(tile: PixelImage): void {
+  drawGroundTileW1(tile);
 }
 
 function drawBrickTile(tile: PixelImage): void {
@@ -242,9 +341,38 @@ function drawGoalTile(tile: PixelImage): void {
 
 function makeTileGround(): void {
   const tile = createImage(TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
-  drawGroundTile(tile);
-  const output = path.join(repoRoot, 'public/assets/tiles/tile_ground.png');
-  writeSprite(output, tile);
+  drawGroundTileW1(tile);
+  writeSprite(path.join(repoRoot, 'public/assets/tiles/tile_ground.png'), tile);
+
+  const variants = [
+    { fn: drawGroundTileW1, file: 'tileset_w1.png' },
+    { fn: drawGroundTileW2, file: 'tileset_w2.png' },
+    { fn: drawGroundTileW3, file: 'tileset_w3.png' },
+    { fn: drawGroundTileW4, file: 'tileset_w4.png' },
+    { fn: drawGroundTileW5, file: 'tileset_w5.png' },
+  ];
+
+  variants.forEach((v) => {
+    const tileBuilders = [
+      v.fn,
+      drawBrickTile,
+      drawPlatformTile,
+      drawOneWayTile,
+      drawSpikeTile,
+      drawCheckpointTile,
+      drawGoalTile,
+    ];
+    
+    const tileset = createImage(TILE_SIZE, TILE_SIZE * tileBuilders.length, [0, 0, 0, 0]);
+    tileBuilders.forEach((builder, index) => {
+      const t = createImage(TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
+      builder(t);
+      blit(tileset, t, 0, index * TILE_SIZE);
+    });
+    
+    writePng(path.join(repoRoot, `public/assets/tiles/${v.file}`), tileset);
+    console.log(`Wrote public/assets/tiles/${v.file}`);
+  });
 }
 
 function makeTileOneWay(): void {
@@ -334,17 +462,31 @@ function makeProjectile(): void {
 }
 
 function makeFlag(): void {
+  const greenDark = parseHex('#5CB85C');
+  const greenLight = COLORS.grassTop;
+  const poleColor = COLORS.steel;
+  
   const flag = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(flag, 6, 11, 3, 4, COLORS.inkDark);
-  fillRect(flag, 6, 1, 4, 2, COLORS.inkDark);
-  fillRect(flag, 8, 2, 5, 2, COLORS.coinCore);
-  fillRect(flag, 10, 4, 2, 2, COLORS.coinEdge);
-  drawLine(flag, 9, 1, 13, 1, COLORS.groundWarm);
-  fillRect(flag, 9, 2, 5, 4, COLORS.checkpointGold);
-  fillRect(flag, 10, 6, 4, 1, COLORS.inkDark);
-  outlineOpaquePixels(flag, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/flag.png');
-  writeSprite(output, flag);
+  
+  // Pole
+  fillRect(flag, 2, 1, 1, 14, poleColor);
+  
+  // Pennant
+  for(let y=0; y<7; y++) {
+    const w = 8 - y;
+    if (w > 0) {
+      fillRect(flag, 3, 2+y, w, 1, greenLight);
+    }
+  }
+  
+  // Checkmark
+  setPixel(flag, 4, 4, COLORS.inkDark);
+  setPixel(flag, 5, 5, COLORS.inkDark);
+  setPixel(flag, 6, 4, COLORS.inkDark);
+  setPixel(flag, 7, 3, COLORS.inkDark);
+  
+  outlineOpaquePixels(flag, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/flag.png'), flag);
 }
 
 function makeCheckpointSprite(): void {
@@ -404,13 +546,23 @@ function makeMovingPlatform(): void {
 }
 
 function makePickupEval(): void {
+  // Task 1: Eval (star replacement)
+  const accentCyan = parseHex('#50E6FF');
   const evalIcon = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(evalIcon, 3, 2, 10, 2, COLORS.coinCore);
-  fillRect(evalIcon, 4, 4, 8, 8, COLORS.hudAccent);
-  fillRect(evalIcon, 5, 5, 6, 6, COLORS.coinEdge);
-  outlineOpaquePixels(evalIcon, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_eval.png');
-  writeSprite(output, evalIcon);
+  
+  fillRect(evalIcon, 6, 6, 5, 5, COLORS.cloudLight);
+  fillRect(evalIcon, 7, 2, 3, 4, COLORS.cloudLight);
+  fillRect(evalIcon, 2, 6, 4, 3, COLORS.cloudLight);
+  fillRect(evalIcon, 11, 6, 4, 3, COLORS.cloudLight);
+  fillRect(evalIcon, 4, 10, 3, 4, COLORS.cloudLight);
+  fillRect(evalIcon, 10, 10, 3, 4, COLORS.cloudLight);
+  
+  setPixel(evalIcon, 7, 8, accentCyan);
+  setPixel(evalIcon, 8, 9, accentCyan);
+  setPixel(evalIcon, 9, 8, accentCyan);
+  
+  outlineOpaquePixels(evalIcon, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_eval.png'), evalIcon);
 }
 
 function makePickupGPUAllocation(): void {
@@ -525,39 +677,52 @@ function makeTileset(): void {
 }
 
 function makeCoin(): void {
-  const coin = createImage(16, 16, [0, 0, 0, 0]);
-  drawDisk(coin, 8, 8, 6, COLORS.inkDark);
-  drawDisk(coin, 8, 8, 5, COLORS.groundMid);
-  drawDisk(coin, 8, 8, 4, COLORS.groundWarm);
-  drawDisk(coin, 8, 8, 3, COLORS.checkpointGold);
-  drawDisk(coin, 8, 8, 2, COLORS.sand);
-  drawDisk(coin, 8, 8, 1, COLORS.inkDark);
-  outlineOpaquePixels(coin, COLORS.inkDeep);
-
-  const output = path.join(repoRoot, 'public/assets/sprites/coin.png');
-  writePng(output, coin);
-  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+  // Task 1: Token
+  const token = createImage(16, 16, [0, 0, 0, 0]);
+  for(let y=2; y<14; y++) {
+    for(let x=2; x<14; x++) {
+      if ((x===2 && y===2) || (x===13 && y===2) || (x===2 && y===13) || (x===13 && y===13)) continue;
+      setPixel(token, x, y, COLORS.coinCore);
+    }
+  }
+  drawLine(token, 13, 4, 13, 11, COLORS.coinEdge);
+  drawLine(token, 4, 13, 11, 13, COLORS.coinEdge);
+  setPixel(token, 12, 12, COLORS.coinEdge);
+  setPixel(token, 3, 3, COLORS.cloudLight);
+  const tx = 7, ty = 6;
+  fillRect(token, tx, ty, 3, 1, COLORS.inkDark);
+  fillRect(token, tx+1, ty+1, 1, 3, COLORS.inkDark);
+  outlineOpaquePixels(token, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/coin.png'), token);
 }
 
 function makeQuestionBlock(): void {
+  // Task 1: Question Block
   const block = createImage(16, 16, [0, 0, 0, 0]);
   fillRect(block, 0, 0, 16, 16, COLORS.inkDark);
-  fillRect(block, 1, 1, 14, 14, COLORS.groundMid);
-  fillRect(block, 2, 2, 12, 12, COLORS.groundWarm);
-  strokeRect(block, 1, 1, 14, 14, COLORS.groundShadow);
-  const q = [
-    [6, 4], [7, 4], [8, 4], [9, 5], [8, 6], [8, 7], [6, 9], [6, 10], [7, 11], [8, 10],
-  ];
-  q.forEach(([x, y]) => setPixel(block, x, y, COLORS.groundWarm));
-  fillRect(block, 8, 12, 1, 2, COLORS.inkDark);
-  fillRect(block, 2, 2, 12, 1, COLORS.inkDark);
-  fillRect(block, 2, 13, 12, 1, COLORS.inkDark);
-  strokeRect(block, 0, 0, 16, 16, COLORS.inkDark);
-
-  const output = path.join(repoRoot, 'public/assets/sprites/question_block.png');
-  writePng(output, block);
-  console.log(`Wrote ${path.relative(repoRoot, output)}`);
+  fillRect(block, 1, 1, 14, 14, COLORS.coinCore);
+  for(let x=2; x<14; x+=2) {
+    setPixel(block, x, 1, COLORS.coinEdge);
+    setPixel(block, x, 14, COLORS.coinEdge);
+  }
+  for(let y=2; y<14; y+=2) {
+    setPixel(block, 1, y, COLORS.coinEdge);
+    setPixel(block, 14, y, COLORS.coinEdge);
+  }
+  drawLine(block, 12, 3, 12, 12, COLORS.coinEdge);
+  drawLine(block, 3, 12, 12, 12, COLORS.coinEdge);
+  const qColor = COLORS.inkDark;
+  const ox = 6, oy = 4;
+  fillRect(block, ox+1, oy, 2, 1, qColor);
+  setPixel(block, ox, oy+1, qColor);
+  setPixel(block, ox+3, oy+1, qColor);
+  setPixel(block, ox+3, oy+2, qColor);
+  setPixel(block, ox+2, oy+3, qColor);
+  setPixel(block, ox+1, oy+4, qColor);
+  setPixel(block, ox+1, oy+6, qColor);
+  writePng(path.join(repoRoot, 'public/assets/sprites/question_block.png'), block);
 }
+
 
 function makeQuestionBlockUsed(): void {
   const block = createImage(16, 16, [0, 0, 0, 0]);
@@ -577,33 +742,7 @@ function makeQuestionBlockUsed(): void {
   console.log(`Wrote ${path.relative(repoRoot, output)}`);
 }
 
-function outlineOpaquePixels(image: PixelImage, outline: Rgba, width = STYLE_OUTLINE_WORLD_PX): void {
-  const safeWidth = outlinePx(width);
-  const snapshot = createImage(image.width, image.height, [0, 0, 0, 0]);
-  blit(snapshot, image, 0, 0);
-  for (let y = 0; y < image.height; y += 1) {
-    for (let x = 0; x < image.width; x += 1) {
-      const px = getPixel(snapshot, x, y);
-      if (px[3] !== 0) {
-        continue;
-      }
-      let hasOpaqueNeighbor = false;
-      for (let yOffset = -safeWidth; yOffset <= safeWidth && !hasOpaqueNeighbor; yOffset += 1) {
-        for (let xOffset = -safeWidth; xOffset <= safeWidth && !hasOpaqueNeighbor; xOffset += 1) {
-          if (Math.abs(xOffset) + Math.abs(yOffset) > safeWidth || (xOffset === 0 && yOffset === 0)) {
-            continue;
-          }
-          if (getPixel(snapshot, x + xOffset, y + yOffset)[3] > 0) {
-            hasOpaqueNeighbor = true;
-          }
-        }
-      }
-      if (hasOpaqueNeighbor) {
-        setPixel(image, x, y, outline);
-      }
-    }
-  }
-}
+
 
 function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): PixelImage {
   const cloud = createImage(baseWidth, baseHeight, [0, 0, 0, 0]);
@@ -721,8 +860,8 @@ function drawWordLayer(image: PixelImage, text: string, x: number, y: number, sc
   }
 }
 
-function drawWordHighlights(image: PixelImage, text: string, x: number, y: number, scale: number): void {
-  const highlight = COLORS.sand;
+function drawWordHighlights(image: PixelImage, text: string, x: number, y: number, scale: number, highlightColor: Rgba = COLORS.sand): void {
+  const highlight = highlightColor;
   const highlightHeight = Math.max(1, Math.floor(scale * 0.5));
   let cursorX = x;
   for (const rawChar of text) {
@@ -744,18 +883,38 @@ function drawWordHighlights(image: PixelImage, text: string, x: number, y: numbe
   }
 }
 
+function drawWordGradient(image: PixelImage, text: string, x: number, y: number, scale: number, colorTop: Rgba, colorBot: Rgba): void {
+  let cursorX = x;
+  for (const rawChar of text) {
+    const char = rawChar.toUpperCase();
+    const glyph = GLYPHS[char] ?? GLYPHS[' '];
+    for (let gy = 0; gy < glyph.length; gy += 1) {
+      const row = glyph[gy] ?? '';
+      const color = gy < 3 ? colorTop : colorBot; // Split at row 3 (of 7)
+      for (let gx = 0; gx < row.length; gx += 1) {
+        if (row[gx] !== '1') {
+          continue;
+        }
+        fillRect(image, cursorX + gx * scale, y + gy * scale, scale, scale, color);
+      }
+    }
+    cursorX += 5 * scale + scale;
+  }
+}
+
 function makeTitleLogo(): void {
-  const logo = createImage(512, 160, [0, 0, 0, 0]);
+  const logo = createImage(512, 180, [0, 0, 0, 0]);
 
   drawDisk(logo, 256, 36, 82, [246, 213, 139, 26]);
   drawDisk(logo, 256, 40, 112, [246, 213, 139, 16]);
   fillRect(logo, 0, 9, 512, 2, [16, 17, 22, 190]);
   fillRect(logo, 0, 149, 512, 2, [16, 17, 22, 190]);
 
-  const line1 = { text: 'SUPER', y: 20, scale: 7 };
-  const line2 = { text: 'BART', y: 86, scale: 8 };
+  const line1 = { text: 'SUPER', y: 10, scale: 7, colorTop: COLORS.checkpointGold, colorBot: COLORS.groundMid };
+  const line2 = { text: 'BART', y: 70, scale: 8, colorTop: COLORS.checkpointGold, colorBot: COLORS.groundMid };
+  const line3 = { text: 'AI EDITION', y: 135, scale: 3, colorTop: COLORS.chipBlue, colorBot: COLORS.hudBlue };
 
-  const drawLine = (line: { text: string; y: number; scale: number }): void => {
+  const drawLine = (line: { text: string; y: number; scale: number; colorTop: Rgba; colorBot: Rgba }): void => {
     const width = measureWordWidth(line.text, line.scale);
     const x = Math.floor((logo.width - width) / 2);
     const dropOffsets = [
@@ -778,15 +937,22 @@ function makeTitleLogo(): void {
       drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDeep);
     }
 
-    drawWordLayer(logo, line.text, x, line.y + 1, line.scale, COLORS.groundMid);
-    drawWordLayer(logo, line.text, x, line.y, line.scale, COLORS.checkpointGold);
-    drawWordLayer(logo, line.text, x, line.y - 1, line.scale, COLORS.sand);
-    drawWordHighlights(logo, line.text, x, line.y, line.scale);
+    // Gradient Text
+    drawWordGradient(logo, line.text, x, line.y, line.scale, line.colorTop, line.colorBot);
+    
+    // Highlights
+    // For Gold: use Sand (default)
+    // For AI: use White (cloudLight)
+    const highlightColor = line.text === 'AI EDITION' ? COLORS.cloudLight : COLORS.sand;
+    drawWordHighlights(logo, line.text, x, line.y, line.scale, highlightColor);
+    
+    // Subtle inner shadow/border
     drawWordLayer(logo, line.text, x + 1, line.y + 1, line.scale, [12, 12, 12, 60]);
   };
 
   drawLine(line1);
   drawLine(line2);
+  drawLine(line3);
 
   strokeRect(logo, 0, 0, logo.width, logo.height, [29, 29, 29, 120]);
 

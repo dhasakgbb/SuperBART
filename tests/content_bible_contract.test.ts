@@ -145,7 +145,7 @@ describe('content bible manifest contract', () => {
       if (structuralChunkNames.has(family)) {
         continue;
       }
-      expect(manifestChunkFamilies.has(family)).toBe(true);
+      expect(manifestChunkFamilies.has(family as any)).toBe(true);
     }
 
     const addEntityIds = new Set([

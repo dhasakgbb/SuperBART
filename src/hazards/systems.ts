@@ -3,20 +3,21 @@ import Phaser from 'phaser';
 export function updateMovingPlatforms(group: Phaser.Physics.Arcade.Group): void {
   group.children.each((child) => {
     const p = child as Phaser.Physics.Arcade.Sprite;
-    if (!p.active) return;
+    if (!p.active) return true;
     const minX = Number(p.getData('minX'));
     const maxX = Number(p.getData('maxX'));
     const speed = Number(p.getData('speed'));
-    if (!p.body.velocity.x) p.setVelocityX(speed);
+    if (!p.body?.velocity.x) p.setVelocityX(speed);
     if (p.x < minX) p.setVelocityX(Math.abs(speed));
     if (p.x > maxX) p.setVelocityX(-Math.abs(speed));
+    return true;
   });
 }
 
 export function updateThwomps(group: Phaser.Physics.Arcade.Group, playerX: number): void {
   group.children.each((child) => {
     const t = child as Phaser.Physics.Arcade.Sprite;
-    if (!t.active) return;
+    if (!t.active) return true;
     const topY = Number(t.getData('topY'));
     const bottomY = Number(t.getData('bottomY'));
     const state = String(t.getData('state') ?? 'idle');
@@ -35,5 +36,6 @@ export function updateThwomps(group: Phaser.Physics.Arcade.Group, playerX: numbe
     } else if (state === 'idle') {
       t.y = topY;
     }
+    return true;
   });
 }

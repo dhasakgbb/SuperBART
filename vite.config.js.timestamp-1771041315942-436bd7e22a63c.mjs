@@ -1,0 +1,17 @@
+// vite.config.js
+import { defineConfig } from "file:///sessions/inspiring-confident-faraday/mnt/SuperBART/node_modules/vite/dist/node/index.js";
+var vite_config_default = defineConfig({
+  resolve: {
+    // Prefer modern TypeScript runtime modules when legacy JS compatibility files coexist.
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".json"]
+  },
+  server: {
+    host: "127.0.0.1",
+    port: 5173,
+    strictPort: true
+  }
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCIvc2Vzc2lvbnMvaW5zcGlyaW5nLWNvbmZpZGVudC1mYXJhZGF5L21udC9TdXBlckJBUlRcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIi9zZXNzaW9ucy9pbnNwaXJpbmctY29uZmlkZW50LWZhcmFkYXkvbW50L1N1cGVyQkFSVC92aXRlLmNvbmZpZy5qc1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vc2Vzc2lvbnMvaW5zcGlyaW5nLWNvbmZpZGVudC1mYXJhZGF5L21udC9TdXBlckJBUlQvdml0ZS5jb25maWcuanNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tICd2aXRlJztcblxuZXhwb3J0IGRlZmF1bHQgZGVmaW5lQ29uZmlnKHtcbiAgcmVzb2x2ZToge1xuICAgIC8vIFByZWZlciBtb2Rlcm4gVHlwZVNjcmlwdCBydW50aW1lIG1vZHVsZXMgd2hlbiBsZWdhY3kgSlMgY29tcGF0aWJpbGl0eSBmaWxlcyBjb2V4aXN0LlxuICAgIGV4dGVuc2lvbnM6IFsnLnRzJywgJy50c3gnLCAnLmpzJywgJy5qc3gnLCAnLm1qcycsICcuanNvbiddXG4gIH0sXG4gIHNlcnZlcjoge1xuICAgIGhvc3Q6ICcxMjcuMC4wLjEnLFxuICAgIHBvcnQ6IDUxNzMsXG4gICAgc3RyaWN0UG9ydDogdHJ1ZVxuICB9XG59KTtcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBMlUsU0FBUyxvQkFBb0I7QUFFeFcsSUFBTyxzQkFBUSxhQUFhO0FBQUEsRUFDMUIsU0FBUztBQUFBO0FBQUEsSUFFUCxZQUFZLENBQUMsT0FBTyxRQUFRLE9BQU8sUUFBUSxRQUFRLE9BQU87QUFBQSxFQUM1RDtBQUFBLEVBQ0EsUUFBUTtBQUFBLElBQ04sTUFBTTtBQUFBLElBQ04sTUFBTTtBQUFBLElBQ04sWUFBWTtBQUFBLEVBQ2Q7QUFDRixDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=

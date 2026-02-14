@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "npm run lint:content && npm run lint:assets && npm run lint:style && npm run lint:audio && npm run lint:visual && vitest run tests/*.test.ts tests/*.test.js",
+    "test:e2e": "npx playwright test tests/e2e/ --project=chromium",
     "ci:gates": "npm run gen:all && npm run lint:assets && npm run lint:style && npm run lint:audio && npm run lint:visual && npm test && npm run build",
     "ci:gates:log": "node scripts/run_ci_gates.mjs",
     "playfeel:phase2": "node scripts/run_playfeel_phase2.mjs",
@@ -32,17 +33,20 @@
     "lint:content": "tsx tools/content_validate.ts",
     "visual:capture": "tsx tools/capture_visual_baselines.ts",
     "visual:update-golden": "tsx tools/capture_visual_baselines.ts --update-golden",
-    "gen:assets": "tsx tools/make_ui_assets.ts",
-    "gen:assets:all": "tsx tools/make_ui_assets.ts --pass all",
-    "gen:assets:objects": "tsx tools/make_ui_assets.ts --pass objects",
-    "gen:assets:hud": "tsx tools/make_ui_assets.ts --pass hud",
-    "gen:body": "tsx tools/make_body_spritesheet.ts",
-    "gen:all": "npm run gen:assets && npm run gen:avatars && npm run gen:body"
+    "gen:assets": "echo 'Skipping asset generation (using static pixel art)'",
+    "gen:assets:all": "echo 'Skipping asset generation'",
+    "gen:assets:objects": "echo 'Skipping asset generation'",
+    "gen:assets:hud": "echo 'Skipping asset generation'",
+    "gen:body": "echo 'Skipping body generation'",
+    "gen:all": "echo 'Skipping all generation'"
   },
   "dependencies": {
+    "@esbuild/linux-arm64": "^0.21.5",
+    "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
     "phaser": "^3.90.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.10.2",
     "@types/pngjs": "^6.0.5",
     "playwright": "^1.58.2",

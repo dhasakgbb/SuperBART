@@ -106,7 +106,7 @@ function normalizeParams(
     initialVx: params.initialVx ?? 0,
     initialVy: params.initialVy ?? 0,
     maxFrames: params.maxFrames ?? DEFAULT_MAX_FRAMES,
-    modifiers: params.modifiers,
+    modifiers: params.modifiers ?? { frictionMultiplier: 1, gravityMultiplier: 1, speedMultiplier: 1, tokenBurnRate: 1 },
     initialFeel: params.initialFeel ?? createFeelState(),
   };
 }

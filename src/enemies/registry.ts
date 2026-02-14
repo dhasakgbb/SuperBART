@@ -1,17 +1,11 @@
-import Phaser from 'phaser';
 import { ENEMIES } from '../content/contentManifest';
-
-type EnemyKind =
-  | 'walker'
-  | 'shell'
-  | 'flying'
-  | 'spitter'
-  | 'hallucination'
-  | 'legacy_system'
-  | 'hot_take'
-  | 'analyst'
-  | 'compliance_officer'
-  | 'technical_debt';
+// Cache bust
+import type { EnemyHandle, EnemyKind, EnemyKillSource, EnemyKillEvent, EnemyContext } from './types';
+import { Hallucination } from './definitions/Hallucination';
+import { LegacySystem } from './definitions/LegacySystem';
+import { TechnicalDebt } from './definitions/TechnicalDebt';
+import { HotTake } from './definitions/HotTake';
+import { Analyst } from './definitions/Analyst';
 
 type EnemyData = {
   kind: EnemyKind;
@@ -40,35 +34,6 @@ type EnemyData = {
   technicalDebtAnchorY?: number;
 };
 
-export type EnemyKillSource = 'stomp' | 'playerShot' | 'inferenceShot' | 'environment' | 'companion';
-
-export interface EnemyKillEvent {
-  enemyType: EnemyKind;
-  source: EnemyKillSource;
-  isBoss: boolean;
-  x: number;
-  y: number;
-}
-
-export interface EnemyHandle {
-  kind: EnemyKind;
-  displayName: string;
-  sprite: Phaser.Physics.Arcade.Sprite;
-  update(dtMs: number): void;
-  onPlayerCollision(player: Phaser.Physics.Arcade.Sprite): 'stomp' | 'damage';
-  createKillEvent(source: EnemyKillSource): EnemyKillEvent;
-  serializeDebug(): Record<string, unknown>;
-}
-
-export interface EnemyContext {
-  scene: Phaser.Scene;
-  projectiles: Phaser.Physics.Arcade.Group;
-  spawnLingerZone?: (x: number, y: number) => void;
-  getPlayerPosition?: () => { x: number; y: number };
-  nowMs?: () => number;
-  onSpawnEnemy?: (handle: EnemyHandle) => void;
-}
-
 const KIND_ALIASES: Record<string, EnemyKind> = {
   walker: 'hallucination',
   shell: 'legacy_system',
@@ -88,7 +53,7 @@ function resolveEnemyKind(kind: string): EnemyKind {
 }
 
 function getEnemyDisplayName(kind: EnemyKind): string {
-  const canonicalByKind = {
+  const canonicalByKind: Record<EnemyKind, EnemyKind> = {
     walker: 'hallucination',
     shell: 'legacy_system',
     flying: 'hot_take',
@@ -99,7 +64,7 @@ function getEnemyDisplayName(kind: EnemyKind): string {
     legacy_system: 'legacy_system',
     hot_take: 'hot_take',
     analyst: 'analyst',
-  } as const;
+  };
 
   const canonical = canonicalByKind[kind] ?? kind;
   const matched = ENEMIES.find((entry) => entry.id === canonical || entry.aliases.includes(canonical));
@@ -123,51 +88,38 @@ function createMicroservice(
   dir: number,
   onSpawnEnemy?: (handle: EnemyHandle) => void,
 ): void {
-  const sprite = scene.physics.add
-    .sprite(source.sprite.x + dir * 10, source.sprite.y, 'enemy_shell_retracted') as Phaser.Physics.Arcade.Sprite;
-  sprite.setScale(source.sprite.scaleX * 0.65, source.sprite.scaleY * 0.65);
-  sprite.setDepth(source.sprite.depth);
-  sprite.setCollideWorldBounds(true);
-  sprite.body.setSize(8, 8);
-  sprite.setVelocityX(dir * 60);
-  sprite.setData('enemyKind', 'legacy_system');
-  sprite.setData('isMicroservice', true);
+  const enemy = new LegacySystem({ 
+      scene, 
+      x: source.sprite.x + dir * 10, 
+      y: source.sprite.y, 
+      texture: 'enemy_shell_retracted' 
+  }, true); // isMicroservice = true
 
-  const micro: EnemyHandle = {
+  enemy.setVelocityX(dir * 60);
+
+  const handle: EnemyHandle = {
     kind: 'legacy_system',
     displayName: getEnemyDisplayName('legacy_system'),
-    sprite,
-    update(dtMs: number) {
-      if (Math.abs(sprite.body.velocity.x) >= 30) {
-        if (sprite.body.blocked.left || sprite.body.blocked.right) {
-          sprite.setVelocityX(-sprite.body.velocity.x);
-        }
-        return;
-      }
-
-      sprite.setVelocityX(dir * 60);
-    },
-    onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
-      const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
-      return stomp ? 'stomp' : 'damage';
-    },
+    sprite: enemy,
+    update: (dt) => enemy.manualUpdate(dt),
+    onPlayerCollision: (p) => enemy.onPlayerCollision(p),
     createKillEvent(sourceEvent: EnemyKillSource): EnemyKillEvent {
       return {
         enemyType: 'legacy_system',
         source: sourceEvent,
         isBoss: false,
-        x: sprite.x,
-        y: sprite.y,
+        x: enemy.x,
+        y: enemy.y,
       };
     },
     serializeDebug: () => ({
       kind: 'legacy_system',
-      x: sprite.x,
-      y: sprite.y,
+      x: enemy.x,
+      y: enemy.y,
       microservice: true,
     }),
   };
-  onSpawnEnemy?.(micro);
+  onSpawnEnemy?.(handle);
 }
 
 export function spawnEnemy(
@@ -207,220 +159,71 @@ export function spawnEnemy(
   sprite.setData('enemyState', sharedData);
 
   if (kind === 'legacy_system') {
-    sprite.body.setSize(12, 10).setOffset(2, 6);
+    const enemy = new LegacySystem({ scene, x, y, texture: defaultTextureFor(kind) });
+    // Handle retracted start state if needed
+    if (data.retracted || data.isMicroservice) {
+        enemy.transitionTo('idle');
+    }
+
     return {
       kind,
-      displayName: getEnemyDisplayName(kind),
-      sprite,
-      update(dtMs: number) {
-        const state = (sprite.getData('enemyState') as EnemyData) ?? sharedData;
-        state.frozenMs = Math.max(0, (state.frozenMs ?? 0) - dtMs);
-        state.safeMs = Math.max(0, (state.safeMs ?? 0) - dtMs);
+      displayName: enemy.displayName,
+      sprite: enemy,
+      update: (dt) => enemy.manualUpdate(dt),
+      onPlayerCollision: (p) => enemy.onPlayerCollision(p),
+      createKillEvent: (s) => enemy.createKillEvent(s),
+      serializeDebug: () => enemy.serializeDebug(),
+    };
+  }
 
-        if (state.retracted) {
-          if (state.safeMs <= 0) {
-            state.retracted = false;
-            state.retractMs = 0;
-            state.retractMs = 0;
-            sprite.setTexture('enemy_shell');
-            sprite.setScale(1.85);
-            sprite.setVelocityX(sprite.body.velocity.x >= 0 ? (state.shellMoveSpeed ?? 55) : -(state.shellMoveSpeed ?? 55));
-          }
-          return;
-        }
+  if (kind === 'technical_debt') {
+      const enemy = new TechnicalDebt({ scene, x, y, texture: defaultTextureFor(kind) }, ctx);
 
-        if (!sprite.body.velocity.x) {
-          sprite.setVelocityX(Math.sign(sprite.x % 2 - 0.5) * (state.shellMoveSpeed ?? 55));
-        }
-
-        if (Math.abs(sprite.body.velocity.x) < 140 && (state.shellMoveSpeed ?? 0) > 0) {
-          sprite.setVelocityX(Math.sign(sprite.body.velocity.x) * (state.shellMoveSpeed ?? 55));
-        }
-
-        if (sprite.body.blocked.left || sprite.body.blocked.right) {
-          sprite.setVelocityX(-sprite.body.velocity.x);
-        }
-      },
-      onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
-        const state = (sprite.getData('enemyState') as EnemyData) ?? sharedData;
-        const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
-        if (stomp) {
-          if (!state.retracted) {
-            state.safeMs = 350;
-            state.retracted = true;
-            state.retractMs = 0;
-            sprite.setVelocityX(0);
-            sprite.setTexture('enemy_shell_retracted');
-            sprite.setScale(1.85);
-            return 'stomp';
-          }
-
-          if (state.safeMs > 0) {
-            return 'stomp';
-          }
-          const dir = player.x < sprite.x ? 1 : -1;
-          sprite.setVelocityX(dir * 220);
-          return 'stomp';
-        }
-
-        return state.safeMs > 0 ? 'damage' : 'damage';
-      },
-      createKillEvent(source: EnemyKillSource): EnemyKillEvent {
-        return {
-          enemyType: kind,
-          source,
-          isBoss: false,
-          x: sprite.x,
-          y: sprite.y,
-        };
-      },
-      serializeDebug: () => ({
+      return {
         kind,
-        x: sprite.x,
-        y: sprite.y,
-        retracted: Boolean(state.retracted),
-      }),
+        displayName: enemy.displayName,
+        sprite: enemy,
+        update: (dt) => enemy.manualUpdate(dt),
+        onPlayerCollision: (p) => enemy.onPlayerCollision(p),
+        createKillEvent: (s) => enemy.createKillEvent(s),
+        serializeDebug: () => enemy.serializeDebug(),
     };
   }
 
   if (kind === 'hot_take') {
-    sprite.setScale(1.8);
-    sprite.body.setSize(10, 10).setOffset(3, 3);
-    const baseY = y;
-    const baseAmp = sharedData.baseAmp ?? 18;
-    const localState = {
-      ...sharedData,
-      phase: 'drift' as const,
-      phaseMs: 0,
-      phaseDurationMs: 2000 + Math.random() * 2000,
-      burstPhaseMs: 0,
-      shellMoveSpeed: 0,
-      targetY: baseY,
-      baseY,
-      baseAmp,
-    };
-    sprite.setData('enemyState', localState);
+      const enemy = new HotTake({ scene, x, y, texture: defaultTextureFor(kind) });
 
-    return {
-      kind,
-      displayName: getEnemyDisplayName(kind),
-      sprite,
-      update(dtMs: number) {
-        const state = sprite.getData('enemyState') as EnemyData;
-        const escalation = 1 + Math.min(1.5, (Number(ctx.nowMs ? ctx.nowMs() : 0) - Number(ctx.nowMs ? ctx.nowMs() : 0)) / 20000);
-        const phase = state.phase ?? 'drift';
-        state.phaseMs = (state.phaseMs ?? 0) + dtMs;
-
-        const driftMs = 2000;
-        const warnMs = 220;
-        const burstMs = 280;
-        const phaseDuration = (state.phaseDurationMs ?? 0) || (driftMs + driftMs * 0.4);
-
-        const t = (thisTime()) / 1000;
-        if (phase === 'drift') {
-          sprite.body.setVelocityX(-35);
-          sprite.y = baseY + Math.sin(t * 2.4) * (baseAmp * (0.5 + Math.min(0.4, escalation * 0.1)));
-          if ((state.phaseMs ?? 0) >= phaseDuration) {
-            state.phase = 'warn';
-            state.phaseMs = 0;
-            sprite.setTint(0xff4444);
-          }
-          return;
-        }
-
-        if (phase === 'warn') {
-          if ((state.phaseMs ?? 0) >= warnMs) {
-            state.phase = 'burst';
-            state.phaseMs = 0;
-            state.burstPhaseMs = 0;
-            const amp = 1 + (escalation - 1) * 0.3;
-            sprite.setVelocityX((Math.random() < 0.5 ? -1 : 1) * 120);
-            sprite.setVelocityY((Math.random() * 2 - 1) * 120 * amp);
-            sprite.setTint(0xffc44d);
-          }
-          return;
-        }
-
-        state.burstPhaseMs = (state.burstPhaseMs ?? 0) + dtMs;
-        if ((state.burstPhaseMs ?? 0) >= burstMs) {
-          sprite.clearTint();
-          state.phase = 'drift';
-          state.phaseMs = 0;
-          state.phaseDurationMs = Math.max(1200, 2600 - 900 * Math.min(1, escalation * 0.25));
-          sprite.setVelocityY(0);
-          sprite.setVelocityX(-35);
-        }
-      },
-      onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
-        const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
-        return stomp ? 'stomp' : 'damage';
-      },
-      createKillEvent(source: EnemyKillSource): EnemyKillEvent {
-        return { enemyType: kind, source, isBoss: false, x: sprite.x, y: sprite.y };
-      },
-      serializeDebug: () => ({
+      return {
         kind,
-        x: sprite.x,
-        y: sprite.y,
-        phase: sprite.getData('enemyState')?.phase,
-      }),
+        displayName: enemy.displayName,
+        sprite: enemy,
+        update: (dt) => enemy.manualUpdate(dt),
+        onPlayerCollision: (p) => enemy.onPlayerCollision(p),
+        createKillEvent: (s) => enemy.createKillEvent(s),
+        serializeDebug: () => enemy.serializeDebug(),
     };
   }
 
   if (kind === 'analyst') {
-    sprite.setScale(1.8);
-    sprite.body.setSize(10, 10).setOffset(3, 3);
-    sprite.body.allowGravity = false;
-    sprite.setImmovable(true);
-    const baseY = y;
-    const state = { ...sharedData, phaseMs: 0, burstPhaseMs: 0, shellMoveSpeed: 0, baseY };
-    sprite.setData('enemyState', state);
+      const enemy = new Analyst({ scene, x, y, texture: defaultTextureFor(kind) }, ctx);
 
-    return {
-      kind,
-      displayName: getEnemyDisplayName(kind),
-      sprite,
-      update(dtMs: number) {
-        const local = sprite.getData('enemyState') as EnemyData;
-        local.phaseMs = (local.phaseMs ?? 0) + dtMs;
-        if ((local.phaseMs ?? 0) >= (local.shellMoveSpeed ?? 0)) {
-          local.phaseMs = 0;
-          const cadence = Number(data.cadenceMs ?? 2100);
-          local.shellMoveSpeed = cadence;
-          const b1 = ctx.projectiles.create(sprite.x - 10, sprite.y - 6, 'projectile') as Phaser.Physics.Arcade.Sprite;
-          const b2 = ctx.projectiles.create(sprite.x - 10, sprite.y - 6, 'projectile') as Phaser.Physics.Arcade.Sprite;
-          const b3 = ctx.projectiles.create(sprite.x - 10, sprite.y - 6, 'projectile') as Phaser.Physics.Arcade.Sprite;
-          b1.setData('owner', 'analyst');
-          b2.setData('owner', 'analyst');
-          b3.setData('owner', 'analyst');
-          b1.body.setAllowGravity(false).setVelocity(-130, 0).setCollideWorldBounds(false);
-          b2.body.setAllowGravity(false).setVelocity(-115, -55).setCollideWorldBounds(false);
-          b3.body.setAllowGravity(false).setVelocity(-115, 55).setCollideWorldBounds(false);
-
-          if (ctx.spawnLingerZone) {
-            ctx.spawnLingerZone(sprite.x, baseY + 12);
-          }
-        }
-
-        if (sprite.y < baseY - 4 && (local.phaseMs ?? 0) > 2000) {
-          sprite.setY(sprite.y + 0.3);
-        }
-      },
-      onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
-        const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
-        return stomp ? 'stomp' : 'damage';
-      },
-      createKillEvent(source: EnemyKillSource): EnemyKillEvent {
-        return { enemyType: kind, source, isBoss: false, x: sprite.x, y: sprite.y };
-      },
-      serializeDebug: () => ({ kind, x: sprite.x, y: sprite.y, cadence: data.cadenceMs ?? 2100 }),
+      return {
+        kind,
+        displayName: enemy.displayName,
+        sprite: enemy,
+        update: (dt) => enemy.manualUpdate(dt),
+        onPlayerCollision: (p) => enemy.onPlayerCollision(p),
+        createKillEvent: (s) => enemy.createKillEvent(s),
+        serializeDebug: () => enemy.serializeDebug(),
     };
   }
 
   if (kind === 'compliance_officer') {
     sprite.setScale(1.85);
-    sprite.body.setSize(12, 10).setOffset(2, 6);
     sprite.setVelocityX(55);
+    if (sprite.body) {
+         sprite.body.setSize(12, 10).setOffset(2, 6);
+    }
     const officerState: EnemyData = {
       ...sharedData,
       kind,
@@ -444,28 +247,29 @@ export function spawnEnemy(
           if (now >= (state.compliancePlatformUntilMs ?? 0)) {
             state.complianceState = 'patrol';
             sprite.setTint(0xffffff);
-            sprite.body.moves = true;
-            sprite.setVelocityX(Math.sign(sprite.body.velocity.x) || 45);
+            if (sprite.body) (sprite.body as Phaser.Physics.Arcade.Body).moves = true;
+            if (sprite.body) sprite.setVelocityX(Math.sign(sprite.body.velocity.x) || 45);
             state.compliancePlatformUntilMs = 0;
           }
           return;
         }
 
-        if (sprite.body.blocked.left || sprite.body.blocked.right) {
-          sprite.setVelocityX(-sprite.body.velocity.x);
+        if (sprite.body && (sprite.body.blocked.left || sprite.body.blocked.right)) {
+          if (sprite.body) sprite.setVelocityX(-sprite.body.velocity.x);
         }
-        if (!sprite.body.velocity.x) {
+        if (sprite.body && !sprite.body.velocity.x) {
           sprite.setVelocityX((state.shellMoveSpeed ?? 55));
         }
       },
       onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
         const state = sprite.getData('enemyState') as EnemyData;
+        if (!sprite.body || !player.body) return 'damage';
         const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
         if (stomp) {
           if (state.complianceState === 'patrol') {
             state.complianceState = 'platform';
             state.compliancePlatformUntilMs = (ctx.nowMs ? ctx.nowMs() : 0) + 5000;
-            sprite.body.moves = false;
+            if (sprite.body) (sprite.body as Phaser.Physics.Arcade.Body).moves = false;
             sprite.setVelocityX(0);
             sprite.setTint(0xbadf00);
           }
@@ -491,98 +295,21 @@ export function spawnEnemy(
     };
   }
 
-  if (kind === 'technical_debt') {
-    sprite.setScale(1.75);
-    sprite.setTint(0x8d5fd3);
-    sprite.body.setSize(12, 10).setOffset(2, 6);
-    const state: EnemyData = {
-      ...sharedData,
-      technicalDebtState: 'patrol',
-      technicalDebtCooldownMs: 0,
-      technicalDebtLungeMs: 0,
-      chainStrain: 0,
-      technicalDebtAnchorX: x,
-      technicalDebtAnchorY: y,
-      shellMoveSpeed: 75,
-      safeMs: 0,
-    };
-    sprite.setData('enemyState', state);
 
+  if (kind === 'hallucination' || kind === 'walker') {
+    const enemy = new Hallucination({ scene, x, y, texture: defaultTextureFor(kind) });
     return {
       kind,
-      displayName: getEnemyDisplayName(kind),
-      sprite,
-      update(dtMs: number) {
-        const current = sprite.getData('enemyState') as EnemyData;
-        const player = ctx.getPlayerPosition ? ctx.getPlayerPosition() : null;
-        const now = ctx.nowMs ? ctx.nowMs() : 0;
-        current.technicalDebtCooldownMs = Math.max(0, (current.technicalDebtCooldownMs ?? 0) - dtMs);
-
-        if (current.technicalDebtState === 'chase') {
-          if (!player) {
-            current.technicalDebtState = 'patrol';
-            return;
-          }
-          const angle = Phaser.Math.Angle.Between(sprite.x, sprite.y, player.x, player.y);
-          sprite.setVelocity(Math.cos(angle) * 150, Math.sin(angle) * 60);
-          return;
-        }
-
-        if (current.technicalDebtState === 'lunge') {
-          current.technicalDebtLungeMs = (current.technicalDebtLungeMs ?? 0) + dtMs;
-          if ((current.technicalDebtLungeMs ?? 0) >= 280) {
-            current.technicalDebtLungeMs = 0;
-            current.technicalDebtState = 'patrol';
-            sprite.setVelocity(0, 0);
-            current.chainStrain = (current.chainStrain ?? 0) + 1;
-            const anchorX = current.technicalDebtAnchorX;
-            const anchorY = current.technicalDebtAnchorY;
-            if (anchorX !== undefined && anchorY !== undefined) {
-              sprite.setPosition(anchorX, anchorY);
-            }
-          }
-          return;
-        }
-
-        if (!player || current.technicalDebtCooldownMs) {
-          return;
-        }
-        if (Math.abs(player.x - sprite.x) <= 128 && Math.abs(player.y - sprite.y) <= 120) {
-          const angle = Phaser.Math.Angle.Between(sprite.x, sprite.y, player.x, player.y);
-          sprite.setVelocity(Math.cos(angle) * 160, Math.min(-20, Math.sin(angle) * 120));
-          current.technicalDebtState = 'lunge';
-          current.technicalDebtLungeMs = 0;
-          current.technicalDebtCooldownMs = 280;
-          if ((current.chainStrain ?? 0) >= 8) {
-            current.technicalDebtState = 'chase';
-          }
-        }
-      },
-      onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
-        const state = sprite.getData('enemyState') as EnemyData;
-        const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
-        return stomp ? 'stomp' : 'damage';
-      },
-      createKillEvent(source: EnemyKillSource): EnemyKillEvent {
-        const state = sprite.getData('enemyState') as EnemyData;
-        return {
-          enemyType: kind,
-          source,
-          isBoss: false,
-          x: sprite.x,
-          y: sprite.y,
-        };
-      },
-      serializeDebug: () => ({
-        kind,
-        x: sprite.x,
-        y: sprite.y,
-        technicalDebtState: (sprite.getData('enemyState') as EnemyData)?.technicalDebtState,
-        chainStrain: (sprite.getData('enemyState') as EnemyData)?.chainStrain ?? 0,
-      }),
+      displayName: enemy.displayName,
+      sprite: enemy,
+      update: (dt) => enemy.manualUpdate(dt),
+      onPlayerCollision: (p) => enemy.onPlayerCollision(p),
+      createKillEvent: (s) => enemy.createKillEvent(s),
+      serializeDebug: () => enemy.serializeDebug(),
     };
   }
 
+  // Fallback for unknown types (shouldn't happen if resolved correctly) or remaining inline implementations
   const state = sharedData;
   const baseY = y;
   const baseAmp = 16 + (Number(data?.amp) || 0);
@@ -591,8 +318,8 @@ export function spawnEnemy(
   state.phaseDurationMs = 1400;
 
   return {
-    kind: kind === 'hallucination' ? 'walker' : kind,
-    displayName: getEnemyDisplayName(kind === 'walker' ? 'hallucination' : kind),
+    kind,
+    displayName: getEnemyDisplayName(kind),
     sprite,
     update(dtMs: number) {
       const t = (ctx.nowMs ? ctx.nowMs() : 0) / 1000;
@@ -601,16 +328,16 @@ export function spawnEnemy(
       if (stateData.phaseMs >= 2000) {
         stateData.phaseMs = 0;
       }
-      const confusion = Math.max(0, 3000 - (ctx.nowMs ? ctx.nowMs() : 0) / 10);
       if ((ctx.nowMs ? ctx.nowMs() : 0) > 0 && Math.random() < dtMs / 1000 / 20) {
         sprite.setVelocityX(Math.random() < 0.5 ? 45 : -45);
       }
-      if (sprite.body.blocked.left || sprite.body.blocked.right) {
+      if (sprite.body && (sprite.body.blocked.left || sprite.body.blocked.right)) {
         sprite.setVelocityX(-sprite.body.velocity.x);
       }
       sprite.y = baseY + Math.sin(t * 2.4) * baseAmp;
     },
     onPlayerCollision(player: Phaser.Physics.Arcade.Sprite) {
+      if (!sprite.body || !player.body) return 'damage';
       const stomp = player.body.bottom < sprite.body.top + 8 && player.body.velocity.y > 0;
       return stomp ? 'stomp' : 'damage';
     },

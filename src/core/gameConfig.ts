@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ScanlinePipeline } from '../rendering/ScanlinePipeline';
 import { PLAYER_CONSTANTS, VIEW_HEIGHT, VIEW_WIDTH } from './constants';
 
 function hasBrowserWebGLContext(): boolean {
@@ -21,7 +22,7 @@ function resolveRendererType(): Phaser.Types.Core.GameConfig['type'] {
 
 export function createGameConfig(scenes: Array<typeof Phaser.Scene>): Phaser.Types.Core.GameConfig {
   return {
-    type: resolveRendererType(),
+    type: Phaser.CANVAS,
     parent: 'app',
     width: VIEW_WIDTH,
     height: VIEW_HEIGHT,
@@ -29,7 +30,7 @@ export function createGameConfig(scenes: Array<typeof Phaser.Scene>): Phaser.Typ
     physics: {
       default: 'arcade',
       arcade: {
-        gravity: { y: PLAYER_CONSTANTS.gravityY },
+        gravity: { x: 0, y: PLAYER_CONSTANTS.gravityY },
         debug: false
       }
     },
@@ -38,7 +39,7 @@ export function createGameConfig(scenes: Array<typeof Phaser.Scene>): Phaser.Typ
       antialias: false,
       roundPixels: true,
       batchSize: 8192,
-      maxLights: 1,
+      maxLights: 0,
     },
     scene: scenes
   };

@@ -9,6 +9,7 @@ export interface HudRefs {
   tokenIcon: Phaser.GameObjects.Image;
   tokenText: Phaser.GameObjects.BitmapText;
   rightText: Phaser.GameObjects.BitmapText;
+  modifierText: Phaser.GameObjects.BitmapText;
   portrait: Phaser.GameObjects.Image;
 }
 
@@ -68,7 +69,14 @@ export function createHud(scene: Phaser.Scene): HudRefs {
   rightText.setScale(hudScale);
   rightText.setLetterSpacing(hud.rightGroup.letterSpacingPx);
 
-  return { leftText, evalIcon, evalText, tokenIcon, tokenText, rightText, portrait };
+  const modifierText = scene.add.bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.rightGroup.fontSizePx * 0.6)
+    .setOrigin(1, 0)
+    .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color)
+    .setDepth(2000);
+  modifierText.setScale(hudScale);
+  modifierText.setLetterSpacing(1);
+
+  return { leftText, evalIcon, evalText, tokenIcon, tokenText, rightText, modifierText, portrait };
 }
 
 /** Reposition HUD elements relative to camera worldView each frame. */
@@ -95,6 +103,7 @@ export function updateHudPosition(hud: HudRefs, cam: Phaser.Cameras.Scene2D.Came
     wv.y + hLayout.leftGroupIcons.coin.y / cam.zoom,
   );
   hud.rightText.setPosition(wv.x + hLayout.rightGroup.x / cam.zoom, wv.y + hLayout.rightGroup.y / cam.zoom);
+  hud.modifierText.setPosition(wv.x + hLayout.rightGroup.x / cam.zoom, wv.y + (hLayout.rightGroup.y + 40) / cam.zoom);
 }
 
 export function renderHud(hud: HudRefs, payload: {
@@ -106,6 +115,7 @@ export function renderHud(hud: HudRefs, payload: {
   lives: number;
   form: string;
   timeSec: number;
+  modifiers?: import('../player/movement').WorldModifiers;
 }): void {
   const hudLayout = styleConfig.hudLayout;
   const instances = String(payload.lives).padStart(HUD_CONTRACT.leftBlock.widthDigits, '0');
@@ -124,4 +134,16 @@ export function renderHud(hud: HudRefs, payload: {
       .replace('{time}', time),
   );
   hud.portrait.setTexture(hudLayout.portrait.texture);
+
+  const mods = payload.modifiers;
+  if (mods) {
+    const lines: string[] = [];
+    if (Math.abs(mods.gravityMultiplier - 1) > 0.01) lines.push(`G: ${mods.gravityMultiplier.toFixed(2)}x`);
+    if (Math.abs(mods.speedMultiplier - 1) > 0.01) lines.push(`Spd: ${mods.speedMultiplier.toFixed(2)}x`);
+    if (Math.abs(mods.frictionMultiplier - 1) > 0.01) lines.push(`Fric: ${mods.frictionMultiplier.toFixed(2)}x`);
+    if (Math.abs(mods.tokenBurnRate - 1) > 0.01) lines.push(`Burn: ${mods.tokenBurnRate.toFixed(2)}x`);
+    hud.modifierText.setText(lines.join('  '));
+  } else {
+    hud.modifierText.setText('');
+  }
 }

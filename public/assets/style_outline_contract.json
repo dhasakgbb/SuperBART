@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedBy": "make_bart_sprites.ts",
-  "generatedAt": "2026-02-13T21:18:32.474Z",
+  "generatedBy": "make_ui_assets.ts",
+  "generatedAt": "2026-02-14T04:03:30.598Z",
   "source": "src/style/styleConfig.ts",
   "outline": {
     "worldPx": 2,

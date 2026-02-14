@@ -33,6 +33,10 @@ export const FAMILY_TEMPLATES: Record<ChunkFamily, ChunkTemplateType[]> = {
   rag_pipeline: ['moving_platform', 'vertical_climb', 'enemy_gauntlet'],
   rate_limiter: ['moving_platform', 'enemy_gauntlet', 'coin_arc'],
   benchmark_sprint: ['benchmark_sprint'],
+  technical_debt_sprint: ['technical_debt_sprint'],
+  analyst_tower: ['analyst_tower'],
+  legacy_slide_01: ['legacy_slide_01'],
+  hot_take_gauntlet: ['hot_take_gauntlet'],
 };
 
 const PHASE_ORDER: PacingPhase[] = [
@@ -127,7 +131,7 @@ function pickEnemyTypeForChunk(world: number, rng: ReturnType<typeof createRng>)
   const base = {
     base: [{ kind: 'walker', weight: 56 }, { kind: 'shell', weight: 18 }, { kind: 'flying', weight: 12 }, { kind: 'spitter', weight: 14 }],
   } as const;
-  const pools = [...base.base];
+  const pools: Array<{ kind: SpawnEnemyKind; weight: number }> = [...base.base];
   const addCompliance = c > 0 ? Math.round(25 * c) : 0;
   const addDebt = d > 0 ? Math.round(18 * d) : 0;
   if (addCompliance > 0) {
@@ -193,7 +197,7 @@ const GUIDANCE_TAGS = new Set([
   'PRACTICE_PAD',
 ]);
 
-const CHUNK_LIBRARY: Record<string, ChunkTemplate> = {
+export const CHUNK_LIBRARY: Record<string, ChunkTemplate> = {
   flat_intro_01: {
     id: 'flat_intro_01',
     tags: ['FLAT'],
@@ -441,6 +445,38 @@ const CHUNK_LIBRARY: Record<string, ChunkTemplate> = {
       visibleMs: 1_000,
       hiddenMs: 1_000,
     },
+  },
+  technical_debt_sprint: {
+    id: 'technical_debt_sprint',
+    tags: ['FLAT', 'GAP_LONG'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: ['technical_debt'],
+  },
+  analyst_tower: {
+    id: 'analyst_tower',
+    tags: ['RISE_STEP', 'PLATFORM_STACK'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: ['spitter'],
+  },
+  legacy_slide_01: {
+    id: 'legacy_slide_01',
+    tags: ['FLAT', 'BLOCKER'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: ['shell'],
+  },
+  hot_take_gauntlet: {
+    id: 'hot_take_gauntlet',
+    tags: ['GAP_LONG', 'FLYER_DRIFT'],
+    weight: 1,
+    lengthPx: CHUNK_WIDTH,
+    recoveryAfter: false,
+    mechanicsIntroduced: ['flying'],
   },
 };
 
@@ -1134,7 +1170,7 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
     const templates = FAMILY_TEMPLATES[family];
     const template = rng.pick([...templates, ...templates]);
     const usedChunkId = template === 'benchmark_sprint' ? 'benchmark_sprint_01' : family;
-    chunksUsed.push(usedChunkId);
+    chunksUsed.push(usedChunkId as ChunkType);
 
     const variance = rng.nextInt(-rules.groundVariance, rules.groundVariance);
     groundY = Math.max(21, Math.min(28, groundY + variance));
@@ -1192,7 +1228,7 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       for (let spawnIndex = 0; spawnIndex < spawnCount; spawnIndex += 1) {
         const enemy = pickEnemyTypeForChunk(input.world, rng);
         const xPos = x0 + 8 + spawnIndex * 6;
-        const baseData = enemy === 'flying' ? { amp: 18 + spawnIndex } : enemy === 'spitter' ? { cadenceMs: rules.projectileCadenceMs } : {};
+        const baseData: Record<string, number | string | boolean> = enemy === 'flying' ? { amp: 18 + spawnIndex } : enemy === 'spitter' ? { cadenceMs: rules.projectileCadenceMs } : {};
         addEntity(entities, enemy, xPos, groundY - 1, baseData);
       }
     }

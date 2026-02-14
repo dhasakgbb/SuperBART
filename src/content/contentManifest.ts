@@ -2,7 +2,7 @@ export type WorldIndex = 1 | 2 | 3 | 4 | 5;
 
 export type WorldTheme = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark';
 
-export type ChunkFamily = 'azure_walkway' | 'server_room' | 'training_run' | 'rag_pipeline' | 'rate_limiter' | 'benchmark_sprint';
+export type ChunkFamily = 'azure_walkway' | 'server_room' | 'training_run' | 'rag_pipeline' | 'rate_limiter' | 'benchmark_sprint' | 'technical_debt_sprint' | 'analyst_tower' | 'legacy_slide_01' | 'hot_take_gauntlet';
 
 export interface WorldPhysicsMultipliers {
   frictionMultiplier: number;
@@ -140,9 +140,9 @@ export interface ManifestSummary {
 export const WORLD_CHUNK_FAMILIES: Record<WorldIndex, ChunkFamily[]> = {
   1: ['azure_walkway', 'server_room'],
   2: ['training_run', 'rag_pipeline'],
-  3: ['rag_pipeline', 'training_run'],
-  4: ['rate_limiter', 'rag_pipeline'],
-  5: ['benchmark_sprint', 'rate_limiter', 'training_run'],
+  3: ['rag_pipeline', 'training_run', 'technical_debt_sprint'],
+  4: ['rate_limiter', 'rag_pipeline', 'technical_debt_sprint', 'analyst_tower', 'legacy_slide_01'],
+  5: ['benchmark_sprint', 'rate_limiter', 'training_run', 'hot_take_gauntlet', 'technical_debt_sprint'],
 };
 
 export const CONTENT_WORLD_THEME_NAMES: Record<WorldIndex, string> = {

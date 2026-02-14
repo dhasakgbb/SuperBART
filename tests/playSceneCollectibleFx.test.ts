@@ -18,6 +18,13 @@ vi.mock('phaser', () => {
       Tweens: {
         Tween: MockTween,
       },
+      Physics: {
+        Arcade: {
+          Sprite: class {},
+          Body: class {},
+          Group: class {},
+        },
+      },
       Scenes: {
         Events: {
           SHUTDOWN: 'shutdown',
@@ -104,11 +111,11 @@ function createSceneHarness(): PlaySceneGlowHarness {
     add: {
       image: fallbackImageFactory,
     },
-  } as unknown as PlaySceneGlowHarness & PlayScene;
+  } as unknown as PlaySceneGlowHarness;
 }
 
 function bindHarness(): PlaySceneGlowHarness {
-  const scene = Object.create(PlayScene.prototype) as PlaySceneGlowHarness & PlayScene;
+  const scene = Object.create(PlayScene.prototype) as PlaySceneGlowHarness;
   const harness = createSceneHarness();
   scene.collectibleGlows = harness.collectibleGlows;
   scene.glowIdCounter = harness.glowIdCounter;

@@ -14,7 +14,15 @@ export type SfxKey =
   | 'pipe_warp'
   | 'fireball'
   | 'time_warning'
-  | 'pause';
+  | 'pause'
+  | 'enemy_kill'
+  | 'chain_extend'
+  | 'spit_attack'
+  | 'charge_warning'
+  | 'land'
+  | 'skid'
+  | 'death_jingle'
+  | 'victory_fanfare';
 
 export interface SfxDefinition {
   wave: OscillatorType;
@@ -63,7 +71,15 @@ export const REQUIRED_SFX_KEYS: SfxKey[] = [
   'game_over',
   'pause',
   'one_up',
-  'fireball'
+  'fireball',
+  'enemy_kill',
+  'chain_extend',
+  'spit_attack',
+  'charge_warning',
+  'land',
+  'skid',
+  'death_jingle',
+  'victory_fanfare'
 ];
 
 export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
@@ -242,6 +258,96 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     sustain: 0.2,
     releaseSec: 0.03,
     gain: 0.16
+  },
+  enemy_kill: {
+    wave: 'sawtooth',
+    startHz: 150,
+    endHz: 50,
+    durationSec: 0.12,
+    attackSec: 0.002,
+    decaySec: 0.04,
+    sustain: 0.2,
+    releaseSec: 0.06,
+    gain: 0.22
+  },
+  chain_extend: {
+    wave: 'square',
+    startHz: 220,
+    endHz: 200,
+    durationSec: 0.08,
+    attackSec: 0.01,
+    decaySec: 0.02,
+    sustain: 0.1,
+    releaseSec: 0.05,
+    gain: 0.12
+  },
+  spit_attack: {
+    wave: 'triangle',
+    startHz: 330,
+    endHz: 110,
+    durationSec: 0.15,
+    attackSec: 0.005,
+    decaySec: 0.05,
+    sustain: 0.2,
+    releaseSec: 0.05,
+    gain: 0.18
+  },
+  charge_warning: {
+    wave: 'sawtooth',
+    startHz: 440,
+    endHz: 880,
+    durationSec: 0.4,
+    attackSec: 0.1,
+    decaySec: 0.1,
+    sustain: 0.5,
+    releaseSec: 0.1,
+    gain: 0.15
+  },
+  land: {
+    wave: 'square',
+    startHz: 140,
+    endHz: 90,
+    durationSec: 0.06,
+    attackSec: 0.001,
+    decaySec: 0.02,
+    sustain: 0.15,
+    releaseSec: 0.03,
+    gain: 0.12
+  },
+  skid: {
+    wave: 'sawtooth',
+    startHz: 260,
+    endHz: 180,
+    durationSec: 0.08,
+    attackSec: 0.001,
+    decaySec: 0.025,
+    sustain: 0.18,
+    releaseSec: 0.04,
+    gain: 0.1
+  },
+  /** Multi-note death melody: descending minor phrase, ~1.8 seconds total. */
+  death_jingle: {
+    wave: 'triangle',
+    startHz: 440,
+    endHz: 330,
+    durationSec: 0.3,
+    attackSec: 0.005,
+    decaySec: 0.06,
+    sustain: 0.35,
+    releaseSec: 0.12,
+    gain: 0.2
+  },
+  /** Multi-note victory fanfare: ascending major phrase, ~2.5 seconds total. */
+  victory_fanfare: {
+    wave: 'square',
+    startHz: 392,
+    endHz: 392,
+    durationSec: 0.2,
+    attackSec: 0.004,
+    decaySec: 0.04,
+    sustain: 0.4,
+    releaseSec: 0.06,
+    gain: 0.18
   }
 };
 
@@ -277,6 +383,47 @@ const SFX_LAYERS: Partial<Record<SfxKey, SfxLayer[]>> = {
     // Bright arpeggio shimmer
     { wave: 'square', startHz: 880, endHz: 1320, delaySec: 0.04, durationSec: 0.08, attackSec: 0.002, releaseSec: 0.03, gain: 0.1 },
     { wave: 'triangle', startHz: 1320, endHz: 1760, delaySec: 0.09, durationSec: 0.06, attackSec: 0.002, releaseSec: 0.03, gain: 0.08 }
+  ],
+  land: [
+    // Subtle thump undertone
+    { wave: 'sine', startHz: 80, endHz: 50, delaySec: 0, durationSec: 0.04, attackSec: 0.001, releaseSec: 0.02, gain: 0.08 }
+  ],
+  skid: [
+    // Gritty friction overtone
+    { wave: 'square', startHz: 350, endHz: 200, delaySec: 0.01, durationSec: 0.06, attackSec: 0.001, releaseSec: 0.03, gain: 0.06 }
+  ],
+  death_jingle: [
+    // Note 2: Eb (311 Hz) - step down
+    { wave: 'triangle', startHz: 311, endHz: 311, delaySec: 0.35, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.18 },
+    // Note 3: D (294 Hz) - another step
+    { wave: 'triangle', startHz: 294, endHz: 294, delaySec: 0.65, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.18 },
+    // Note 4: Db (277 Hz) - chromatic descent
+    { wave: 'triangle', startHz: 277, endHz: 277, delaySec: 0.95, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.16 },
+    // Note 5: C (262 Hz) - penultimate
+    { wave: 'triangle', startHz: 262, endHz: 262, delaySec: 1.25, durationSec: 0.3, attackSec: 0.004, releaseSec: 0.12, gain: 0.14 },
+    // Note 6: low Ab (208 Hz) - final somber resolution
+    { wave: 'square', startHz: 208, endHz: 208, delaySec: 1.6, durationSec: 0.4, attackSec: 0.006, releaseSec: 0.2, gain: 0.12 },
+    // Harmony: minor 3rd underneath notes 4-6
+    { wave: 'square', startHz: 165, endHz: 156, delaySec: 0.95, durationSec: 1.0, attackSec: 0.01, releaseSec: 0.3, gain: 0.06 }
+  ],
+  victory_fanfare: [
+    // G4 (392) already plays as primary. Layer the full fanfare:
+    // Note 2: C5 (523 Hz)
+    { wave: 'square', startHz: 523, endHz: 523, delaySec: 0.22, durationSec: 0.18, attackSec: 0.004, releaseSec: 0.05, gain: 0.18 },
+    // Note 3: E5 (659 Hz)
+    { wave: 'square', startHz: 659, endHz: 659, delaySec: 0.42, durationSec: 0.18, attackSec: 0.004, releaseSec: 0.05, gain: 0.18 },
+    // Note 4: G5 (784 Hz) - octave arrival
+    { wave: 'square', startHz: 784, endHz: 784, delaySec: 0.62, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.06, gain: 0.2 },
+    // Hold: E5 (659 Hz) - held note under
+    { wave: 'triangle', startHz: 659, endHz: 659, delaySec: 0.9, durationSec: 0.35, attackSec: 0.005, releaseSec: 0.1, gain: 0.14 },
+    // Finale: high C6 (1047 Hz) - triumphant peak
+    { wave: 'square', startHz: 1047, endHz: 1047, delaySec: 1.28, durationSec: 0.35, attackSec: 0.005, releaseSec: 0.15, gain: 0.16 },
+    // Bass: C major root motion underneath
+    { wave: 'triangle', startHz: 262, endHz: 262, delaySec: 0.42, durationSec: 0.5, attackSec: 0.008, releaseSec: 0.15, gain: 0.1 },
+    // Bass: G resolution
+    { wave: 'triangle', startHz: 196, endHz: 196, delaySec: 1.0, durationSec: 0.7, attackSec: 0.008, releaseSec: 0.2, gain: 0.1 },
+    // Shimmer: octave doubling on the peak note
+    { wave: 'triangle', startHz: 2093, endHz: 2093, delaySec: 1.28, durationSec: 0.2, attackSec: 0.003, releaseSec: 0.1, gain: 0.06 }
   ]
 };
 
@@ -286,7 +433,11 @@ const SFX_NOISE: Partial<Record<SfxKey, NoiseBurst>> = {
   shell_kick: { durationSec: 0.035, attackSec: 0.001, releaseSec: 0.025, gain: 0.08, filterHz: 2500 },
   hurt: { durationSec: 0.05, attackSec: 0.001, releaseSec: 0.04, gain: 0.06, filterHz: 2000 },
   fireball: { durationSec: 0.03, attackSec: 0.001, releaseSec: 0.02, gain: 0.08, filterHz: 4000 },
-  game_over: { durationSec: 0.06, attackSec: 0.002, releaseSec: 0.05, gain: 0.05, filterHz: 1500 }
+  game_over: { durationSec: 0.06, attackSec: 0.002, releaseSec: 0.05, gain: 0.05, filterHz: 1500 },
+  enemy_kill: { durationSec: 0.08, attackSec: 0.001, releaseSec: 0.04, gain: 0.1, filterHz: 1200 },
+  chain_extend: { durationSec: 0.02, attackSec: 0.001, releaseSec: 0.01, gain: 0.05, filterHz: 3000 },
+  land: { durationSec: 0.04, attackSec: 0.001, releaseSec: 0.025, gain: 0.07, filterHz: 1800 },
+  skid: { durationSec: 0.06, attackSec: 0.001, releaseSec: 0.035, gain: 0.06, filterHz: 2200 }
 };
 
 /** Shared white noise buffer (1 second at 44100). Created lazily. */

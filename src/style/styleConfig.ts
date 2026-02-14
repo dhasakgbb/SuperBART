@@ -79,6 +79,8 @@ export const styleConfig = {
       { name: 'inkSoft', hex: '#2B2824' },
       { name: 'skyDeep', hex: '#000000' },
       { name: 'skyMid', hex: '#060808' },
+      { name: 'skyBlue', hex: '#6b8cff' },
+      { name: 'skyLight', hex: '#9CBDFF' }, // Added skyLight
       { name: 'grassTop', hex: '#46BA4C' },
       { name: 'grassMid', hex: '#20A36D' },
       { name: 'groundShadow', hex: '#742B01' },
@@ -163,8 +165,8 @@ export const styleConfig = {
       extraWalkerOffsetX: 250,
     },
     sky: {
-      topSwatch: 'skyDeep',
-      bottomSwatch: 'skyMid',
+      topSwatch: 'skyBlue',
+      bottomSwatch: 'skyLight',
     },
     haze: {
       y: 240,

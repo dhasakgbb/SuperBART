@@ -46,7 +46,7 @@ export class WorldMapScene extends Phaser.Scene {
       const levels = CAMPAIGN_WORLD_LAYOUT[world - 1] ?? 0;
       for (let levelIndex = 1; levelIndex <= levels; levelIndex += 1) {
         const key = levelKey(world, levelIndex);
-        const node = byKey.get(key);
+        const node = byKey.get(key as any);
         if (node) {
           ordered.push(node);
         }
@@ -263,7 +263,7 @@ export class WorldMapScene extends Phaser.Scene {
     const { world, levelIndex } = runtimeStore.save.campaign;
     this.selectedOrdinal = campaignOrdinal(world, levelIndex);
 
-    this.cameras.main.setBackgroundColor(color('skyDeep'));
+    this.cameras.main.setBackgroundColor(color('skyBlue'));
     this.cameras.main.setBounds(0, 0, styleConfig.worldMapLayout.viewport.width, styleConfig.worldMapLayout.viewport.height);
     renderGameplayBackground(
       this,

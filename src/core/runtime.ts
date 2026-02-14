@@ -1,4 +1,4 @@
-import type { GameMode, PlayerForm, PlayerRuntimeState, SaveGameV3, SuperBartRuntimeState } from '../types/game';
+import type { GameMode, PlayerForm, PlayerRuntimeState, SaveGameV3, SuperBartRuntimeState, PlayerCombatState } from '../types/game';
 import { defaultSave } from '../systems/save';
 
 export interface RuntimeStore {
@@ -32,7 +32,7 @@ export const runtimeStore: RuntimeStore = {
 
 export function buildRuntimeState(extra: {
   playerForm: PlayerForm;
-  combatState?: Partial<PlayerRuntimeState> & { form?: PlayerForm };
+  combatState?: Partial<PlayerCombatState>;
   lives: number;
   invulnMsRemaining: number;
   checkpointId: string;

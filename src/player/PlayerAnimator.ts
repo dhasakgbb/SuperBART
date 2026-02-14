@@ -129,14 +129,16 @@ export class PlayerAnimator {
   private landTimer = 0;
   private hurtTimer = 0;
   private form: PlayerForm;
+  private scene: Phaser.Scene;
   private sprite: Phaser.Physics.Arcade.Sprite;
   private config: AnimConfig;
 
   constructor(
-    _scene: Phaser.Scene,
+    scene: Phaser.Scene,
     sprite: Phaser.Physics.Arcade.Sprite,
     form: PlayerForm,
   ) {
+    this.scene = scene;
     this.sprite = sprite;
     this.form = form;
     this.config = {
@@ -167,6 +169,30 @@ export class PlayerAnimator {
     if (this.sprite.anims.currentAnim?.key !== animKey) {
       this.sprite.anims.play(animKey, true);
     }
+
+    // Juice: squash and stretch
+    if (this.justEntered('land')) {
+      this.applyJuice(1.3, 0.7); // Squash
+    } else if (this.justEntered('jump')) {
+      this.applyJuice(0.8, 1.25); // Stretch
+    }
+  }
+
+  private applyJuice(scaleX: number, scaleY: number): void {
+    const actorScale = styleConfig.gameplayLayout.actorScale.player;
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleX: actorScale * scaleX,
+      scaleY: actorScale * scaleY,
+      duration: 80,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (this.sprite.active) {
+          this.sprite.setScale(actorScale);
+        }
+      },
+    });
   }
 
   getCurrentHeadOffset(): HeadOffset {
@@ -181,6 +207,10 @@ export class PlayerAnimator {
 
   getState(): PlayerAnimState {
     return this.state;
+  }
+
+  getForm(): PlayerForm {
+    return this.form;
   }
 
   setForm(form: PlayerForm): void {

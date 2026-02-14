@@ -65,7 +65,7 @@ export class TitleScene extends Phaser.Scene {
     audio.configureFromSettings(runtimeStore.save.settings);
     audio.stopMusic();
 
-    this.cameras.main.setBackgroundColor(palette('skyDeep'));
+    this.cameras.main.setBackgroundColor(palette('skyBlue'));
     this.renderAttractBackground();
     this.renderTitleUi();
     this.setSceneReadyMarker();
@@ -212,7 +212,10 @@ export class TitleScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
       onUpdate: (tween) => {
-        this.cameras.main.setScroll(tween.getValue(), 0);
+        const val = tween.getValue();
+        if (typeof val === 'number') {
+           this.cameras.main.setScroll(val, 0);
+        }
       }
     });
 
@@ -226,8 +229,8 @@ export class TitleScene extends Phaser.Scene {
         .image(cloud.x + tileStep / 2, cloud.y + tileStep / 2, cloud.key)
         .setScale(cloud.scale + 0.12)
         .setAlpha(cloud.alpha * 0.25)
-        .setTint(palette('bloomWarm'))
-        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(palette('hudText'))
+        .setBlendMode(Phaser.BlendModes.NORMAL)
         .setDepth(-991);
       this.tweens.add({
         targets: [cloudSprite, cloudGlow],
@@ -243,7 +246,7 @@ export class TitleScene extends Phaser.Scene {
     for (let row = 0; row < titleLayout.attract.groundRows; row += 1) {
       const y = titleLayout.attract.groundY + row * tileStep;
       for (let x = 0; x < titleLayout.attract.worldWidthPx; x += tileStep) {
-        const tile = this.add.image(x, y, 'tileset').setOrigin(0, 0).setDepth(-120 + row);
+        const tile = this.add.image(x, y, 'tile_ground').setOrigin(0, 0).setDepth(-120 + row);
         tile.setCrop(crop.x, crop.y, crop.w, crop.h);
       }
     }
