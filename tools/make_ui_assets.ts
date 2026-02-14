@@ -58,7 +58,7 @@ const STYLE_OUTLINE_UI: Rgba = [...swatchColor(STYLE_OUTLINE_UI_SWATCH).slice(0,
 const STYLE_OUTLINE: Rgba = STYLE_OUTLINE_WORLD;
 
 const COLORS = {
-  inkDark: swatchColor('inkDark'),
+  inkDark: parseHex('#1D1D1D', 220),
   inkSoft: swatchColor('inkSoft'),
   inkDeep: parseHex('#0e0f12'),
   grassTop: swatchColor('grassTop'),

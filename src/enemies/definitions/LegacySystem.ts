@@ -7,8 +7,6 @@ export class LegacySystem extends BaseEnemy {
   private slideSpeed: number = 220;
   private microservice: boolean = false;
   
-  // Shell specific state
-  private isRetracted: boolean = false;
   private retractTimer: number = 0;
   private safeTimer: number = 0; // Time before it can be kicked again after stomping
 
@@ -20,7 +18,7 @@ export class LegacySystem extends BaseEnemy {
         this.setTexture('enemy_shell_retracted');
         this.setScale(0.65);
         if (this.body) this.body.setSize(8, 8);
-        this.isRetracted = true;
+
     } else {
         if (this.body) {
             this.body.setSize(12, 10);
@@ -42,13 +40,13 @@ export class LegacySystem extends BaseEnemy {
   protected onStateEnter(state: EnemyState): void {
       switch (state) {
           case 'patrol':
-              this.isRetracted = false;
+
               this.setTexture('enemy_shell');
               this.setScale(1.85); // Standard scale
               this.setVelocityX(this.walkSpeed * this.direction);
               break;
           case 'idle': // Retracted stationary
-              this.isRetracted = true;
+      
               this.setTexture('enemy_shell_retracted');
               this.setScale(1.85);
               this.setVelocityX(0);
@@ -56,7 +54,7 @@ export class LegacySystem extends BaseEnemy {
               this.safeTimer = 200; // Brief immunity to prevent instant kick
               break;
           case 'attack': // Sliding
-              this.isRetracted = true;
+      
               this.setTexture('enemy_shell_retracted');
               this.setVelocityX(this.slideSpeed * this.direction);
               this.safeTimer = 200;

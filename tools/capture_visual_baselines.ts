@@ -254,7 +254,7 @@ function startDevServer(): ChildProcessWithoutNullStreams {
   proc.stderr.on('data', () => {
     // keep pipe drained to avoid deadlock in long runs
   });
-  return proc;
+  return proc as unknown as ChildProcessWithoutNullStreams;
 }
 
 function stopDevServer(proc: ChildProcessWithoutNullStreams): Promise<void> {
@@ -275,7 +275,10 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
 
   try {
     await waitForServer(DEV_URL, 25000);
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'],
+    });
     const expectedVersion = styleConfig.contractVersion;
     try {
       const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
@@ -286,7 +289,10 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
         } catch {
           // keep capture pipeline resilient in restricted environments
         }
+        (window as any).__SUPER_BART__ = { forceSeed: 1337 };
       });
+      page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+      page.on('pageerror', err => console.log('PAGE ERROR:', err));
       await page.goto(DEV_URL, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('canvas');
       await waitForSceneReadyMarker(page, 'TitleScene', expectedVersion);

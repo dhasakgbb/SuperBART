@@ -8,29 +8,14 @@ import { Analyst } from './definitions/Analyst';
 
 type EnemyData = {
   kind: EnemyKind;
-  retracted?: boolean;
-  microservice?: boolean;
-  safeMs?: number;
-  retractMs?: number;
-  frozenMs?: number;
   phase?: 'drift' | 'warn' | 'burst';
   phaseMs?: number;
   phaseDurationMs?: number;
-  burstPhaseMs?: number;
   baseAmp?: number;
-  targetY?: number;
   baseY?: number;
-  shellRepositionMs?: number;
-  shellRepositionDir?: number;
   shellMoveSpeed?: number;
   complianceState?: 'patrol' | 'platform';
   compliancePlatformUntilMs?: number;
-  chainStrain?: number;
-  technicalDebtState?: 'patrol' | 'lunge' | 'chase';
-  technicalDebtCooldownMs?: number;
-  technicalDebtLungeMs?: number;
-  technicalDebtAnchorX?: number;
-  technicalDebtAnchorY?: number;
 };
 
 const KIND_ALIASES: Record<string, EnemyKind> = {
@@ -68,46 +53,6 @@ function defaultTextureFor(kind: EnemyKind, microservice = false): string {
   return 'enemy_walker';
 }
 
-function createMicroservice(
-  scene: Phaser.Scene,
-  source: EnemyHandle,
-  dir: number,
-  onSpawnEnemy?: (handle: EnemyHandle) => void,
-): void {
-  const enemy = new LegacySystem({ 
-      scene, 
-      x: source.sprite.x + dir * 10, 
-      y: source.sprite.y, 
-      texture: 'enemy_shell_retracted' 
-  }, true); // isMicroservice = true
-
-  enemy.setVelocityX(dir * 60);
-
-  const handle: EnemyHandle = {
-    kind: 'legacy_system',
-    displayName: getEnemyDisplayName('legacy_system'),
-    sprite: enemy,
-    update: (dt) => enemy.manualUpdate(dt),
-    onPlayerCollision: (p) => enemy.onPlayerCollision(p),
-    createKillEvent(sourceEvent: EnemyKillSource): EnemyKillEvent {
-      return {
-        enemyType: 'legacy_system',
-        source: sourceEvent,
-        isBoss: false,
-        x: enemy.x,
-        y: enemy.y,
-      };
-    },
-    serializeDebug: () => ({
-      kind: 'legacy_system',
-      x: enemy.x,
-      y: enemy.y,
-      microservice: true,
-    }),
-  };
-  onSpawnEnemy?.(handle);
-}
-
 export function spawnEnemy(
   rawKind: EnemyKind,
   scene: Phaser.Scene,
@@ -124,9 +69,6 @@ export function spawnEnemy(
   sprite.setData('enemyKind', kind);
   const sharedData: EnemyData = {
     kind,
-    safeMs: 0,
-    retractMs: Number(data.retractMs ?? 0),
-    frozenMs: 0,
     baseAmp: Number(data.amp ?? 18),
     baseY: y,
     phase: 'drift',
@@ -135,12 +77,6 @@ export function spawnEnemy(
     shellMoveSpeed: 55,
     complianceState: kind === 'compliance_officer' ? 'patrol' : undefined,
     compliancePlatformUntilMs: 0,
-    chainStrain: 0,
-    technicalDebtState: kind === 'technical_debt' ? 'patrol' : undefined,
-    technicalDebtLungeMs: 0,
-    technicalDebtCooldownMs: 0,
-    technicalDebtAnchorX: x,
-    technicalDebtAnchorY: y,
   };
   sprite.setData('enemyState', sharedData);
 

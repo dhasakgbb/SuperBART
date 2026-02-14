@@ -5,7 +5,6 @@ import { EnemyContext } from '../types';
 export class TechnicalDebt extends BaseEnemy {
   private anchorX: number;
   private anchorY: number;
-  private chainStrain: number = 0;
   private chainGraphics?: Phaser.GameObjects.Graphics;
   private context?: EnemyContext;
   
@@ -51,9 +50,8 @@ export class TechnicalDebt extends BaseEnemy {
 
   protected onStateEnter(state: EnemyState): void {
       switch (state) {
-          case 'patrol': // Idle / Waiting
+          case 'patrol':
              this.setVelocity(0, 0);
-             this.chainStrain = 0;
              break;
           case 'attack': // Lunging
              this.lungeTimer = this.lungeDuration;

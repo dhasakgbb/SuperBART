@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import styleConfig from "../style/styleConfig";
 import { createDustPuff, DustPuffEmitter } from "../player/dustPuff";
 import { createSparkleEffect, SparkleEmitter } from "./SparkleEffect";
 

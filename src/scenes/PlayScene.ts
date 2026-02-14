@@ -13,13 +13,11 @@ import {
   createFeelState,
   DEFAULT_WORLD_MODIFIERS,
   stepMovement,
-  type MotionHint,
   type WorldModifiers,
   type FeelState,
 } from '../player/movement';
 import { PlayerAnimator } from '../player/PlayerAnimator';
 import { EffectManager } from '../systems/EffectManager';
-import { PopupManager } from '../systems/PopupManager';
 import { createDustPuff, DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
 import { renderGameplayBackground, type WorldPaletteOverride } from '../rendering/parallax';
@@ -100,7 +98,6 @@ export class PlayScene extends Phaser.Scene {
   private playerHead!: Phaser.GameObjects.Sprite;
   private animator!: PlayerAnimator;
   private effects!: EffectManager;
-  private popups!: PopupManager;
   private dustPuff!: DustPuffEmitter;
   private wasOnGround = true;
 
@@ -123,15 +120,19 @@ export class PlayScene extends Phaser.Scene {
   private autoScrollActiveIndex = -1;
   /** Elapsed ms within current auto-scroll segment. */
   private autoScrollElapsedMs = 0;
-  /** Camera X position at start of auto-scroll. */
-  private autoScrollCameraStartX = 0;
 
   constructor() {
     super('PlayScene');
   }
 
-  init(data: { bonus?: boolean }): void {
+  init(data: { world?: number; level?: number; bonus?: boolean }): void {
     this.levelBonus = Boolean(data?.bonus);
+    if (data?.world != null) {
+      runtimeStore.save.campaign.world = data.world;
+    }
+    if (data?.level != null) {
+      runtimeStore.save.campaign.levelIndex = data.level;
+    }
   }
 
   create(): void {
@@ -142,7 +143,8 @@ export class PlayScene extends Phaser.Scene {
     this.world = runtimeStore.save.campaign.world;
     this.levelIndex = runtimeStore.save.campaign.levelIndex;
 
-    const seed = computeSeed(this.world, this.levelIndex + (this.levelBonus ? 100 : 0));
+    const forcedSeed = (window as any).__SUPER_BART__?.forceSeed;
+    const seed = typeof forcedSeed === 'number' ? forcedSeed : computeSeed(this.world, this.levelIndex + (this.levelBonus ? 100 : 0));
     const level = generateLevel({
       world: this.world,
       levelIndex: this.levelIndex,
@@ -197,16 +199,12 @@ export class PlayScene extends Phaser.Scene {
       };
       patchLayers('hill_far_w1', 'hill_near_w1');
       
-      patchLayers('hill_far_w1', 'hill_near_w1');
-      
       // Custom Sky for Cryo-Server (Icy Blue)
       layout.sky = {
         topSwatch: 'skyBlue' as any,
         bottomSwatch: 'hudText' as any,
       };
-      
-      // Failsafe removed - moved to end of create
-      patchLayers('hill_far_w1', 'hill_near_w1');
+      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyBlue')?.hex);
 
     } else if (this.world === 2) {
       layout.hills = {
@@ -263,10 +261,9 @@ export class PlayScene extends Phaser.Scene {
         bottomSwatch: 'inkSoft' as any,
       };
       this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'inkDark')?.hex);
-
     }
     
-    renderGameplayBackground(this, level.width * TILE_SIZE, VIEW_HEIGHT, layout, worldPalette);
+    renderGameplayBackground(this, VIEW_WIDTH, VIEW_HEIGHT, layout, worldPalette);
 
     this.physics.world.setBounds(0, 0, level.width * TILE_SIZE, level.height * TILE_SIZE);
 
@@ -435,7 +432,6 @@ export class PlayScene extends Phaser.Scene {
     createPlayerAnimations(this);
     this.animator = new PlayerAnimator(this, this.player, this.playerForm);
     this.effects = new EffectManager({ scene: this });
-    this.popups = new PopupManager(this);
     this.dustPuff = createDustPuff(this);
     this.wasOnGround = true;
 
@@ -462,7 +458,6 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.physics.add.overlap(this.player, this.coins, (_p, coin) => {
-      const token = coin as Phaser.Physics.Arcade.Sprite;
       const pickup = coin as Phaser.Physics.Arcade.Sprite;
       const collectibleId = String(pickup.getData('collectibleId') ?? '');
       if (collectibleId) {
@@ -472,7 +467,7 @@ export class PlayScene extends Phaser.Scene {
       runtimeStore.save.progression.coins += 1;
       runtimeStore.save.progression.score += amount;
       this.renderHud();
-      this.popups.spawn(pickup.x, pickup.y, `+${amount} ${DISPLAY_NAMES.coin}`);
+      this.showHudToast(`+${amount} ${DISPLAY_NAMES.coin}`);
       this.collectItem(pickup);
       this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 6);
       // Sparkle effect
@@ -490,7 +485,7 @@ export class PlayScene extends Phaser.Scene {
       runtimeStore.save.progression.stars += 1;
       runtimeStore.save.progression.score += amount;
       this.renderHud();
-      this.popups.spawn(pickup.x, pickup.y, `+${amount} ${DISPLAY_NAMES.star}`, 0xffd700);
+      this.showHudToast(`+${amount} ${DISPLAY_NAMES.star}`);
       this.collectItem(pickup);
       this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 10);
       this.playSfx('power');
@@ -503,7 +498,7 @@ export class PlayScene extends Phaser.Scene {
       this.checkpointXY = { x: point.x, y: point.y - 20 };
       point.setTint(0x76ff03);
       if (prevId !== this.checkpointId) {
-        this.popups.spawn(point.x, point.y, SCENE_TEXT.gameplay.checkpointSaved);
+        this.showHudToast(SCENE_TEXT.gameplay.checkpointSaved);
         this.effects.flash(150, 0x5cb85c);
       }
     });
@@ -609,10 +604,6 @@ export class PlayScene extends Phaser.Scene {
 
     this.registerDebugHooks();
 
-    // FINAL FAILSAFE: Force background color
-    if (this.world === 1) {
-       this.cameras.main.setBackgroundColor(0x6b8cff);
-    }
   }
 
   private registerDebugHooks(): void {
@@ -734,47 +725,6 @@ export class PlayScene extends Phaser.Scene {
     };
   }
 
-  private hitQuestionBlock(block: Phaser.Physics.Arcade.Sprite): void {
-    const state = String(block.getData('state'));
-    if (state === 'used') return;
-
-    block.setData('state', 'used');
-    this.detachCollectibleGlow(block);
-    block.setTexture('question_block_used');
-    block.refreshBody();
-    const collectibleId = String(block.getData('collectibleId') ?? '');
-    if (collectibleId) {
-      runtimeStore.save = setLevelCollectibleStatus(runtimeStore.save, this.world, this.levelIndex, collectibleId);
-    }
-
-    // Bump animation
-    const origY = block.y;
-    this.tweens.add({
-      targets: block,
-      y: origY - 8,
-      duration: 80,
-      yoyo: true,
-      ease: 'Quad.easeOut',
-    });
-
-    // Spawn coin reward that pops out the top
-    const rewardCoin = this.add.image(block.x, block.y - 20, 'pickup_token')
-      .setScale(styleConfig.gameplayLayout.actorScale.coin)
-      .setDepth(30);
-    this.tweens.add({
-      targets: rewardCoin,
-      y: block.y - 56,
-      alpha: 0,
-      duration: 420,
-      ease: 'Back.easeOut',
-      onComplete: () => rewardCoin.destroy(),
-    });
-
-    runtimeStore.save.progression.coins += 1;
-    runtimeStore.save.progression.score += SCORE_VALUES.questionBlock;
-    this.playSfx('block_hit');
-  }
-
   private attachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite, textureKey: string): void {
     if (!styleConfig.bloom.enabled) {
       return;
@@ -876,10 +826,6 @@ export class PlayScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
     coin.setData('coinSpinTween', spinTween);
-  }
-
-  private flashCollectiblePickup(color = 0xffffff): void {
-    this.effects.flash(120, color);
   }
 
   private collectItem(pickup: Phaser.Physics.Arcade.Sprite): void {
@@ -1127,6 +1073,29 @@ export class PlayScene extends Phaser.Scene {
     this.audio.playSfx(keyMap[kind]);
   }
 
+  private showHudToast(message: string): void {
+    const typography = styleConfig.typography;
+    const defaultColor = Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#ffffff').color;
+    const toast = this.add
+      .bitmapText(VIEW_WIDTH / 2, 46, typography.fontKey, message, 14)
+      .setOrigin(0.5, 0)
+      .setTint(defaultColor)
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    this.tweens.add({
+      targets: toast,
+      alpha: 0,
+      y: toast.y - 12,
+      duration: 700,
+      delay: 450,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        toast.destroy();
+      },
+    });
+  }
+
   private triggerStompHitstop(): void {
     if (!this.physics?.world || this.physics?.world?.isPaused) {
       return;
@@ -1144,7 +1113,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     const amount = SCORE_VALUES.stomp;
-    this.popups.spawn(this.player.x, this.player.y - 12, `+${amount} ${DISPLAY_NAMES.stomp}`);
+    this.showHudToast(`+${amount} ${DISPLAY_NAMES.stomp}`);
     this.effects.hitStop(PLAYER_CONSTANTS.stompHitstopMs);
     // Note: Record resume status is now decoupled from the actual resume in EffectManager
     // but we can still track it for telemetry if needed by passing a callback.
@@ -1161,51 +1130,6 @@ export class PlayScene extends Phaser.Scene {
       currentlyPaused: isWorldPaused && this.stompHitstop != null,
       history: [...this.stompHitstopHistory],
     };
-  }
-
-  private showHudToast(message: string): void {
-    const uiScale = 1 / Math.max(1, this.cameras.main.zoom);
-    const popup = this.add.bitmapText(
-      this.cameras.main.width / 2,
-      38 * uiScale,
-      styleConfig.typography.fontKey,
-      message,
-      styleConfig.hudLayout.leftGroup.fontSizePx,
-    ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(90);
-    popup.setTint(Phaser.Display.Color.HexStringToColor(stylePalette.hudText ?? '#F2FDFD').color);
-    popup.setScale(uiScale);
-    popup.setLetterSpacing(styleConfig.hudLayout.leftGroup.letterSpacingPx);
-    this.tweens.add({
-      targets: popup,
-      y: popup.y - 40 * uiScale,
-      alpha: 0,
-      duration: 600,
-      ease: 'Cubic.easeOut',
-      onComplete: () => popup.destroy(),
-    });
-  }
-
-  private pulseHudCounter(text: Phaser.GameObjects.BitmapText): void {
-    const existing = text.getData('counterPulse');
-    if (existing instanceof Phaser.Tweens.Tween) {
-      existing.stop();
-      existing.remove();
-    }
-    const baseScaleX = text.scaleX;
-    const baseScaleY = text.scaleY;
-    const pulse = this.tweens.add({
-      targets: text,
-      scaleX: baseScaleX * 1.12,
-      scaleY: baseScaleY * 1.12,
-      duration: 80,
-      yoyo: true,
-      ease: 'Sine.easeOut',
-      onComplete: () => {
-        text.setScale(baseScaleX, baseScaleY);
-        text.setData('counterPulse', undefined);
-      },
-    });
-    text.setData('counterPulse', pulse);
   }
 
   /** Whether a death animation is currently playing. Blocks input during sequence. */
@@ -1320,7 +1244,7 @@ export class PlayScene extends Phaser.Scene {
 
       const baseScaleX = this.player.scaleX;
       let flick = 0;
-      const flickerEvent = this.time.addEvent({
+      this.time.addEvent({
         delay: flickerDuration,
         repeat: flickerCount - 1,
         callback: () => {
@@ -1419,7 +1343,6 @@ export class PlayScene extends Phaser.Scene {
         if (playerX >= seg.startX && playerX < seg.startX + seg.speedPxPerSec * (seg.durationMs / 1000)) {
           this.autoScrollActiveIndex = i;
           this.autoScrollElapsedMs = 0;
-          this.autoScrollCameraStartX = cam.scrollX;
           // Detach camera from player follow
           cam.stopFollow();
           break;

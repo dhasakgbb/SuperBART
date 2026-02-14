@@ -1,9 +1,7 @@
-import Phaser from 'phaser';
 import { BaseEnemy, EnemyConfig, EnemyState, EnemyKind } from '../BaseEnemy';
 
 export class HotTake extends BaseEnemy {
   private baseY: number;
-  private targetY: number;
   private baseAmp: number;
   
   private phaseMs: number = 0;
@@ -19,17 +17,13 @@ export class HotTake extends BaseEnemy {
   constructor(config: EnemyConfig) {
     super(config);
     this.baseY = config.y;
-    this.targetY = config.y;
-    this.baseAmp = 18; // Default amp
+    this.baseAmp = 18;
 
     if (this.body) {
         this.body.setSize(10, 10);
         this.body.setOffset(3, 3);
     }
-    
-    
-    // Flying enemies often ignore gravity or have custom gravity
-    this.setGravityY(0); 
+    this.setGravityY(0);
     this.setScale(1.8);
     
     this.transitionTo('drift');

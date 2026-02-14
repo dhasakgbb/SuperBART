@@ -42,3 +42,15 @@ artifacts/
 
 # Source archives
 *.zip
+
+# Imagegen
+tmp/imagegen/
+output/imagegen/
+
+# Imagegen
+tmp/imagegen/
+output/imagegen/
+
+# Imagegen
+tmp/imagegen/
+output/imagegen/

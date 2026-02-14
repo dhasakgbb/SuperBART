@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BaseEnemy, EnemyConfig, EnemyState, EnemyKind } from '../BaseEnemy';
+import { BaseEnemy, EnemyConfig, EnemyKind } from '../BaseEnemy';
 import { EnemyContext } from '../types';
 
 export class Analyst extends BaseEnemy {

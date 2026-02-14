@@ -7,7 +7,6 @@ import type {
   EntityType,
   GeneratedLevel,
   LevelGenerationInput,
-  LevelHardRules,
   LevelSpec,
   PacingPhase,
   PacingSegment,
@@ -20,12 +19,6 @@ import { campaignOrdinal } from '../systems/progression';
 const CHUNK_WIDTH = 24;
 const LEVEL_HEIGHT = 34;
 const BASE_GROUND = 26;
-const DEFAULT_HARD_RULES: LevelHardRules = {
-  maxNewMechanicsPerChunk: 1,
-  minRecoveryGap: 1,
-  maxHazardClusters: 1,
-};
-
 export const FAMILY_TEMPLATES: Record<ChunkFamily, ChunkTemplateType[]> = {
   azure_walkway: ['mid_flat', 'moving_platform', 'coin_arc'],
   server_room: ['mid_flat', 'mid_flat', 'coin_arc'],
@@ -92,13 +85,6 @@ function clampChance(raw: number): number {
     return 0;
   }
   return Math.min(0.98, Math.max(0, raw));
-}
-
-function clampMs(raw: number): number {
-  if (!Number.isFinite(raw) || raw <= 0) {
-    return 1;
-  }
-  return Math.max(1, Math.floor(raw));
 }
 
 function pickWorldPowerup(world: number, rng: ReturnType<typeof createRng>): SpawnPowerupKind | null {
@@ -185,7 +171,6 @@ const HAZARD_TAGS = new Set([
   'SPIKE_SWEEP',
   'THWOMP_DROP',
 ]);
-const HAZARD_MECHANICS = new Set(['spike', 'flying', 'thwomp']);
 const RISKY_CHUNK_TAGS = new Set([...HAZARD_TAGS, 'GAP_LONG']);
 
 const GUIDANCE_TAGS = new Set([
@@ -636,13 +621,6 @@ function validateMechanicAllowed(
   return illegal.length > 0 ? [`introduces unapproved mechanics: ${illegal.join(', ')}`] : [];
 }
 
-function introducesNewHazardMechanic(template: ChunkTemplate, newMechanics: string[]): boolean {
-  if (!hasHazardTag(template) || newMechanics.length === 0) {
-    return false;
-  }
-  return newMechanics.some((mechanic) => HAZARD_MECHANICS.has(mechanic));
-}
-
 function hasNearbyGuidance(chunkIds: string[], centerChunkIndex: number, radius = 2): boolean {
   const start = Math.max(0, centerChunkIndex - radius);
   const end = Math.min(chunkIds.length - 1, centerChunkIndex + radius);
@@ -883,7 +861,6 @@ function addChunkDecorations(
     rng,
     entities,
     oneWayPlatforms,
-    movingPlatforms,
   } = input;
   const tags = new Set(chunkTemplate.tags);
   const groundY = Math.min(...groundProfile);

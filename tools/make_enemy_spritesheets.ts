@@ -23,34 +23,41 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
 const COLORS = {
-  inkDark: parseHex('#1D1D1D'),
+  inkDark: parseHex('#1D1D1D', 220),
   inkSoft: parseHex('#2B2824'),
   
   // Walker (Hallucination)
-  blobLight: parseHex('#46BA4C'),
-  blobMid:   parseHex('#20A36D'),
+  blobLight: parseHex('#A2EA32'), // Brightened for SNES
+  blobMid:   parseHex('#46BA4C'),
   blobDark:  parseHex('#0A582C'),
   eyeYellow: parseHex('#DED256'),
   teeth:     parseHex('#F2FDFD'),
   mouth:     parseHex('#CF5151'),
+  mouthDark: parseHex('#9D2C2C'),
 
   // Shell (Legacy System)
   steel:     parseHex('#9FA8B3'),
-  steelDark: parseHex('#66707C'),
+  steelDark: parseHex('#5D6774'),
+  steelLight:parseHex('#D9E7EB'),
   copper:    parseHex('#B6560E'),
   copperLight: parseHex('#DC7C1D'),
+  copperDark:  parseHex('#742B01'),
 
   // Flying (Hot Take)
   red:       parseHex('#CF5151'),
   redDark:   parseHex('#9D2C2C'),
+  redLight:  parseHex('#E36863'),
   orange:    parseHex('#DC7C1D'),
+  orangeLight:parseHex('#F1C55F'),
   white:     parseHex('#F2FDFD'),
 
   // Spitter (Gartner Analyst)
   blue:      parseHex('#1E4EA3'),
-  blueShadow:parseHex('#1B4D95'),
+  blueShadow:parseHex('#102D5A'),
+  blueLight: parseHex('#5FA2F2'),
   glow:      parseHex('#5FA2F2'),
   cyan:      parseHex('#50E6FF'),
+  cyanLight: parseHex('#B0FFFF'),
   cloud:     parseHex('#F2FDFD'),
   cloudShade:parseHex('#D9E7EB'),
 
@@ -58,10 +65,12 @@ const COLORS = {
   suitBlue:  parseHex('#102D5A'),
   suitLight: parseHex('#1B4D95'),
   beige:     parseHex('#E9B48E'),
+  beigeLight:parseHex('#F5D1B8'),
 
   // Tech Debt
   debtDark:  parseHex('#1A1A1E'),
   debtRed:   parseHex('#9D2C2C'),
+  debtLight: parseHex('#3D3D42'),
   chain:     parseHex('#9FA8B3'),
 };
 
@@ -100,15 +109,17 @@ function drawWalkerFrame(f: number): PixelImage {
   const yOff = 15 - h;
   // Body - Squat rounded
   drawDisk(img, 8, yOff + h/2, h/2, COLORS.blobMid);
-  // Dithering
+  // Dithering & Shading
   for(let y=yOff; y<16; y++) {
     for(let x=0; x<16; x++) {
        const [,,,a] = getPixel(img, x, y);
-       if (a > 0 && (x+y)%2 === 0) setPixel(img, x, y, COLORS.blobLight);
-       if (a > 0 && y > yOff + h*0.7) setPixel(img, x, y, COLORS.blobDark);
+       if (a > 0) {
+         if ((x+y)%2 === 0 && y < yOff + h*0.4) setPixel(img, x, y, COLORS.blobLight);
+         if (y > yOff + h*0.7) setPixel(img, x, y, COLORS.blobDark);
+       }
     }
   }
-  // Eyes
+  // Eyes - Shiny yellow
   setPixel(img, 6, yOff + 4, COLORS.eyeYellow);
   setPixel(img, 10, yOff + 4, COLORS.eyeYellow);
   if (f === 3) { // Thinking
@@ -119,7 +130,8 @@ function drawWalkerFrame(f: number): PixelImage {
     setPixel(img, 10, yOff + 4, [0,0,0,255]);
   }
   // Mouth
-  fillRect(img, 6, yOff + 7, 5, 2, COLORS.mouth);
+  fillRect(img, 6, yOff + 7, 5, 2, COLORS.mouthDark);
+  fillRect(img, 6, yOff + 7, 5, 1, COLORS.mouth);
   setPixel(img, 7, yOff + 7, COLORS.teeth);
   setPixel(img, 9, yOff + 7, COLORS.teeth);
 
@@ -136,15 +148,20 @@ function drawShellFrame(f: number): PixelImage {
 
   // Chassis
   fillRect(img, 2, yOff, 12, h, COLORS.steel);
+  // Highlights
+  fillRect(img, 2, yOff, 12, 1, COLORS.steelLight);
+  fillRect(img, 2, yOff, 1, h, COLORS.steelLight);
+  
   // Dither
   for(let y=yOff; y<16; y++) {
     for(let x=2; x<14; x++) {
       if ((x+y)%3 === 0) setPixel(img, x, y, COLORS.steelDark);
     }
   }
-  // Circuit traces
-  drawLine(img, 4, yOff + 2, 11, yOff + 2, COLORS.copper);
-  setPixel(img, 11, yOff + 2, COLORS.copperLight);
+  // Circuit traces - Glowy copper
+  drawLine(img, 4, yOff + 2, 11, yOff + 2, COLORS.copperDark);
+  drawLine(img, 4, yOff + 1, 11, yOff + 1, COLORS.copper);
+  setPixel(img, 11, yOff + 1, COLORS.copperLight);
   // Rivets
   setPixel(img, 3, yOff + 1, COLORS.copperLight);
   setPixel(img, 12, yOff + 1, COLORS.copperLight);
@@ -167,23 +184,37 @@ function drawFlyingFrame(f: number): PixelImage {
   
   // Body - Angular
   fillRect(img, 4, 6, 8, 6, COLORS.red);
+  fillRect(img, 4, 6, 8, 1, COLORS.redLight); // Top highlight
+  fillRect(img, 4, 11, 8, 1, COLORS.redDark); // Bottom shadow
+  
   fillRect(img, 12, 7, 3, 3, COLORS.red); // beak
-  // Wings
+  setPixel(img, 12, 7, COLORS.redLight);
+  
+  // Wings - Multi-tone
+  const wColor = COLORS.orange;
+  const wLight = COLORS.orangeLight;
   if (wingPos === 1) { // Up
-    fillRect(img, 2, 2, 4, 5, COLORS.orange);
-    fillRect(img, 10, 2, 4, 5, COLORS.orange);
+    fillRect(img, 2, 2, 4, 5, wColor);
+    fillRect(img, 2, 2, 4, 1, wLight);
+    fillRect(img, 10, 2, 4, 5, wColor);
+    fillRect(img, 10, 2, 4, 1, wLight);
   } else if (wingPos === 2) { // Down
-    fillRect(img, 2, 9, 4, 5, COLORS.orange);
-    fillRect(img, 10, 9, 4, 5, COLORS.orange);
+    fillRect(img, 2, 9, 4, 5, wColor);
+    fillRect(img, 2, 9, 4, 1, wLight);
+    fillRect(img, 10, 9, 4, 5, wColor);
+    fillRect(img, 10, 9, 4, 1, wLight);
   } else { // Mid
-    fillRect(img, 1, 6, 4, 4, COLORS.orange);
-    fillRect(img, 11, 6, 4, 4, COLORS.orange);
+    fillRect(img, 1, 6, 4, 4, wColor);
+    fillRect(img, 1, 6, 4, 1, wLight);
+    fillRect(img, 11, 6, 4, 4, wColor);
+    fillRect(img, 11, 6, 4, 1, wLight);
   }
   // Eye
   setPixel(img, 10, 8, COLORS.white);
   
   if (f === 3) { // Angry burst
     fillRect(img, 4, 6, 8, 6, COLORS.orange);
+    fillRect(img, 4, 6, 8, 1, COLORS.orangeLight);
   }
 
   outline(img, COLORS.inkDark);
@@ -195,21 +226,27 @@ function drawSpitterFrame(f: number): PixelImage {
   const img = createImage(16, 16, [0,0,0,0]);
   const bob = (f === 1) ? -1 : 0;
   
-  // Cloud
+  // Cloud - Billowy SNES look
   drawDisk(img, 8, 13 + bob, 4, COLORS.cloud);
   drawDisk(img, 4, 13 + bob, 3, COLORS.cloudShade);
   drawDisk(img, 12, 13 + bob, 3, COLORS.cloudShade);
+  setPixel(img, 8, 10 + bob, COLORS.white); // Top shine
   
   // Body (Robe)
   fillRect(img, 6, 5 + bob, 5, 8, COLORS.blue);
+  fillRect(img, 6, 5 + bob, 5, 1, COLORS.blueLight);
   fillRect(img, 7, 6 + bob, 3, 6, COLORS.blueShadow);
   
   // Head
   fillRect(img, 7, 2 + bob, 4, 4, COLORS.beige);
-  // Glasses
+  setPixel(img, 7, 2 + bob, COLORS.beigeLight);
+  
+  // Glasses - Glowy
   fillRect(img, 6, 3 + bob, 6, 2, COLORS.glow);
+  setPixel(img, 6, 3 + bob, COLORS.cyanLight);
   if (f === 3) { // Firing glow
     fillRect(img, 5, 2 + bob, 8, 4, COLORS.cyan);
+    fillRect(img, 5, 2 + bob, 8, 1, COLORS.cyanLight);
   }
 
   outline(img, COLORS.inkDark);
@@ -223,11 +260,14 @@ function drawComplianceFrame(f: number): PixelImage {
   
   // Suit
   fillRect(img, 5, 4, 6, 10, COLORS.suitBlue);
+  fillRect(img, 5, 4, 6, 1, COLORS.suitLight);
   // Head
   fillRect(img, 6, 1, 4, 4, COLORS.beige);
+  setPixel(img, 6, 1, COLORS.beigeLight);
   // Clipboard
   fillRect(img, 10, 6 + step, 4, 6, COLORS.white);
   fillRect(img, 11, 5 + step, 2, 1, COLORS.inkSoft);
+  setPixel(img, 11, 7 + step, COLORS.inkSoft); // a "check" mark
   
   outline(img, COLORS.inkDark);
   return img;
@@ -240,13 +280,17 @@ function drawDebtFrame(f: number): PixelImage {
   
   // Mass
   drawDisk(img, 8, 8, 6 + pulse, COLORS.debtDark);
-  // Veins
+  // Veins - Pulsing red
   for(let i=0; i<4; i++) {
     const angle = i * Math.PI / 2;
     const x = Math.round(8 + Math.cos(angle) * 4);
     const y = Math.round(8 + Math.sin(angle) * 4);
     setPixel(img, x, y, COLORS.debtRed);
+    if (f === 1) setPixel(img, x, y, COLORS.redLight);
   }
+  // Highlight
+  setPixel(img, 6, 5, COLORS.debtLight);
+  
   // Chain
   drawLine(img, 8, 14, 8, 15, COLORS.chain);
   

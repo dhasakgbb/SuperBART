@@ -4,10 +4,10 @@ Source of truth for visual and typography contract decisions.
 
 ## Reference Contract
 
-| name | path | role | required | scenes | reason | notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| primary_reference | `public/assets/target_look.png` | primary | true | BootScene,TitleScene,WorldMapScene,PlayScene,GameOverScene,LevelCompleteScene,FinalVictoryScene,SettingsScene | Primary NES baseline for all user-facing lock scenes. | Used as canonical lock coverage source. |
-| secondary_reference | `public/assets/target_look_2.jpeg` | secondary | false | PlayScene,WorldMapScene | Supplemental visual parity reference for play/map campaign review. | Do not treat as source-of-truth for lock decisions. |
+| name                | path                               | role      | required | scenes                                                                                                        | reason                                                             | notes                                               |
+| ------------------- | ---------------------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------- |
+| primary_reference   | `public/assets/target_look.png`    | primary   | true     | BootScene,TitleScene,WorldMapScene,PlayScene,GameOverScene,LevelCompleteScene,FinalVictoryScene,SettingsScene | Primary NES baseline for all user-facing lock scenes.              | Used as canonical lock coverage source.             |
+| secondary_reference | `public/assets/target_look_2.jpeg` | secondary | false    | PlayScene,WorldMapScene                                                                                       | Supplemental visual parity reference for play/map campaign review. | Do not treat as source-of-truth for lock decisions. |
 
 ## Scene Style Exceptions
 
@@ -29,23 +29,25 @@ If an exception is approved later, add rows below with the exact columns: `scene
 
 ## Palette
 
-| Name | Hex | Usage |
-| --- | --- | --- |
-| inkDark | `#1D1D1D` | Primary sprite/UI outlines |
-| inkSoft | `#2B2824` | Secondary contours |
-| skyDeep | `#000000` | Gameplay/title upper sky |
-| skyMid | `#060808` | Gameplay/title lower sky |
-| grassTop | `#46BA4C` | Terrain highlight + map completion accents |
-| grassMid | `#20A36D` | Terrain mids |
-| groundShadow | `#742B01` | Terrain low values |
-| groundMid | `#B6560E` | Terrain mids |
-| groundWarm | `#DC7C1D` | Terrain warmth + title depth |
-| coinCore | `#DED256` | Coin/light interior |
-| coinEdge | `#DC7C1D` | Coin edge |
-| hudText | `#F2FDFD` | Primary HUD/map text |
-| hudAccent | `#DED256` | Counters, title accents, selected state |
-| hudPanel | `#1F1F20` | HUD/map dark panel fill |
-| bloomWarm | `#F6D58B` | Additive glow tint |
+| Name         | Hex       | Usage                                      |
+| ------------ | --------- | ------------------------------------------ |
+| inkDark      | `#1D1D1D` | Primary sprite/UI outlines                 |
+| inkSoft      | `#2B2824` | Secondary contours                         |
+| skyDeep      | `#000000` | Gameplay/title upper sky                   |
+| skyMid       | `#060808` | Gameplay/title lower sky                   |
+| skyBlue      | `#6B8CFF` | Gameplay sky (top)                         |
+| skyLight     | `#9CBDFF` | Gameplay sky (bottom)                      |
+| grassTop     | `#46BA4C` | Terrain highlight + map completion accents |
+| grassMid     | `#20A36D` | Terrain mids                               |
+| groundShadow | `#742B01` | Terrain low values                         |
+| groundMid    | `#B6560E` | Terrain mids                               |
+| groundWarm   | `#DC7C1D` | Terrain warmth + title depth               |
+| coinCore     | `#DED256` | Coin/light interior                        |
+| coinEdge     | `#DC7C1D` | Coin edge                                  |
+| hudText      | `#FFFFFF` | Primary HUD/map text                       |
+| hudAccent    | `#FFD700` | Counters, title accents, selected state    |
+| hudPanel     | `#1A1A1D` | HUD/map dark panel fill                    |
+| bloomWarm    | `#FFEB9C` | Additive glow tint                         |
 
 ## HUD Contract
 
@@ -71,8 +73,8 @@ If an exception is approved later, add rows below with the exact columns: `scene
 - `skyDeep`: `#000000`
 - `skyMid`: `#060808`
 - `grassTop`: `#46BA4C`
-- `hudText`: `#F2FDFD`
-- `hudAccent`: `#DED256`
+- `hudText`: `#FFFFFF`
+- `hudAccent`: `#FFD700`
 
 ## Player Animation Contract
 

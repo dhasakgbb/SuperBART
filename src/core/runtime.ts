@@ -1,4 +1,4 @@
-import type { GameMode, PlayerForm, PlayerRuntimeState, SaveGameV3, SuperBartRuntimeState, PlayerCombatState } from '../types/game';
+import type { GameMode, PlayerForm, SaveGameV3, SuperBartRuntimeState, PlayerCombatState } from '../types/game';
 import { defaultSave } from '../systems/save';
 
 export interface RuntimeStore {

@@ -243,24 +243,24 @@ export const ASSET_MANIFEST: {
     tile_ground_w5_mid: image('/assets/tiles/tile_ground_w5_mid.png', { pass: 'tile' }),
     tile_ground_w5_bot: image('/assets/tiles/tile_ground_w5_bot.png', { pass: 'tile' }),
     
-    tile_oneway_w2: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
-    tile_oneway_w3: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
-    tile_oneway_w4: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
-    tile_oneway_w5: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
+    tile_oneway_w2: image('/assets/tiles/tile_oneway_w2.png', { pass: 'tile' }),
+    tile_oneway_w3: image('/assets/tiles/tile_oneway_w3.png', { pass: 'tile' }),
+    tile_oneway_w4: image('/assets/tiles/tile_oneway_w4.png', { pass: 'tile' }),
+    tile_oneway_w5: image('/assets/tiles/tile_oneway_w5.png', { pass: 'tile' }),
 
     // World 1: Glacial Mainframe
     hill_far_w1: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
     hill_near_w1: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
 
-    // World 2-5 backgrounds (fallback to W1 until per-world assets exist)
-    hill_far_w2: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
-    hill_near_w2: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
-    hill_far_w3: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
-    hill_near_w3: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
-    hill_far_w4: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
-    hill_near_w4: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
-    hill_far_w5: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
-    hill_near_w5: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
+    // World 2-5 backgrounds (placeholder copies until per-world assets exist)
+    hill_far_w2: image('/assets/bg/hill_far_w2.png', { pass: 'object' }),
+    hill_near_w2: image('/assets/bg/hill_near_w2.png', { pass: 'object' }),
+    hill_far_w3: image('/assets/bg/hill_far_w3.png', { pass: 'object' }),
+    hill_near_w3: image('/assets/bg/hill_near_w3.png', { pass: 'object' }),
+    hill_far_w4: image('/assets/bg/hill_far_w4.png', { pass: 'object' }),
+    hill_near_w4: image('/assets/bg/hill_near_w4.png', { pass: 'object' }),
+    hill_far_w5: image('/assets/bg/hill_far_w5.png', { pass: 'object' }),
+    hill_near_w5: image('/assets/bg/hill_near_w5.png', { pass: 'object' }),
   },
   spritesheets: {
     bart_body_small: { path: '/assets/sprites/bart_body_small.png', frameWidth: 32, frameHeight: 32 },

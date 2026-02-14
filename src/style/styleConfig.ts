@@ -88,10 +88,10 @@ export const styleConfig = {
       { name: 'groundWarm', hex: '#DC7C1D' },
       { name: 'coinCore', hex: '#DED256' },
       { name: 'coinEdge', hex: '#DC7C1D' },
-      { name: 'hudText', hex: '#F2FDFD' },
-      { name: 'hudAccent', hex: '#DED256' },
-      { name: 'hudPanel', hex: '#1F1F20' },
-      { name: 'bloomWarm', hex: '#F6D58B' },
+      { name: 'hudText', hex: '#FFFFFF' },
+      { name: 'hudAccent', hex: '#FFD700' }, // Gold accent
+      { name: 'hudPanel', hex: '#1A1A1D' }, // Deep dark grey
+      { name: 'bloomWarm', hex: '#FFEB9C' },
     ],
     ramps: {
       terrain: ['groundShadow', 'groundMid', 'groundWarm', 'grassMid', 'grassTop'],
@@ -141,8 +141,8 @@ export const styleConfig = {
       textFormat: HUD_CONTRACT.rightBlock.line1TextFormat,
     },
     leftGroupIcons: {
-      star: { texture: 'pickup_eval', x: 188, y: 11, scale: 0.9 },
-      coin: { texture: 'pickup_token', x: 244, y: 11, scale: 0.9 },
+      star: { texture: 'pickup_eval', x: 210, y: 11, scale: 1.1 }, // Increased scale
+      coin: { texture: 'pickup_token', x: 266, y: 11, scale: 1.1 },
     },
     hudMode: 'icon-driven',
     timeDigits: 3,

@@ -2,16 +2,15 @@ import Phaser from 'phaser';
 import './style.css';
 import { createGameConfig } from './core/gameConfig';
 import { BootScene } from './scenes/BootScene';
-import { FinalVictoryScene } from './scenes/FinalVictoryScene';
-import { GameOverScene } from './scenes/GameOverScene';
-import { LevelCompleteScene } from './scenes/LevelCompleteScene';
-import { PauseScene } from './scenes/PauseScene';
-import { PlayScene } from './scenes/PlayScene';
-import { SettingsScene } from './scenes/SettingsScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
-
-const scenes = {
+import { PlayScene } from './scenes/PlayScene';
+import { PauseScene } from './scenes/PauseScene';
+import { LevelCompleteScene } from './scenes/LevelCompleteScene';
+import { GameOverScene } from './scenes/GameOverScene';
+import { FinalVictoryScene } from './scenes/FinalVictoryScene';
+import { SettingsScene } from './scenes/SettingsScene';
+const scenes = [
   BootScene,
   TitleScene,
   WorldMapScene,
@@ -21,23 +20,27 @@ const scenes = {
   GameOverScene,
   FinalVictoryScene,
   SettingsScene
-};
+];
 
-try {
-  const game = new Phaser.Game(
-    createGameConfig(Object.values(scenes))
-  );
+function init() {
+  if ((window as any).__SUPER_BART__?.game) return;
 
-  game.events.on('ready', () => {
-    if (!game.scene.isActive('BootScene')) {
-      game.scene.start('BootScene');
-    }
-  });
+  const config = createGameConfig(scenes);
+  
+  try {
+    const game = new Phaser.Game(config);
+    (window as any).__SUPER_BART__ = { game };
 
-  (window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__ = {
-    ...(window as Window & { __SUPER_BART__?: Record<string, unknown> }).__SUPER_BART__,
-    game
-  };
-} catch (e) {
-  console.error('Failed to create Phaser game instance:', e);
+    // Wait slightly for boot to finish since we forced CANVAS
+    setTimeout(() => {
+      if (!game.scene.isActive('BootScene') && game.scene.getScene('BootScene')) {
+        game.scene.start('BootScene');
+      }
+    }, 100);
+
+  } catch (e) {
+    console.error('Phaser Init Error:', e);
+  }
 }
+
+init();
