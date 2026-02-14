@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
 import { BaseEnemy, EnemyConfig, EnemyState, EnemyKind } from '../BaseEnemy';
 
-export type HotTakeState = 'drift' | 'warn' | 'burst';
-
 export class HotTake extends BaseEnemy {
   private baseY: number;
   private targetY: number;
@@ -56,14 +54,7 @@ export class HotTake extends BaseEnemy {
               this.phaseMs = 0;
               this.setTint(0xff4444);
               break;
-          case 'burst': // Using 'attack' as burst? Or custom state name? BaseEnemy has 'attack'.
-              // We can map 'burst' to 'attack' or just use 'burst' string casting if needed?
-              // BaseEnemy.EnemyState is broad. Let's use 'attack' for burst.
-              // But wait, the logic uses 'burst'. 
-              // BaseEnemy types: 'idle' | 'patrol' | 'chase' | 'attack' | 'hurt' | 'dead' | 'stumble';
-              // 'Drift' maps to 'patrol'. 'Warn' maps to 'chase'? 'Burst' maps to 'attack'?
-              // Or I can add custom states effectively by just ignoring the type restriction 
-              // or casting. But cleaner to map.
+          case 'burst':
               this.burstPhaseMs = 0;
               const amp = 1 + (this.escalation - 1) * 0.3;
               this.setVelocityX((Math.random() < 0.5 ? -1 : 1) * 120);
@@ -71,20 +62,10 @@ export class HotTake extends BaseEnemy {
               this.setTint(0xffc44d);
               break;
       }
-      this.currentState = state; // valid cast
+      this.currentState = state;
   }
 
   protected updateState(delta: number): void {
-      // Escalation logic from registry
-      // const escalation = 1 + Math.min(1.5, (Number(ctx.nowMs ? ctx.nowMs() : 0) - Number(ctx.nowMs ? ctx.nowMs() : 0)) / 20000);
-      // Wait, the original code had `(Number(ctx.nowMs ? ctx.nowMs() : 0) - Number(ctx.nowMs ? ctx.nowMs() : 0))` which is 0?
-      // "Number(ctx.nowMs ? ctx.nowMs() : 0) - Number(ctx.nowMs ? ctx.nowMs() : 0)"
-      // Ah, line 216 in registry.ts: 
-      // const escalation = 1 + Math.min(1.5, (Number(ctx.nowMs ? ctx.nowMs() : 0) - Number(ctx.nowMs ? ctx.nowMs() : 0)) / 20000);
-      // That looks like a bug in the original code? 0 / 20000 is 0. So escalation is always 1?
-      // Unless it was supposed to be (now - startTime)?
-      // I'll stick to escalation = 1 for now or fix it if I had startTime.
-
       if (this.currentState === 'drift') {
           const t = this.scene.time.now / 1000;
           this.y = this.baseY + Math.sin(t * 2.4) * (this.baseAmp * (0.5 + Math.min(0.4, this.escalation * 0.1)));
@@ -100,14 +81,9 @@ export class HotTake extends BaseEnemy {
       else if (this.currentState === 'warn') {
           this.phaseMs += delta;
           
-          // Add shake/jitter
           if (this.scene) {
              this.x += (Math.random() - 0.5) * 4;
              this.y += (Math.random() - 0.5) * 4;
-             // Ideally we should oscillate around base position to avoid drift,
-             // but short duration jitter is fine for "warn".
-             // Better: this.setOffset ? or use a tween?
-             // Simple jitter:
           }
 
           if (this.phaseMs >= this.WARN_MS) {

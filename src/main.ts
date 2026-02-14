@@ -10,7 +10,6 @@ import { PlayScene } from './scenes/PlayScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
-console.log('DEBUG: Starting main.ts');
 
 const scenes = {
   BootScene,
@@ -25,29 +24,13 @@ const scenes = {
 };
 
 try {
-  const appEl = document.getElementById('app');
-  if (!appEl) {
-    console.error('CRITICAL: DOM element #app not found!');
-  } else {
-    console.log('DEBUG: DOM element #app found.', appEl);
-  }
-
-    const game = new Phaser.Game(
+  const game = new Phaser.Game(
     createGameConfig(Object.values(scenes))
   );
 
-  game.events.on('poststep', () => {
-     // Log only once
-     if (!(window as any)._stepLogged) {
-         console.log('DEBUG: Game loop ticking (poststep)');
-         (window as any)._stepLogged = true;
-     }
-  });
-
   game.events.on('ready', () => {
-    // Ensure BootScene starts if not automatically triggered
     if (!game.scene.isActive('BootScene')) {
-        game.scene.start('BootScene');
+      game.scene.start('BootScene');
     }
   });
 
@@ -56,5 +39,5 @@ try {
     game
   };
 } catch (e) {
-  console.error('CRITICAL: Failed to create Phaser game instance:', e);
+  console.error('Failed to create Phaser game instance:', e);
 }

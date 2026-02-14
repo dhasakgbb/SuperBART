@@ -38,11 +38,8 @@ const REQUIRED_MANIFEST_IMAGES = new Set<string>([
   'bart_head_64',
   'bart_portrait_96',
   'dust_puff',
-  'enemy_walker',
-  'enemy_shell',
   'enemy_shell_retracted',
-  'enemy_flying',
-  'enemy_spitter',
+  'enemy_microservice',
   'projectile',
   'question_block',
   'question_block_used',
@@ -69,11 +66,16 @@ const REQUIRED_MANIFEST_IMAGES = new Set<string>([
   'spike',
   'thwomp',
   'moving_platform',
+  'dust_puff',
+  'particle_spark',
+  'particle_chain',
+  'boss_health_bg',
+  'boss_health_fill',
   'tile_ground',
   'tile_oneway',
 ]);
 
-const REQUIRED_MANIFEST_SPRITESHEETS = new Set<string>(['bart_body_small', 'bart_body_big']);
+const REQUIRED_MANIFEST_SPRITESHEETS = new Set<string>(['bart_body_small', 'bart_body_big', 'bart_body_small_fire', 'bart_body_big_fire', 'boss_sheet']);
 const REQUIRED_BITMAP_FONTS = new Set<string>(['hud']);
 const REQUIRED_PASS_ASSIGNMENTS = new Map<string, string>([
   ['enemy_walker', 'enemy'],
@@ -98,21 +100,31 @@ const REQUIRED_PASS_ASSIGNMENTS = new Map<string, string>([
   ['thwomp', 'hazard'],
   ['moving_platform', 'hazard'],
   ['dust_puff', 'object'],
+  ['boss_health_bg', 'hud'],
+  ['boss_health_fill', 'hud'],
+  ['particle_spark', 'object'],
+  ['particle_chain', 'object'],
+  ['enemy_compliance', 'enemy'],
+  ['enemy_techdebt', 'enemy'],
 ]);
 const REQUIRED_SPRITESHEET_FRAMECOUNTS = new Map<string, number>([
   ['bart_body_small', 14],
   ['bart_body_big', 14],
+  ['bart_body_small_fire', 14],
+  ['bart_body_big_fire', 14],
+  ['enemy_walker', 4],
+  ['enemy_shell', 4],
+  ['enemy_flying', 4],
+  ['enemy_spitter', 4],
+  ['enemy_compliance', 4],
+  ['enemy_techdebt', 4],
+  ['boss_sheet', 4],
 ]);
 const REQUIRED_SPRITESHEET_FRAME_QUALITY: Record<string, { minOpaquePerFrame: number; minUniqueFrames: number }> = {
   bart_body_small: { minOpaquePerFrame: 6, minUniqueFrames: 8 },
   bart_body_big: { minOpaquePerFrame: 6, minUniqueFrames: 8 },
 };
 const REQUIRED_ANIM_FRAMECOUNTS = new Map<string, number>([
-  ['enemy_walker', 4],
-  ['enemy_shell', 3],
-  ['enemy_shell_retracted', 1],
-  ['enemy_flying', 2],
-  ['enemy_spitter', 2],
   ['thwomp', 2],
 ]);
 
@@ -394,12 +406,15 @@ const REQUIRED_FILES: Array<{ file: string; dimensions?: [number, number] }> = [
   { file: 'public/assets/sprites/pickup_semantic_kernel.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/pickup_deploy_to_prod.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/pickup_works_on_my_machine.png', dimensions: [16, 16] },
-  { file: 'public/assets/sprites/enemy_walker.png', dimensions: [16, 16] },
-  { file: 'public/assets/sprites/enemy_shell.png', dimensions: [16, 16] },
+  { file: 'public/assets/sprites/enemy_walker.png', dimensions: [64, 16] },
+  { file: 'public/assets/sprites/enemy_shell.png', dimensions: [64, 16] },
   { file: 'public/assets/sprites/enemy_shell_retracted.png', dimensions: [16, 16] },
-  { file: 'public/assets/sprites/enemy_flying.png', dimensions: [16, 16] },
-  { file: 'public/assets/sprites/enemy_spitter.png', dimensions: [16, 16] },
-  { file: 'public/assets/sprites/projectile.png', dimensions: [8, 8] },
+  { file: 'public/assets/sprites/enemy_microservice.png', dimensions: [16, 16] },
+  { file: 'public/assets/sprites/enemy_flying.png', dimensions: [64, 16] },
+  { file: 'public/assets/sprites/enemy_spitter.png', dimensions: [64, 16] },
+  { file: 'public/assets/sprites/enemy_compliance.png', dimensions: [64, 16] },
+  { file: 'public/assets/sprites/enemy_techdebt.png', dimensions: [64, 16] },
+  { file: 'public/assets/sprites/projectile.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/flag.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/checkpoint.png', dimensions: [16, 16] },
   { file: 'public/assets/sprites/spring.png', dimensions: [16, 16] },

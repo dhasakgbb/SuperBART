@@ -61,11 +61,17 @@ export class PatternMusicSynth {
   private nextStepTime = 0;
   private stepIndex = 0;
   private currentPreset: MusicPresetKey | null = null;
+  private tempoOverrideBpm: number | null = null;
 
   constructor(
     private readonly ctx: AudioContext,
     private readonly musicBus: GainNode
   ) {}
+
+  /** Override the current preset's tempo. Pass null to revert to preset default. */
+  setTempoOverride(bpm: number | null): void {
+    this.tempoOverrideBpm = bpm;
+  }
 
   isRunning(): boolean {
     return this.timerId !== null;
@@ -98,7 +104,8 @@ export class PatternMusicSynth {
     }
 
     const preset = MUSIC_PRESETS[this.currentPreset];
-    const beatSec = 60 / preset.tempoBpm;
+    const effectiveBpm = this.tempoOverrideBpm ?? preset.tempoBpm;
+    const beatSec = 60 / effectiveBpm;
     const stepSec = beatSec * SUBDIVISION_BEATS;
     const lookAheadSec = 0.2;
 

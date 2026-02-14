@@ -10,11 +10,16 @@ dist/
 .vite/
 coverage/
 
+# Vite temp files
+vite.config.*.timestamp*.mjs
+
 # OS/editor
 .DS_Store
+Thumbs.db
 .idea/
 .vscode/
 *.swp
+*~
 
 # Python helpers
 __pycache__/
@@ -31,3 +36,9 @@ artifacts/
 .env
 .env.*
 !.env.example
+
+# Dev screenshots (should not be committed)
+*.screenshot.png
+
+# Source archives
+*.zip

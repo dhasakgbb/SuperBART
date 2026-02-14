@@ -20,9 +20,7 @@ export class LegacySystem extends BaseEnemy {
         this.setTexture('enemy_shell_retracted');
         this.setScale(0.65);
         if (this.body) this.body.setSize(8, 8);
-        this.isRetracted = true; // Microservices start as just shells? 
-        // Actually registry says they spawn as sliding shells usually. 
-        // Let's stick to standard Koopa behavior first.
+        this.isRetracted = true;
     } else {
         if (this.body) {
             this.body.setSize(12, 10);
@@ -92,42 +90,6 @@ export class LegacySystem extends BaseEnemy {
              if (this.retractTimer <= 0) {
                  this.transitionTo('patrol');
              }
-          }
-      }
-      else if (this.currentState === 'slide') {
-        const wallHit = (this.body && (this.body.blocked.left || this.body.blocked.right));
-        if (wallHit) {
-            // Camera shake could be here if we had access to camera
-            if (this.scene.cameras?.main) {
-                this.scene.cameras.main.shake(100, 0.01);
-            }
-            // Bounce
-            // ...
-        }
-        
-        // Enemy bowling logic
-        this.scene.physics.overlap(this, (this.scene as any).enemiesGroup, (me, other) => {
-             if (me === other) return;
-             const otherEnemy = other as Phaser.Physics.Arcade.Sprite;
-             if (otherEnemy.active) {
-                 // Kill other enemy
-                 // We need a uniform way to kill enemies.
-                 // BaseEnemy has 'die()'. But 'other' is just a Sprite here technically,
-                 // though likely a BaseEnemy instance.
-                 if ('die' in otherEnemy) {
-                     (otherEnemy as any).die(this.x);
-                     // Maybe add hitstop or sound?
-                 } else {
-                     otherEnemy.destroy();
-                 }
-             }
-        });
-           if (this.body && this.body.blocked.left) {
-              this.direction = 1;
-              this.setVelocityX(this.slideSpeed);
-          } else if (this.body && this.body.blocked.right) {
-              this.direction = -1;
-              this.setVelocityX(-this.slideSpeed);
           }
       }
   }

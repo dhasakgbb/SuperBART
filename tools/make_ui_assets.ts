@@ -176,85 +176,176 @@ function outlineOpaquePixels(image: PixelImage, outline: Rgba, width = STYLE_OUT
 // --- Task 1: Ground Tiles Variants ---
 
 function drawGroundTileW1(tile: PixelImage): void {
-  // W1 Azure: green grass top + warm brown earth (current tile)
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundMid);
-  for (let y = 4; y < TILE_SIZE; y += 1) {
-    for (let x = 0; x < TILE_SIZE; x += 1) {
-      const tone = (x + y) % 3;
-      setPixel(tile, x, y, tone === 0 ? COLORS.groundWarm : tone === 1 ? COLORS.groundMid : COLORS.groundShadow);
+  // W1 Azure: Lush green grass top over organic brown earth
+  const grass1 = [70, 186, 76, 255] as const;
+  const grass2 = [32, 163, 109, 255] as const;
+  const grass3 = [10, 88, 44, 255] as const;
+  const dirt1 = [220, 124, 29, 255] as const;
+  const dirt2 = [182, 86, 14, 255] as const;
+  const dirt3 = [116, 43, 1, 255] as const;
+  const ink = COLORS.inkDark;
+
+  // Fill earth
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, dirt3);
+  fillRect(tile, 0, 4, TILE_SIZE, TILE_SIZE - 4, dirt2);
+
+  // Dirt Clusters (Organic clusters instead of math patterns)
+  const clusters = [
+    [2, 6], [3, 6], [2, 7], 
+    [8, 10], [9, 10], [9, 11],
+    [12, 5], [13, 5], [13, 6],
+    [4, 12], [5, 12], [4, 13]
+  ];
+  clusters.forEach(([cx, cy]) => setPixel(tile, cx, cy, dirt1));
+
+  // Multi-layered Grass
+  // Top edge highlight
+  fillRect(tile, 0, 0, TILE_SIZE, 1, [140, 240, 140, 255]);
+  
+  // Layer 1: Bright Green
+  for (let x = 0; x < TILE_SIZE; x++) {
+    const h = (x % 3 === 0) ? 3 : 2;
+    fillRect(tile, x, 1, 1, h, grass1);
+  }
+  
+  // Layer 2: Mid Green Clusters
+  for (let x = 0; x < TILE_SIZE; x++) {
+    if ((x + 1) % 4 === 0) fillRect(tile, x, 2, 1, 3, grass2);
+    if ((x + 2) % 5 === 0) fillRect(tile, x, 3, 1, 2, grass2);
+  }
+
+  // Layer 3: Deep Green
+  for (let x = 0; x < TILE_SIZE; x++) {
+    if (getPixel(tile, x, 4)[0] === dirt2[0]) {
+       if ((x * 7) % 3 === 0) setPixel(tile, x, 4, grass3);
+       if ((x * 13) % 4 === 0) setPixel(tile, x, 5, grass3);
     }
   }
-  fillRect(tile, 0, 0, TILE_SIZE, 2, COLORS.grassTop);
-  fillRect(tile, 0, 2, TILE_SIZE, 2, COLORS.grassMid);
-  for (let x = 0; x < TILE_SIZE; x += 2) {
-    setPixel(tile, x, 3, COLORS.mossDark);
-  }
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW2(tile: PixelImage): void {
-  // W2 Pipeline: copper/bronze metallic surface, rivet dots
-  // Palette: #3B2007 (sky), #C97D10 (accent) -> Use groundWarm/groundMid/groundShadow + accent?
-  // Using generic "copper" feel from existing palette or accent if possible.
-  // Using: groundWarm (copper), groundShadow (dark), sand (rivets/highlight)
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundWarm);
-  strokeRect(tile, 1, 1, 14, 14, COLORS.groundMid);
-  // Rivets
-  setPixel(tile, 2, 2, COLORS.sand);
-  setPixel(tile, 13, 2, COLORS.sand);
-  setPixel(tile, 2, 13, COLORS.sand);
-  setPixel(tile, 13, 13, COLORS.sand);
-  // Industrial texture
-  for(let i=4; i<12; i+=2) {
-    drawLine(tile, i, 4, i, 11, COLORS.groundShadow);
+  // W2 Pipeline: Volumetric copper/bronze industrial plating
+  const copper1 = [255, 160, 60, 255] as const;
+  const copper2 = [182, 86, 14, 255] as const;
+  const copper3 = [90, 40, 0, 255] as const;
+  const highlight = [255, 220, 160, 255] as const;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, copper2);
+  
+  // Plating Bevel
+  fillRect(tile, 0, 0, TILE_SIZE, 1, highlight);
+  fillRect(tile, 0, 0, 1, TILE_SIZE, highlight);
+  fillRect(tile, 0, TILE_SIZE - 1, TILE_SIZE, 1, copper3);
+  fillRect(tile, TILE_SIZE - 1, 0, 1, TILE_SIZE, copper3);
+
+  // Oxidized Texture
+  for (let y = 1; y < TILE_SIZE - 1; y++) {
+    for (let x = 1; x < TILE_SIZE - 1; x++) {
+      if ((x ^ y) % 3 === 0) setPixel(tile, x, y, copper1);
+      if ((x * y) % 7 === 0) setPixel(tile, x, y, copper3);
+    }
   }
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+
+  // Rivets with luster
+  const rivets = [[3, 3], [12, 3], [3, 12], [12, 12]];
+  rivets.forEach(([rx, ry]) => {
+    setPixel(tile, rx, ry, ink);
+    setPixel(tile, rx - 1, ry - 1, highlight);
+  });
+
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW3(tile: PixelImage): void {
-  // W3 Enterprise: gray concrete, blue trim line at top
-  // Colors: steel, steelDark, hudBlue
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.steel);
-  // Noise
-  for(let y=0; y<TILE_SIZE; y+=2) {
-    for(let x=0; x<TILE_SIZE; x+=2) {
-      if ((x+y)%4 === 0) setPixel(tile, x, y, COLORS.steelDark);
+  // W3 Enterprise: Premium corporate concrete/glass
+  const gray1 = [160, 168, 179, 255] as const;
+  const gray2 = [100, 110, 124, 255] as const;
+  const blue = [30, 78, 163, 255] as const;
+  const blueLight = [120, 180, 255, 255] as const;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, gray1);
+  
+  // Texture shading
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if ((x + y * 11) % 5 === 0) setPixel(tile, x, y, gray2);
     }
   }
-  // Blue trim
-  fillRect(tile, 0, 0, 16, 2, COLORS.hudBlue);
-  fillRect(tile, 0, 2, 16, 1, COLORS.hudBlueLight);
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+
+  // Modern Grid
+  for (let i = 0; i < TILE_SIZE; i += 8) {
+    drawLine(tile, i, 0, i, TILE_SIZE, [80, 90, 100, 255]);
+    drawLine(tile, 0, i, TILE_SIZE, i, [80, 90, 100, 255]);
+  }
+
+  // Corporate Glass Trim
+  fillRect(tile, 1, 1, TILE_SIZE - 2, 3, blue);
+  fillRect(tile, 1, 1, TILE_SIZE - 2, 1, blueLight);
+  
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW4(tile: PixelImage): void {
-  // W4 GPU: dark basalt/volcanic, NVIDIA green crystal veins
-  // Colors: inkSoft (basalt), inkDark, grassTop (green crystal), grassMid
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkSoft);
-  // Cracks/Veins
-  drawLine(tile, 2, 2, 8, 8, COLORS.grassMid);
-  drawLine(tile, 8, 8, 14, 4, COLORS.grassMid);
-  drawLine(tile, 8, 8, 6, 14, COLORS.grassMid);
-  // Crystals
-  setPixel(tile, 8, 8, COLORS.grassTop);
-  setPixel(tile, 3, 3, COLORS.grassTop);
-  setPixel(tile, 13, 5, COLORS.grassTop);
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+  // W4 GPU: Volcanic basalt + glowing energy veins
+  const basalt1 = [43, 40, 36, 255] as const;
+  const basalt2 = [20, 18, 16, 255] as const;
+  const energy = [118, 185, 0, 255] as const; // NVIDIA Green
+  const energyGlow = [180, 255, 60, 255] as const;
+  const lava = [207, 81, 81, 255] as const;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, basalt2);
+  
+  // Basalt texture
+  for (let y = 0; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if ((x ^ y) % 4 === 0) setPixel(tile, x, y, basalt1);
+    }
+  }
+
+  // Energy Veins
+  drawLine(tile, 3, 3, 12, 12, energy);
+  drawLine(tile, 12, 3, 3, 12, energy);
+  setPixel(tile, 8, 8, energyGlow);
+
+  // Lava base heat
+  fillRect(tile, 0, TILE_SIZE - 2, TILE_SIZE, 1, lava);
+  for (let x = 0; x < TILE_SIZE; x += 2) setPixel(tile, x, TILE_SIZE - 3, lava);
+  
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW5(tile: PixelImage): void {
-  // W5 Benchmark: deep purple base, neon pink/magenta circuit traces
-  // Colors: We don't have deep purple/magenta in CONSTANTS.
-  // Using mapped values from provided W5 Palette in prompt:
-  // #0D0221 (sky), #FF2D55 (accent).
-  // I will use 'glitch' (#ff6e7a - close to pink) and 'hudBlue' mixed for "purple" feel?
-  // Or just use inkDeep/inkSoft and Glitch.
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDeep); // Deep base
-  // Circuit traces
-  drawLine(tile, 2, 8, 13, 8, COLORS.glitch);
-  drawLine(tile, 8, 2, 8, 13, COLORS.glitch);
-  drawDisk(tile, 8, 8, 2, COLORS.chipBlue); // Node
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+  // W5 Benchmark: Deep red digital circuit board
+  const core = [29, 29, 29, 255] as const;
+  const trace = [255, 82, 82, 255] as const;
+  const traceDim = [120, 40, 40, 255] as const;
+  const node = [242, 253, 253, 255] as const;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, core);
+  
+  // Logic Grids
+  for (let i = 0; i < TILE_SIZE; i += 4) {
+    drawLine(tile, i, 0, i, TILE_SIZE, [43, 43, 48, 255]);
+    drawLine(tile, 0, i, TILE_SIZE, i, [43, 43, 48, 255]);
+  }
+
+  // Circuit Traces
+  drawLine(tile, 8, 2, 8, 14, traceDim);
+  drawLine(tile, 2, 8, 14, 8, traceDim);
+  drawLine(tile, 8, 4, 8, 12, trace);
+  drawLine(tile, 4, 8, 12, 8, trace);
+  
+  // Digital Node
+  fillRect(tile, 7, 7, 3, 3, trace);
+  setPixel(tile, 8, 8, node);
+
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTile(tile: PixelImage): void {
@@ -262,16 +353,32 @@ function drawGroundTile(tile: PixelImage): void {
 }
 
 function drawBrickTile(tile: PixelImage): void {
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.groundWarm);
+  // Premium Brick: Warm clay with deep shadow mortar
+  const brickMid = COLORS.groundWarm;
+  const brickDark = COLORS.groundShadow;
+  const brickLight = [255, 180, 80, 255] as const;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, brickMid);
+  
+  // Mortar lines
   for (let y = 0; y < TILE_SIZE; y += 4) {
-    fillRect(tile, 0, y, TILE_SIZE, 1, COLORS.groundShadow);
+    fillRect(tile, 0, y, TILE_SIZE, 1, brickDark);
   }
   for (let x = 0; x < TILE_SIZE; x += 8) {
-    fillRect(tile, x, 4, 1, 4, COLORS.groundShadow);
-    fillRect(tile, x + 4, 8, 1, 4, COLORS.groundShadow);
-    fillRect(tile, x, 12, 1, 4, COLORS.groundShadow);
+    fillRect(tile, x, 1, 1, 3, brickDark);
+    fillRect(tile, (x + 4) % TILE_SIZE, 5, 1, 3, brickDark);
   }
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, COLORS.inkDark);
+
+  // Highlights
+  for (let x = 0; x < TILE_SIZE; x++) {
+    if ((x % 8) !== 0) {
+      setPixel(tile, x, 1, brickLight);
+      setPixel(tile, x, 5, brickLight);
+    }
+  }
+
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawPlatformTile(tile: PixelImage): void {
@@ -288,14 +395,23 @@ function drawPlatformTile(tile: PixelImage): void {
 }
 
 function drawOneWayTile(tile: PixelImage): void {
+  // Premium One-Way: Sleek hover-beam platform
   fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
-  fillRect(tile, 1, 6, 14, 3, COLORS.groundWarm);
-  fillRect(tile, 1, 9, 14, 2, COLORS.groundShadow);
-  fillRect(tile, 6, 7, 4, 1, COLORS.sand);
-  for (let x = 2; x < TILE_SIZE - 2; x += 4) {
-    fillRect(tile, x, 6, 1, 5, COLORS.inkSoft);
+  const beam = [255, 230, 0, 180] as const;
+  const base = [40, 40, 60, 255] as const;
+  const ink = COLORS.inkDark;
+
+  // Metal Base
+  fillRect(tile, 1, 6, 14, 4, base);
+  fillRect(tile, 1, 6, 14, 1, COLORS.steel);
+  
+  // Glowing Hover Beam
+  for (let x = 2; x < 14; x += 2) {
+    setPixel(tile, x, 7, beam);
+    setPixel(tile, x + 1, 8, [beam[0], beam[1], beam[2], 100]);
   }
-  strokeRect(tile, 1, 6, 14, 5, COLORS.inkDark);
+
+  strokeRect(tile, 1, 6, 14, 4, ink);
 }
 
 function drawSpikeTile(tile: PixelImage): void {
@@ -316,27 +432,51 @@ function drawSpikeTile(tile: PixelImage): void {
 }
 
 function drawCheckpointTile(tile: PixelImage): void {
+  // Premium Checkpoint: High-fidelity mechanical scanner
   fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
-  fillRect(tile, 7, 2, 2, 12, COLORS.steel);
-  fillRect(tile, 9, 4, 5, 3, COLORS.checkpointBlue);
-  fillRect(tile, 9, 7, 4, 2, COLORS.checkpointGold);
-  fillRect(tile, 4, 13, 8, 2, COLORS.groundShadow);
-  strokeRect(tile, 4, 13, 8, 2, COLORS.inkDark);
-  strokeRect(tile, 9, 4, 5, 5, COLORS.inkDark);
-  for (let y = 3; y < 14; y += 2) {
-    setPixel(tile, 7, y, COLORS.inkDark);
-    setPixel(tile, 8, y, COLORS.inkDark);
-  }
+  const base = COLORS.steelDark;
+  const bar = COLORS.steel;
+  const energy = COLORS.checkpointGold;
+  const scanned = COLORS.checkpointBlue;
+  const ink = COLORS.inkDark;
+
+  // Base
+  fillRect(tile, 3, 13, 10, 3, base);
+  fillRect(tile, 4, 12, 8, 1, bar);
+  
+  // Vertical Pole
+  fillRect(tile, 7, 2, 2, 10, bar);
+  for (let y = 2; y < 12; y += 2) setPixel(tile, 7, y, ink);
+
+  // Scanner Head
+  fillRect(tile, 9, 4, 5, 6, base);
+  fillRect(tile, 10, 5, 3, 2, scanned);
+  fillRect(tile, 10, 7, 3, 2, energy);
+  
+  outlineOpaquePixels(tile, ink, 1);
 }
 
 function drawGoalTile(tile: PixelImage): void {
+  // Premium Goal: AI Edition Flagpiece
   fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, [0, 0, 0, 0]);
-  fillRect(tile, 2, 12, 12, 3, COLORS.groundShadow);
-  strokeRect(tile, 2, 12, 12, 3, COLORS.inkDark);
-  fillRect(tile, 5, 3, 6, 9, COLORS.checkpointRed);
-  fillRect(tile, 6, 4, 4, 7, COLORS.checkpointGold);
-  strokeRect(tile, 5, 3, 6, 9, COLORS.inkDark);
-  drawDisk(tile, 8, 8, 2, COLORS.sand);
+  const gold = COLORS.checkpointGold;
+  const shadow = COLORS.groundShadow;
+  const ink = COLORS.inkDark;
+
+  // Heavy Base
+  fillRect(tile, 2, 12, 12, 4, shadow);
+  fillRect(tile, 2, 12, 12, 1, COLORS.steel);
+  
+  // Flagpole
+  fillRect(tile, 7, 2, 2, 10, COLORS.steel);
+  
+  // Premium Banner
+  fillRect(tile, 2, 3, 6, 7, [200, 40, 40, 255]);
+  fillRect(tile, 3, 4, 4, 5, gold);
+  // Banner trim
+  fillRect(tile, 2, 3, 6, 1, [150, 30, 30, 255]);
+  
+  outlineOpaquePixels(tile, ink, 1);
 }
 
 function makeTileGround(): void {
@@ -409,83 +549,47 @@ function makeEnemyShell(): void {
   writeSprite(output, enemy);
 }
 
-function makeEnemyShellRetracted(): void {
-  const enemy = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(enemy, 3, 2, 10, 11, COLORS.shellShell);
-  fillRect(enemy, 3, 12, 10, 2, COLORS.shellRust);
-  fillRect(enemy, 4, 4, 8, 3, COLORS.shellGlow);
-  outlineOpaquePixels(enemy, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/enemy_shell_retracted.png');
-  writeSprite(output, enemy);
-}
-
-function makeEnemyFlying(): void {
-  const enemy = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(enemy, 0, 5, 16, 4, COLORS.inkDark);
-  fillRect(enemy, 1, 3, 14, 2, COLORS.ghostTeal);
-  fillRect(enemy, 2, 2, 12, 2, COLORS.chipGrid);
-  drawDisk(enemy, 8, 4, 4, COLORS.cloudLight);
-  fillRect(enemy, 2, 9, 12, 1, COLORS.chipBlue);
-  for (let x = 2; x < 14; x += 2) {
-    if (x % 4 === 0) {
-      drawLine(enemy, x, 12, x + 1, 10, COLORS.ghostTeal);
-    }
-  }
-  outlineOpaquePixels(enemy, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/enemy_flying.png');
-  writeSprite(output, enemy);
-}
-
-function makeEnemySpitter(): void {
-  const enemy = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(enemy, 2, 3, 12, 9, COLORS.inkDark);
-  fillRect(enemy, 3, 4, 10, 2, COLORS.glitch);
-  fillRect(enemy, 3, 7, 10, 3, COLORS.chipBlue);
-  fillRect(enemy, 3, 10, 2, 2, COLORS.shellShell);
-  fillRect(enemy, 11, 10, 2, 2, COLORS.shellShell);
-  fillRect(enemy, 7, 9, 2, 3, COLORS.shellGlow);
-  outlineOpaquePixels(enemy, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/enemy_spitter.png');
-  writeSprite(output, enemy);
-}
-
 function makeProjectile(): void {
-  const proj = createImage(8, 8, [0, 0, 0, 0]);
-  fillRect(proj, 1, 2, 6, 4, COLORS.groundShadow);
-  fillRect(proj, 2, 3, 4, 2, COLORS.groundWarm);
-  fillRect(proj, 2, 4, 4, 1, COLORS.groundMid);
-  setPixel(proj, 0, 4, COLORS.groundMid);
-  setPixel(proj, 7, 4, COLORS.groundMid);
-  outlineOpaquePixels(proj, COLORS.outline);
+  const proj = createImage(16, 16, [0, 0, 0, 0]);
+  const core = parseHex('#D0644A');
+  const light = parseHex('#F1C55F');
+  
+  drawDisk(proj, 8, 8, 4, core);
+  drawDisk(proj, 7, 7, 2, light);
+  
+  outlineOpaquePixels(proj, COLORS.inkDark);
   const output = path.join(repoRoot, 'public/assets/sprites/projectile.png');
-  writeSprite(output, proj);
+  writePng(output, proj);
 }
 
 function makeFlag(): void {
+  const greenLight = parseHex('#46BA4C');
   const greenDark = parseHex('#5CB85C');
-  const greenLight = COLORS.grassTop;
-  const poleColor = COLORS.steel;
+  const poleColor = parseHex('#9FA8B3');
   
   const flag = createImage(16, 16, [0, 0, 0, 0]);
   
   // Pole
-  fillRect(flag, 2, 1, 1, 14, poleColor);
+  fillRect(flag, 1, 0, 1, 16, poleColor);
+  fillRect(flag, 2, 0, 1, 16, parseHex('#66707C')); // Pole shadow
   
   // Pennant
-  for(let y=0; y<7; y++) {
-    const w = 8 - y;
+  for(let y=0; y<8; y++) {
+    const w = 10 - y;
     if (w > 0) {
-      fillRect(flag, 3, 2+y, w, 1, greenLight);
+      fillRect(flag, 3, 1+y, w, 1, greenDark);
+      setPixel(flag, 3, 1+y, greenLight); // Highlight at pole attachment
     }
   }
   
-  // Checkmark
-  setPixel(flag, 4, 4, COLORS.inkDark);
-  setPixel(flag, 5, 5, COLORS.inkDark);
-  setPixel(flag, 6, 4, COLORS.inkDark);
-  setPixel(flag, 7, 3, COLORS.inkDark);
+  // Checkmark symbol
+  const ink = COLORS.inkDark;
+  setPixel(flag, 5, 4, ink);
+  setPixel(flag, 6, 5, ink);
+  setPixel(flag, 7, 4, ink);
+  setPixel(flag, 8, 3, ink);
   
-  outlineOpaquePixels(flag, COLORS.inkDark);
+  outlineOpaquePixels(flag, ink);
   writePng(path.join(repoRoot, 'public/assets/sprites/flag.png'), flag);
 }
 
@@ -546,94 +650,109 @@ function makeMovingPlatform(): void {
 }
 
 function makePickupEval(): void {
-  // Task 1: Eval (star replacement)
-  const accentCyan = parseHex('#50E6FF');
+  // Task 1: Eval Replacement (16x16)
   const evalIcon = createImage(16, 16, [0, 0, 0, 0]);
-  
-  fillRect(evalIcon, 6, 6, 5, 5, COLORS.cloudLight);
-  fillRect(evalIcon, 7, 2, 3, 4, COLORS.cloudLight);
-  fillRect(evalIcon, 2, 6, 4, 3, COLORS.cloudLight);
-  fillRect(evalIcon, 11, 6, 4, 3, COLORS.cloudLight);
-  fillRect(evalIcon, 4, 10, 3, 4, COLORS.cloudLight);
-  fillRect(evalIcon, 10, 10, 3, 4, COLORS.cloudLight);
-  
-  setPixel(evalIcon, 7, 8, accentCyan);
-  setPixel(evalIcon, 8, 9, accentCyan);
-  setPixel(evalIcon, 9, 8, accentCyan);
-  
-  outlineOpaquePixels(evalIcon, COLORS.inkDark);
+  const white = parseHex('#F2FDFD');
+  const cyan = parseHex('#50E6FF');
+  const ink = COLORS.inkDark;
+
+  // Star badge shape (5-point-ish)
+  // Center
+  fillRect(evalIcon, 6, 6, 4, 4, white);
+  // Points
+  fillRect(evalIcon, 7, 2, 2, 4, white); // Top
+  fillRect(evalIcon, 3, 10, 3, 3, white); // Bottom Left
+  fillRect(evalIcon, 10, 10, 3, 3, white); // Bottom Right
+  fillRect(evalIcon, 2, 5, 4, 3, white); // Mid Left
+  fillRect(evalIcon, 10, 5, 4, 3, white); // Mid Right
+
+  // Cyan accents (shading)
+  setPixel(evalIcon, 7, 3, cyan);
+  setPixel(evalIcon, 4, 11, cyan);
+  setPixel(evalIcon, 11, 11, cyan);
+  setPixel(evalIcon, 3, 6, cyan);
+  setPixel(evalIcon, 12, 6, cyan);
+
+  // Checkmark in center (2x2)
+  setPixel(evalIcon, 7, 8, cyan);
+  setPixel(evalIcon, 8, 9, cyan);
+  setPixel(evalIcon, 9, 8, cyan);
+  setPixel(evalIcon, 10, 7, cyan);
+
+  outlineOpaquePixels(evalIcon, ink);
   writePng(path.join(repoRoot, 'public/assets/sprites/pickup_eval.png'), evalIcon);
 }
 
 function makePickupGPUAllocation(): void {
+  // GPU Allocation Pickup (16x16 Chip)
   const chip = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(chip, 2, 1, 12, 12, COLORS.chipBlue);
-  fillRect(chip, 3, 2, 10, 10, COLORS.chipGrid);
-  for (let i = 3; i < 13; i += 2) {
-    fillRect(chip, i, 6, 1, 2, COLORS.inkDark);
-    if ((i % 4) === 3) {
-      fillRect(chip, i, 9, 1, 1, COLORS.hudBlueLight);
-    }
+  const blue = parseHex('#1B4D95');
+  const green = parseHex('#76B900');
+  const gold = parseHex('#DED256');
+  
+  fillRect(chip, 2, 2, 12, 12, blue);
+  strokeRect(chip, 2, 2, 12, 12, parseHex('#5FA2F2'));
+  // Gold processing center
+  fillRect(chip, 6, 6, 4, 4, gold);
+  // Pins
+  for(let x=3; x<13; x+=2) {
+    setPixel(chip, x, 1, green);
+    setPixel(chip, x, 14, green);
+    setPixel(chip, 1, x, green);
+    setPixel(chip, 14, x, green);
   }
-  fillRect(chip, 6, 3, 4, 4, COLORS.sand);
-  fillRect(chip, 4, 11, 8, 2, COLORS.coinCore);
-  outlineOpaquePixels(chip, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_gpu_allocation.png');
-  writeSprite(output, chip);
+  
+  outlineOpaquePixels(chip, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_gpu_allocation.png'), chip);
 }
 
 function makePickupCopilot(): void {
-  const icon = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(icon, 2, 2, 12, 6, COLORS.skyMid);
-  fillRect(icon, 3, 8, 10, 4, COLORS.groundWarm);
-  fillRect(icon, 4, 4, 8, 3, COLORS.inkDark);
-  for (let y = 7; y < 12; y += 1) {
-    setPixel(icon, 2, y, COLORS.inkDark);
-    setPixel(icon, 13, y, COLORS.inkDark);
-  }
-  outlineOpaquePixels(icon, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_copilot_mode.png');
-  writeSprite(output, icon);
+  // Copilot assistant icon (16x16 Bot)
+  const bot = createImage(16, 16, [0, 0, 0, 0]);
+  const gray = parseHex('#9FA8B3');
+  const cyan = parseHex('#50E6FF');
+  
+  fillRect(bot, 4, 3, 8, 7, gray); // Head
+  fillRect(bot, 5, 10, 6, 4, parseHex('#66707C')); // Neck/Body
+  // Eyes
+  setPixel(bot, 6, 5, cyan);
+  setPixel(bot, 9, 5, cyan);
+  // Antenna
+  drawLine(bot, 8, 0, 8, 2, parseHex('#DC7C1D'));
+  
+  outlineOpaquePixels(bot, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_copilot_mode.png'), bot);
 }
 
 function makePickupSemanticKernel(): void {
   const icon = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(icon, 1, 1, 14, 3, COLORS.inkDark);
-  fillRect(icon, 2, 4, 12, 10, COLORS.hudBlue);
-  fillRect(icon, 3, 5, 10, 8, COLORS.hudBlueLight);
-  fillRect(icon, 4, 6, 8, 2, COLORS.sand);
-  for (let y = 4; y < 12; y += 2) {
-    fillRect(icon, 6, y, 4, 1, COLORS.inkDark);
-  }
+  fillRect(icon, 2, 2, 12, 12, parseHex('#1E4EA3'));
+  drawDisk(icon, 8, 8, 4, parseHex('#50E6FF'));
   outlineOpaquePixels(icon, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_semantic_kernel.png');
-  writeSprite(output, icon);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_semantic_kernel.png'), icon);
 }
 
+
 function makePickupDeployToProd(): void {
-  const icon = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(icon, 4, 1, 8, 6, COLORS.mushroomCap);
-  fillRect(icon, 5, 7, 6, 8, COLORS.mushroomStem);
-  fillRect(icon, 2, 4, 11, 2, COLORS.shellShell);
-  fillRect(icon, 3, 8, 4, 1, COLORS.inkDark);
-  fillRect(icon, 9, 8, 4, 1, COLORS.inkDark);
-  fillRect(icon, 6, 11, 4, 3, COLORS.groundMid);
-  outlineOpaquePixels(icon, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_deploy_to_prod.png');
-  writeSprite(output, icon);
+  // Deploy Flag / Box (Green package)
+  const pkg = createImage(16, 16, [0, 0, 0, 0]);
+  const green = parseHex('#46BA4C');
+  fillRect(pkg, 2, 4, 12, 10, green);
+  strokeRect(pkg, 2, 4, 12, 10, parseHex('#0A582C'));
+  fillRect(pkg, 6, 2, 4, 4, parseHex('#9FA8B3')); // Shipping label
+  outlineOpaquePixels(pkg, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_deploy_to_prod.png'), pkg);
 }
 
 function makePickupWorksOnMyMachine(): void {
-  const icon = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(icon, 4, 1, 8, 6, COLORS.mushroomOff);
-  fillRect(icon, 5, 7, 6, 8, COLORS.inkSoft);
-  fillRect(icon, 2, 4, 11, 2, COLORS.inkDark);
-  fillRect(icon, 3, 8, 4, 1, COLORS.mushroomCap);
-  fillRect(icon, 9, 8, 4, 1, COLORS.mushroomCap);
-  fillRect(icon, 6, 11, 4, 3, COLORS.groundShadow);
-  outlineOpaquePixels(icon, COLORS.outline);
-  const output = path.join(repoRoot, 'public/assets/sprites/pickup_works_on_my_machine.png');
-  writeSprite(output, icon);
+  // Poison Mushroom variant (Red/Purple glitchy orb)
+  const orb = createImage(16, 16, [0, 0, 0, 0]);
+  drawDisk(orb, 8, 8, 6, parseHex('#9D2C2C'));
+  // Glitch stripes
+  setPixel(orb, 4, 6, parseHex('#FF5252'));
+  setPixel(orb, 11, 10, parseHex('#FF5252'));
+  outlineOpaquePixels(orb, COLORS.inkDark);
+  writePng(path.join(repoRoot, 'public/assets/sprites/pickup_works_on_my_machine.png'), orb);
 }
 
 function makePickupToken(): void {
@@ -677,49 +796,77 @@ function makeTileset(): void {
 }
 
 function makeCoin(): void {
-  // Task 1: Token
+  // Task 1: Token (was "coin") - Vertical oval 10x8
   const token = createImage(16, 16, [0, 0, 0, 0]);
-  for(let y=2; y<14; y++) {
-    for(let x=2; x<14; x++) {
-      if ((x===2 && y===2) || (x===13 && y===2) || (x===2 && y===13) || (x===13 && y===13)) continue;
-      setPixel(token, x, y, COLORS.coinCore);
-    }
-  }
-  drawLine(token, 13, 4, 13, 11, COLORS.coinEdge);
-  drawLine(token, 4, 13, 11, 13, COLORS.coinEdge);
-  setPixel(token, 12, 12, COLORS.coinEdge);
-  setPixel(token, 3, 3, COLORS.cloudLight);
-  const tx = 7, ty = 6;
-  fillRect(token, tx, ty, 3, 1, COLORS.inkDark);
-  fillRect(token, tx+1, ty+1, 1, 3, COLORS.inkDark);
-  outlineOpaquePixels(token, COLORS.inkDark);
+  const gold = parseHex('#DED256');
+  const shadow = parseHex('#DC7C1D');
+  const highlight = parseHex('#F1DD77');
+  const tokenInk = COLORS.inkDark;
+
+  // Main oval shape (8x10)
+  fillRect(token, 4, 3, 8, 10, gold);
+  // Corners rounding for oval
+  setPixel(token, 4, 3, [0,0,0,0]);
+  setPixel(token, 11, 3, [0,0,0,0]);
+  setPixel(token, 4, 12, [0,0,0,0]);
+  setPixel(token, 11, 12, [0,0,0,0]);
+
+  // Shading (shadow on right and bottom)
+  drawLine(token, 11, 4, 11, 11, shadow);
+  drawLine(token, 5, 12, 10, 12, shadow);
+  
+  // Central slot line (2px wide)
+  fillRect(token, 7, 5, 2, 6, shadow);
+  
+  // Highlight (upper-left)
+  setPixel(token, 5, 4, highlight);
+  setPixel(token, 6, 4, highlight);
+  setPixel(token, 5, 5, highlight);
+
+  outlineOpaquePixels(token, tokenInk);
   writePng(path.join(repoRoot, 'public/assets/sprites/coin.png'), token);
 }
 
 function makeQuestionBlock(): void {
-  // Task 1: Question Block
+  // Task 1: Question Block - Chunky outline, bold white "?"
   const block = createImage(16, 16, [0, 0, 0, 0]);
-  fillRect(block, 0, 0, 16, 16, COLORS.inkDark);
-  fillRect(block, 1, 1, 14, 14, COLORS.coinCore);
-  for(let x=2; x<14; x+=2) {
-    setPixel(block, x, 1, COLORS.coinEdge);
-    setPixel(block, x, 14, COLORS.coinEdge);
-  }
-  for(let y=2; y<14; y+=2) {
-    setPixel(block, 1, y, COLORS.coinEdge);
-    setPixel(block, 14, y, COLORS.coinEdge);
-  }
-  drawLine(block, 12, 3, 12, 12, COLORS.coinEdge);
-  drawLine(block, 3, 12, 12, 12, COLORS.coinEdge);
-  const qColor = COLORS.inkDark;
-  const ox = 6, oy = 4;
-  fillRect(block, ox+1, oy, 2, 1, qColor);
-  setPixel(block, ox, oy+1, qColor);
-  setPixel(block, ox+3, oy+1, qColor);
-  setPixel(block, ox+3, oy+2, qColor);
-  setPixel(block, ox+2, oy+3, qColor);
-  setPixel(block, ox+1, oy+4, qColor);
-  setPixel(block, ox+1, oy+6, qColor);
+  const qInk = COLORS.inkDark;
+  const goldFill = parseHex('#DED256');
+  const innerBorder = parseHex('#F1DD77');
+  const darkGold = parseHex('#DC7C1D');
+  const white = parseHex('#F2FDFD');
+
+  // 2px thick dark outline (manual stroke for control)
+  fillRect(block, 0, 0, 16, 16, qInk);
+  fillRect(block, 2, 2, 12, 12, goldFill);
+
+  // Inner highlight border (1px)
+  strokeRect(block, 2, 2, 12, 12, innerBorder);
+
+  // Darker gold on bottom half for depth
+  fillRect(block, 3, 8, 10, 5, darkGold);
+
+  // Bold white "?" centered
+  // Shadow for "?"
+  const qShadow = qInk;
+  const ox = 5, oy = 4;
+  // Shadow pixels
+  setPixel(block, ox+2, oy+1, qShadow);
+  setPixel(block, ox+4, oy+2, qShadow);
+  setPixel(block, ox+4, oy+3, qShadow);
+  setPixel(block, ox+3, oy+4, qShadow);
+  setPixel(block, ox+2, oy+5, qShadow);
+  setPixel(block, ox+2, oy+7, qShadow);
+
+  // White "?" pixels
+  fillRect(block, ox+1, oy, 3, 1, white); // top
+  setPixel(block, ox, oy+1, white);
+  setPixel(block, ox+3, oy+1, white);
+  setPixel(block, ox+3, oy+2, white);
+  setPixel(block, ox+2, oy+3, white);
+  setPixel(block, ox+1, oy+4, white);
+  setPixel(block, ox+1, oy+6, white); // dot
+
   writePng(path.join(repoRoot, 'public/assets/sprites/question_block.png'), block);
 }
 
@@ -746,26 +893,33 @@ function makeQuestionBlockUsed(): void {
 
 function drawCloud(baseWidth: number, baseHeight: number, variant: 1 | 2): PixelImage {
   const cloud = createImage(baseWidth, baseHeight, [0, 0, 0, 0]);
-  const puffs = variant === 1
-    ? [[6, 9, 5], [12, 7, 5], [18, 9, 5]]
-    : [[7, 10, 5], [13, 7, 7], [20, 7, 6], [26, 10, 5]];
+  const cx = baseWidth / 2;
+  const cy = baseHeight / 2;
+  const baseColor = COLORS.cloudLight;
+  const shadeColor = COLORS.cloudShade;
 
-  for (const [cx, cy, radius] of puffs) {
-    drawDisk(cloud, cx, cy, radius, COLORS.cloudLight);
-    drawDisk(cloud, cx + 1, cy + 1, Math.max(2, radius - 1), COLORS.cloudShade);
+  if (variant === 1) {
+    drawDisk(cloud, cx, cy, baseHeight * 0.4, baseColor);
+    drawDisk(cloud, cx - baseWidth * 0.2, cy + baseHeight * 0.1, baseHeight * 0.3, baseColor);
+    drawDisk(cloud, cx + baseWidth * 0.2, cy + baseHeight * 0.05, baseHeight * 0.25, baseColor);
+  } else {
+    drawDisk(cloud, cx, cy, baseHeight * 0.4, baseColor);
+    drawDisk(cloud, cx + baseWidth * 0.25, cy, baseHeight * 0.3, baseColor);
+    drawDisk(cloud, cx - baseWidth * 0.2, cy + baseHeight * 0.05, baseHeight * 0.35, baseColor);
+    drawDisk(cloud, cx + baseWidth * 0.1, cy - baseHeight * 0.15, baseHeight * 0.25, baseColor);
   }
 
-  for (let y = 0; y < cloud.height; y += 1) {
-    for (let x = 0; x < cloud.width; x += 1) {
-      const pixel = getPixel(cloud, x, y);
-      if (pixel[3] === 0) {
-        continue;
-      }
-      const topBand = y < cloud.height / 2;
-      if (topBand) {
-        setPixel(cloud, x, y, COLORS.cloudLight);
-      } else if ((x + y) % 3 === 0) {
-        setPixel(cloud, x, y, COLORS.cloudShade);
+  // Voluminous Shading (Dithering)
+  for (let y = 0; y < cloud.height; y++) {
+    for (let x = 0; x < cloud.width; x++) {
+      const px = getPixel(cloud, x, y);
+      if (px[3] === 0) continue;
+      
+      // Shade bottom-right edges
+      const isBottom = y > cy + baseHeight * 0.1;
+      const isRight = x > cx + baseWidth * 0.1;
+      if ((isBottom || isRight) && (x + y) % 2 === 0) {
+        setPixel(cloud, x, y, shadeColor);
       }
     }
   }
@@ -860,22 +1014,44 @@ function drawWordLayer(image: PixelImage, text: string, x: number, y: number, sc
   }
 }
 
-function drawWordHighlights(image: PixelImage, text: string, x: number, y: number, scale: number, highlightColor: Rgba = COLORS.sand): void {
-  const highlight = highlightColor;
-  const highlightHeight = Math.max(1, Math.floor(scale * 0.5));
+function drawWordBevel(image: PixelImage, text: string, x: number, y: number, scale: number): void {
+  // Bevel adds a light edge on top-left and dark on bottom-right inside the font
   let cursorX = x;
   for (const rawChar of text) {
     const char = rawChar.toUpperCase();
     const glyph = GLYPHS[char] ?? GLYPHS[' '];
     for (let gy = 0; gy < glyph.length; gy += 1) {
-      if (gy > 1) {
-        continue;
-      }
       const row = glyph[gy] ?? '';
       for (let gx = 0; gx < row.length; gx += 1) {
-        if (row[gx] !== '1') {
-          continue;
+        if (row[gx] !== '1') continue;
+        const screenX = cursorX + gx * scale;
+        const screenY = y + gy * scale;
+        // Top-left light
+        if (gx === 0 || gy === 0 || (glyph[gy-1] && glyph[gy-1][gx] !== '1') || (row[gx-1] !== '1')) {
+           fillRect(image, screenX, screenY, scale, scale, [255, 255, 255, 80]);
         }
+        // Bottom-right dark
+        if (gx === row.length - 1 || gy === glyph.length - 1 || (glyph[gy+1] && glyph[gy+1][gx] !== '1') || (row[gx+1] !== '1')) {
+           fillRect(image, screenX, screenY, scale, scale, [0, 0, 0, 60]);
+        }
+      }
+    }
+    cursorX += 5 * scale + scale;
+  }
+}
+
+function drawWordHighlights(image: PixelImage, text: string, x: number, y: number, scale: number, highlightColor: Rgba = COLORS.sand): void {
+  const highlight = highlightColor;
+  const highlightHeight = Math.max(1, Math.floor(scale * 0.4));
+  let cursorX = x;
+  for (const rawChar of text) {
+    const char = rawChar.toUpperCase();
+    const glyph = GLYPHS[char] ?? GLYPHS[' '];
+    for (let gy = 0; gy < glyph.length; gy += 1) {
+      if (gy > 1) continue;
+      const row = glyph[gy] ?? '';
+      for (let gx = 0; gx < row.length; gx += 1) {
+        if (row[gx] !== '1') continue;
         fillRect(image, cursorX + gx * scale, y + gy * scale, scale, highlightHeight, highlight);
       }
     }
@@ -903,16 +1079,16 @@ function drawWordGradient(image: PixelImage, text: string, x: number, y: number,
 }
 
 function makeTitleLogo(): void {
-  const logo = createImage(512, 180, [0, 0, 0, 0]);
+  const logo = createImage(512, 160, [0, 0, 0, 0]);
 
-  drawDisk(logo, 256, 36, 82, [246, 213, 139, 26]);
-  drawDisk(logo, 256, 40, 112, [246, 213, 139, 16]);
-  fillRect(logo, 0, 9, 512, 2, [16, 17, 22, 190]);
-  fillRect(logo, 0, 149, 512, 2, [16, 17, 22, 190]);
+  drawDisk(logo, 256, 36, 100, [246, 213, 139, 40]); // Larger glow
+  drawDisk(logo, 256, 40, 140, [246, 213, 139, 24]);
+  fillRect(logo, 0, 9, 512, 4, [16, 17, 22, 220]); // Thicker bars
+  fillRect(logo, 0, 147, 512, 4, [16, 17, 22, 220]);
 
-  const line1 = { text: 'SUPER', y: 10, scale: 7, colorTop: COLORS.checkpointGold, colorBot: COLORS.groundMid };
-  const line2 = { text: 'BART', y: 70, scale: 8, colorTop: COLORS.checkpointGold, colorBot: COLORS.groundMid };
-  const line3 = { text: 'AI EDITION', y: 135, scale: 3, colorTop: COLORS.chipBlue, colorBot: COLORS.hudBlue };
+  const line1 = { text: 'SUPER', y: 12, scale: 6, colorTop: [255, 230, 150, 255] as const, colorBot: [200, 140, 40, 255] as const };
+  const line2 = { text: 'BART', y: 62, scale: 9, colorTop: [255, 230, 150, 255] as const, colorBot: [200, 140, 40, 255] as const };
+  const line3 = { text: 'AI EDITION', y: 132, scale: 2, colorTop: [120, 220, 255, 255] as const, colorBot: [40, 100, 220, 255] as const };
 
   const drawLine = (line: { text: string; y: number; scale: number; colorTop: Rgba; colorBot: Rgba }): void => {
     const width = measureWordWidth(line.text, line.scale);
@@ -937,22 +1113,37 @@ function makeTitleLogo(): void {
       drawWordLayer(logo, line.text, x + dx, line.y + dy, line.scale, COLORS.inkDeep);
     }
 
+    // Bevel for 3D depth
+    drawWordBevel(logo, line.text, x, line.y, line.scale);
+
     // Gradient Text
     drawWordGradient(logo, line.text, x, line.y, line.scale, line.colorTop, line.colorBot);
     
     // Highlights
-    // For Gold: use Sand (default)
-    // For AI: use White (cloudLight)
     const highlightColor = line.text === 'AI EDITION' ? COLORS.cloudLight : COLORS.sand;
     drawWordHighlights(logo, line.text, x, line.y, line.scale, highlightColor);
     
-    // Subtle inner shadow/border
-    drawWordLayer(logo, line.text, x + 1, line.y + 1, line.scale, [12, 12, 12, 60]);
+    // Subtle inner shadow
+    drawWordLayer(logo, line.text, x + 1, line.y + 1, line.scale, [12, 12, 12, 40]);
   };
 
   drawLine(line1);
   drawLine(line2);
   drawLine(line3);
+
+  // Add extra sparkle to gold words
+  const addSparks = (lineText: string, y: number, scale: number) => {
+    if (lineText === 'AI EDITION') return;
+    const w = measureWordWidth(lineText, scale);
+    const x = Math.floor((logo.width - w) / 2);
+    for (let i = 0; i < 5; i++) {
+      const sx = x + Math.random() * w;
+      const sy = y + Math.random() * (7 * scale);
+      setPixel(logo, Math.floor(sx), Math.floor(sy), [255, 255, 255, 180]);
+    }
+  };
+  addSparks('SUPER', 12, 6);
+  addSparks('BART', 62, 9);
 
   strokeRect(logo, 0, 0, logo.width, logo.height, [29, 29, 29, 120]);
 
@@ -1025,25 +1216,47 @@ function makeMapNodes(): void {
 }
 
 function makeHills(): void {
+  // Far Hills: Dithered dark green with subtle rim
   const far = createImage(80, 44, [0, 0, 0, 0]);
-  drawDisk(far, 22, 32, 24, COLORS.hillFarDark);
-  drawDisk(far, 50, 29, 24, COLORS.hillFarDark);
-  drawDisk(far, 62, 32, 18, COLORS.hillFarDark);
-  drawDisk(far, 48, 20, 12, COLORS.hillFarLight);
-  drawDisk(far, 24, 22, 10, COLORS.hillFarLight);
-  drawDisk(far, 0, 43, 16, COLORS.hillFarDark);
-  fillRect(far, 2, 34, 18, 1, COLORS.hillFarLight);
-  fillRect(far, 45, 31, 10, 1, COLORS.hillFarLight);
+  const farDark = COLORS.hillFarDark;
+  const farLight = COLORS.hillFarLight;
+  
+  // Base shapes
+  drawDisk(far, 22, 32, 24, farDark);
+  drawDisk(far, 50, 29, 24, farDark);
+  drawDisk(far, 62, 32, 18, farDark);
+  
+  // Dithered gradient for volume
+  for (let y = 10; y < 44; y++) {
+    for (let x = 0; x < 80; x++) {
+       const px = getPixel(far, x, y);
+       if (px[3] === 0) continue;
+       if (y < 25 && (x + y) % 2 === 0) setPixel(far, x, y, farLight);
+       if (y < 20) setPixel(far, x, y, farLight);
+    }
+  }
+  
   outlineOpaquePixels(far, COLORS.outline, STYLE_OUTLINE_WORLD_PX);
 
+  // Near Hills: Lush green with highlights
   const near = createImage(88, 46, [0, 0, 0, 0]);
-  drawDisk(near, 26, 35, 24, COLORS.hillNearDark);
-  drawDisk(near, 56, 30, 28, COLORS.hillNearDark);
-  drawDisk(near, 72, 33, 16, COLORS.hillNearDark);
-  drawDisk(near, 52, 22, 14, COLORS.hillNearLight);
-  drawDisk(near, 28, 24, 10, COLORS.hillNearLight);
-  fillRect(near, 10, 32, 30, 1, COLORS.hillNearLight);
-  fillRect(near, 60, 26, 10, 1, COLORS.hillNearLight);
+  const nearDark = COLORS.hillNearDark;
+  const nearLight = COLORS.hillNearLight;
+  
+  drawDisk(near, 26, 35, 24, nearDark);
+  drawDisk(near, 56, 30, 28, nearDark);
+  drawDisk(near, 72, 33, 16, nearDark);
+  
+  // Highlighting
+  for (let y = 10; y < 46; y++) {
+    for (let x = 0; x < 88; x++) {
+       const px = getPixel(near, x, y);
+       if (px[3] === 0) continue;
+       if (y < 28 && (x + y) % 2 === 0) setPixel(near, x, y, nearLight);
+       if (y < 22) setPixel(near, x, y, nearLight);
+    }
+  }
+  
   outlineOpaquePixels(near, COLORS.outline, STYLE_OUTLINE_WORLD_PX);
 
   const outFar = path.join(repoRoot, 'public/assets/sprites/hill_far.png');
@@ -1144,9 +1357,57 @@ function makeDustPuff(): void {
       }
     }
   }
+  outlineOpaquePixels(puff, COLORS.outline);
   const output = path.join(repoRoot, 'public/assets/sprites/dust_puff.png');
   writePng(output, puff);
   console.log(`Wrote ${path.relative(repoRoot, output)}`);
+}
+
+function makeSpark(): void {
+  const spark = createImage(8, 8, [0, 0, 0, 0]);
+  fillRect(spark, 3, 1, 2, 6, [255, 250, 180, 255]);
+  fillRect(spark, 1, 3, 6, 2, [255, 250, 180, 255]);
+  setPixel(spark, 3, 3, [255, 255, 255, 255]);
+  setPixel(spark, 4, 3, [255, 255, 255, 255]);
+  setPixel(spark, 3, 4, [255, 255, 255, 255]);
+  setPixel(spark, 4, 4, [255, 255, 255, 255]);
+  outlineOpaquePixels(spark, COLORS.outline);
+  const out = path.join(repoRoot, 'public/assets/sprites/particle_spark.png');
+  writePng(out, spark);
+  console.log(`Wrote ${path.relative(repoRoot, out)}`);
+}
+
+function makeChainLink(): void {
+  const img = createImage(8, 8, [0, 0, 0, 0]);
+  fillRect(img, 2, 1, 4, 6, [160, 165, 180, 255]);
+  fillRect(img, 3, 2, 2, 4, [0, 0, 0, 0]); // hole
+  setPixel(img, 2, 1, COLORS.outline);
+  setPixel(img, 5, 1, COLORS.outline);
+  setPixel(img, 2, 6, COLORS.outline);
+  setPixel(img, 5, 6, COLORS.outline);
+  outlineOpaquePixels(img, COLORS.outline);
+  const out = path.join(repoRoot, 'public/assets/sprites/particle_chain.png');
+  writePng(out, img);
+  console.log(`Wrote ${path.relative(repoRoot, out)}`);
+}
+
+function makeBossHealthBar(): void {
+  const w = 128;
+  const h = 8;
+  const bg = createImage(w, h, [0, 0, 0, 0]);
+  fillRect(bg, 0, 0, w, h, COLORS.outline);
+  fillRect(bg, 1, 1, w - 2, h - 2, [60, 20, 20, 255]);
+  const outBg = path.join(repoRoot, 'public/assets/sprites/boss_health_bg.png');
+  writePng(outBg, bg);
+  console.log(`Wrote ${path.relative(repoRoot, outBg)}`);
+
+  const fill = createImage(w, h, [0, 0, 0, 0]);
+  fillRect(fill, 1, 1, w - 2, h - 2, [220, 40, 40, 255]);
+  fillRect(fill, 1, 1, w - 2, 2, [255, 100, 100, 255]);
+  outlineOpaquePixels(fill, COLORS.outline);
+  const outFill = path.join(repoRoot, 'public/assets/sprites/boss_health_fill.png');
+  writePng(outFill, fill);
+  console.log(`Wrote ${path.relative(repoRoot, outFill)}`);
 }
 
 function selectedPassFromArg(): GeneratorPass {
@@ -1179,11 +1440,6 @@ function runGeneratorPass(pass: GeneratorPass): void {
       makePickupSemanticKernel,
       makePickupDeployToProd,
       makePickupWorksOnMyMachine,
-      makeEnemyWalker,
-      makeEnemyShell,
-      makeEnemyShellRetracted,
-      makeEnemyFlying,
-      makeEnemySpitter,
       makeProjectile,
       makeFlag,
       makeCheckpointSprite,
@@ -1197,6 +1453,9 @@ function runGeneratorPass(pass: GeneratorPass): void {
       makeTitleLogo,
       makeBitmapFont,
       makeDustPuff,
+      makeSpark,
+      makeChainLink,
+      makeBossHealthBar,
     ];
     for (const task of tasks) {
       task();
@@ -1217,11 +1476,6 @@ function runGeneratorPass(pass: GeneratorPass): void {
       makePickupSemanticKernel,
       makePickupDeployToProd,
       makePickupWorksOnMyMachine,
-      makeEnemyWalker,
-      makeEnemyShell,
-      makeEnemyShellRetracted,
-      makeEnemyFlying,
-      makeEnemySpitter,
       makeProjectile,
       makeFlag,
       makeCheckpointSprite,

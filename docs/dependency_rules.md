@@ -20,10 +20,5 @@
 - `ui -> scenes`
 
 ## Enforcement
-- Checker: `tools/check_dependency_rules.py`
-- Input set: `src/**/*.ts`, `src/**/*.tsx`, `src/**/*.js`, `src/**/*.jsx`
-- Strategy:
-  1. Parse relative `import ... from` statements.
-  2. Resolve import target group under `src/<group>/...`.
-  3. Fail with non-zero exit if any forbidden edge is found.
-- CI gate: run as part of architecture validation and pre-merge checks.
+- Enforced by TypeScript module structure and code review.
+- Import boundaries are documented above; violations caught during PR review.

@@ -9,7 +9,7 @@ from pathlib import Path
 EXPECT_SNIPPETS = {
     'src/player/movement.ts': ['coyoteMs', 'jumpBufferMs', 'jumpCutMultiplier'],
     'src/scenes/PlayScene.ts': ['damagePlayer', 'onGoalReached', 'checkpoints', 'movingPlatforms', 'thwomps'],
-    'src/enemies/registry.ts': ['walker', 'shell', 'flying', 'spitter'],
+    'src/enemies/registry.ts': ['walker', 'shell', 'flying', 'spitter', 'compliance_officer', 'technical_debt'],
 }
 
 

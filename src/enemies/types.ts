@@ -10,7 +10,8 @@ export type EnemyKind =
   | 'hot_take'
   | 'analyst'
   | 'compliance_officer'
-  | 'technical_debt';
+  | 'technical_debt'
+  | 'boss';
 
 export type EnemyKillSource = 'stomp' | 'playerShot' | 'inferenceShot' | 'environment' | 'companion';
 

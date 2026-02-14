@@ -157,31 +157,47 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
     key: 'azure',
     tempoBpm: 126,
     rootHz: 196,
-    // Major flavor.
+    // Major flavor: bright, bouncy world 1 theme
     scale: [0, 2, 4, 5, 7, 9, 11],
     lead: {
-      // A section: ascending run → B section: descending variation
+      // A section: ascending major melody | B section: call-and-response variation
       steps: [
+        // A: bright ascending run
         0, 2, 4, 7, 9, 7, 4, 2, 0, null, 4, 5, 7, 9, 11, 9,
-        11, 9, 7, 4, 2, 4, 7, 9, 11, null, 9, 7, 4, 2, 0, null
+        11, 9, 7, 4, 2, 4, 7, 9, 11, null, 9, 7, 4, 2, 0, null,
+        // B: higher register response with new contour
+        7, 9, 11, 14, 12, 11, 9, 7, 4, 7, 9, 11, 14, 16, 14, 11,
+        9, 7, 4, 2, 4, 7, 9, 11, 7, 4, 2, 0, 2, 4, 7, null
       ],
       noteBeats: 0.5,
       instrument: CHIP_LEAD
     },
     bass: {
       steps: [
+        // A
         0, null, 0, null, 5, null, 4, null, 0, null, 7, null, 5, null, 4, null,
-        0, null, 4, null, 5, null, 7, null, 4, null, 2, null, 0, null, -2, null
+        0, null, 4, null, 5, null, 7, null, 4, null, 2, null, 0, null, -2, null,
+        // B: walking bass with more movement
+        7, null, 5, null, 4, null, 2, null, 0, null, 4, null, 5, null, 7, null,
+        9, null, 7, null, 5, null, 4, null, 2, null, 0, null, -2, null, 0, null
       ],
       noteBeats: 0.5,
       instrument: BASS_ROUND
     },
     drums: {
       steps: [
+        // A
         'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat',
         'kick', 'hat', 'snare', 'hat', 'kick', 'kick', 'snare', 'hat',
+        // A'
         'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat',
-        'kick', 'hat', 'snare', 'hat', 'kick', 'snare', 'kick', 'hat'
+        'kick', 'hat', 'snare', 'hat', 'kick', 'snare', 'kick', 'hat',
+        // B: more active
+        'kick', 'hat', 'snare', 'hat', 'kick', 'kick', 'snare', 'hat',
+        'kick', 'hat', 'kick', 'snare', 'kick', 'hat', 'snare', 'hat',
+        // B': fill at the end
+        'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'kick',
+        'snare', 'hat', 'kick', 'hat', 'snare', 'kick', 'snare', 'kick'
       ],
       noteBeats: 0.5,
       ...DRUMS_STANDARD
@@ -191,30 +207,44 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
     key: 'pipeline',
     tempoBpm: 118,
     rootHz: 174.61,
-    // Harmonic minor-ish.
+    // Harmonic minor: underground/pipe theme
     scale: [0, 2, 3, 5, 7, 8, 11],
     lead: {
       steps: [
+        // A: chromatic tension with harmonic minor flavor
         0, 3, 5, 7, 8, 7, 5, 3, 2, 3, 5, 7, 11, 8, 7, 5,
-        7, 8, 11, 8, 7, 5, 3, 2, 0, null, 3, 5, 8, 7, 5, 3
+        7, 8, 11, 8, 7, 5, 3, 2, 0, null, 3, 5, 8, 7, 5, 3,
+        // B: darker variation, descending patterns
+        11, 8, 7, 5, 3, 5, 7, 8, 11, 12, 11, 8, 7, 5, 3, 2,
+        0, 2, 3, 5, 8, 11, 8, 5, 3, null, 2, 0, null, 3, 5, null
       ],
       noteBeats: 0.5,
       instrument: { ...CHIP_LEAD, filterHz: 3600, gain: 0.16, vibratoDepth: 14 }
     },
     bass: {
       steps: [
+        // A
         0, null, 0, null, 5, null, 3, null, 0, null, 7, null, 8, null, 5, null,
-        0, null, 3, null, 5, null, 8, null, 7, null, 5, null, 3, null, 0, null
+        0, null, 3, null, 5, null, 8, null, 7, null, 5, null, 3, null, 0, null,
+        // B: descending chromatic bass movement
+        8, null, 7, null, 5, null, 3, null, 0, null, -2, null, 0, null, 3, null,
+        5, null, 7, null, 8, null, 5, null, 3, null, 2, null, 0, null, -2, null
       ],
       noteBeats: 0.5,
       instrument: { ...BASS_ROUND, filterHz: 950, gain: 0.22 }
     },
     drums: {
       steps: [
+        // A: sparse and groovy
         'kick', null, 'hat', null, 'snare', null, 'hat', null,
         'kick', null, 'hat', 'hat', 'snare', null, 'hat', null,
         'kick', null, 'hat', null, 'snare', null, 'hat', null,
-        'kick', 'kick', 'hat', null, 'snare', null, 'kick', null
+        'kick', 'kick', 'hat', null, 'snare', null, 'kick', null,
+        // B: builds intensity
+        'kick', 'hat', 'snare', null, 'kick', 'hat', 'snare', 'hat',
+        'kick', 'hat', 'kick', 'hat', 'snare', null, 'kick', null,
+        'kick', 'hat', 'snare', 'hat', 'kick', null, 'snare', 'hat',
+        'kick', 'kick', 'snare', 'kick', 'snare', 'hat', 'kick', null
       ],
       noteBeats: 0.5,
       ...DRUMS_TIGHT
@@ -224,30 +254,44 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
     key: 'enterprise',
     tempoBpm: 136,
     rootHz: 220,
-    // Lydian-ish sparkle.
+    // Lydian sparkle: icy, floating corporate theme
     scale: [0, 2, 4, 6, 7, 9, 11],
     lead: {
       steps: [
+        // A: sparkling arpeggios
         0, 4, 6, 7, 11, 9, 7, 6, 4, 6, 7, 9, 11, 14, 11, 9,
-        14, 11, 9, 7, 6, 4, 6, 7, 9, 11, 9, 7, 4, 2, 0, null
+        14, 11, 9, 7, 6, 4, 6, 7, 9, 11, 9, 7, 4, 2, 0, null,
+        // B: lydian shimmer, higher register with rests
+        2, 4, 7, 11, 14, null, 11, 9, 7, 11, 14, 16, 14, 11, 9, 7,
+        4, null, 7, 9, 11, 14, 11, 9, 7, 6, 4, 2, 0, null, 2, null
       ],
       noteBeats: 0.5,
       instrument: SPARKLE_LEAD
     },
     bass: {
       steps: [
+        // A
         0, null, 0, null, 6, null, 4, null, 0, null, 7, null, 9, null, 7, null,
-        0, null, 4, null, 6, null, 9, null, 7, null, 4, null, 2, null, 0, null
+        0, null, 4, null, 6, null, 9, null, 7, null, 4, null, 2, null, 0, null,
+        // B: ascending stepwise bass
+        2, null, 4, null, 6, null, 7, null, 9, null, 11, null, 9, null, 7, null,
+        6, null, 4, null, 2, null, 0, null, -2, null, 0, null, 2, null, 4, null
       ],
       noteBeats: 0.5,
       instrument: { ...BASS_ROUND, filterHz: 1300, gain: 0.18 }
     },
     drums: {
       steps: [
+        // A: driving 16th hats
         'kick', 'hat', 'hat', 'hat', 'snare', 'hat', 'hat', 'hat',
         'kick', 'hat', 'hat', 'hat', 'snare', 'hat', 'kick', 'hat',
         'kick', 'hat', 'hat', 'hat', 'snare', 'hat', 'hat', 'hat',
-        'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat'
+        'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat',
+        // B: broken pattern for contrast
+        'kick', null, 'hat', 'hat', 'snare', 'hat', null, 'hat',
+        'kick', 'hat', null, 'hat', 'snare', null, 'kick', 'hat',
+        'kick', 'hat', 'hat', 'hat', 'snare', 'hat', 'kick', 'hat',
+        'kick', 'snare', 'hat', 'kick', 'snare', 'hat', 'snare', 'kick'
       ],
       noteBeats: 0.5,
       ...DRUMS_TIGHT
@@ -257,30 +301,44 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
     key: 'gpu',
     tempoBpm: 124,
     rootHz: 164.81,
-    // Natural minor.
+    // Natural minor: heavy, brooding factory theme
     scale: [0, 2, 3, 5, 7, 8, 10],
     lead: {
       steps: [
+        // A: grinding minor riff
         0, 3, 5, 3, 7, 5, 3, 2, 0, -2, 0, 3, 5, 7, 8, 10,
-        8, 7, 5, 3, 2, 0, -2, 0, 3, 5, 7, 10, 8, 7, 5, 3
+        8, 7, 5, 3, 2, 0, -2, 0, 3, 5, 7, 10, 8, 7, 5, 3,
+        // B: aggressive ascending with octave jump
+        0, 2, 3, 5, 8, 10, 12, 10, 8, 5, 3, 2, 0, null, -2, 0,
+        10, 8, 7, 5, 3, 5, 7, 8, 10, 12, 10, 8, 5, 3, 0, null
       ],
       noteBeats: 0.5,
       instrument: FACTORY_LEAD
     },
     bass: {
       steps: [
+        // A
         0, null, 0, null, 5, null, 3, null, -2, null, 0, null, 7, null, 5, null,
-        0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null, -2, null
+        0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null, -2, null,
+        // B: pounding root movement
+        0, 0, null, null, 5, 5, null, null, 3, 3, null, null, 7, 7, null, null,
+        8, null, 7, null, 5, null, 3, null, 2, null, 0, null, -2, null, 0, null
       ],
       noteBeats: 0.5,
       instrument: { ...BASS_ROUND, wave: 'sawtooth', filterHz: 820, gain: 0.22 }
     },
     drums: {
       steps: [
+        // A: heavy industrial
         'kick', null, 'snare', null, 'kick', 'kick', 'snare', null,
         'kick', null, 'snare', 'hat', 'kick', null, 'snare', null,
         'kick', null, 'snare', null, 'kick', null, 'snare', 'hat',
-        'kick', 'kick', 'snare', null, 'kick', 'snare', 'kick', null
+        'kick', 'kick', 'snare', null, 'kick', 'snare', 'kick', null,
+        // B: double-time feel
+        'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat',
+        'kick', 'kick', 'snare', 'hat', 'kick', 'hat', 'snare', 'kick',
+        'kick', 'hat', 'snare', 'hat', 'kick', 'kick', 'snare', 'hat',
+        'kick', 'snare', 'kick', 'snare', 'kick', 'hat', 'snare', 'kick'
       ],
       noteBeats: 0.5,
       ...DRUMS_HEAVY
@@ -290,30 +348,44 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
     key: 'benchmark',
     tempoBpm: 152,
     rootHz: 146.83,
-    // Tense / dissonant.
+    // Tense / dissonant: final castle
     scale: [0, 1, 3, 5, 6, 8, 10],
     lead: {
       steps: [
+        // A: relentless chromatic tension
         0, 1, 3, 6, 8, 6, 3, 1, 0, 3, 6, 8, 10, 8, 6, 3,
-        10, 8, 6, 3, 1, 0, 1, 3, 6, 8, 10, 13, 10, 8, 6, 3
+        10, 8, 6, 3, 1, 0, 1, 3, 6, 8, 10, 13, 10, 8, 6, 3,
+        // B: climactic phrase with peak and fall
+        1, 3, 6, 8, 10, 13, 15, 13, 10, 8, 6, 3, 1, 0, null, 1,
+        13, 10, 8, 6, 3, 1, 0, 1, 3, 6, 8, 10, 8, 6, 3, null
       ],
       noteBeats: 0.5,
       instrument: CASTLE_LEAD
     },
     bass: {
       steps: [
+        // A
         0, null, 0, null, 6, null, 3, null, 1, null, 0, null, 8, null, 6, null,
-        0, null, 3, null, 6, null, 8, null, 6, null, 3, null, 1, null, 0, null
+        0, null, 3, null, 6, null, 8, null, 6, null, 3, null, 1, null, 0, null,
+        // B: aggressive syncopated bass
+        0, 0, null, 6, null, 3, null, 1, 0, null, 8, null, 6, null, 3, null,
+        1, null, 0, null, 6, null, 8, null, 6, null, 3, null, 1, 0, null, null
       ],
       noteBeats: 0.5,
       instrument: CASTLE_BASS
     },
     drums: {
       steps: [
+        // A: intense driving beat
         'kick', 'hat', 'snare', 'hat', 'kick', 'hat', 'snare', 'hat',
         'kick', 'hat', 'kick', 'hat', 'snare', 'hat', 'kick', 'hat',
         'kick', 'hat', 'snare', 'hat', 'kick', 'kick', 'snare', 'hat',
-        'kick', 'hat', 'snare', 'kick', 'kick', 'hat', 'snare', 'hat'
+        'kick', 'hat', 'snare', 'kick', 'kick', 'hat', 'snare', 'hat',
+        // B: relentless double kicks
+        'kick', 'kick', 'snare', 'hat', 'kick', 'kick', 'snare', 'hat',
+        'kick', 'hat', 'kick', 'kick', 'snare', 'hat', 'kick', 'hat',
+        'kick', 'kick', 'snare', 'kick', 'kick', 'hat', 'snare', 'hat',
+        'kick', 'snare', 'kick', 'kick', 'snare', 'kick', 'snare', 'kick'
       ],
       noteBeats: 0.5,
       ...DRUMS_HEAVY

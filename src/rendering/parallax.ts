@@ -372,14 +372,72 @@ function renderParallaxLayers(scene: Phaser.Scene, width: number, layers: Parall
   onPostUpdate();
 }
 
+export interface WorldPaletteOverride {
+  skyTop: number;
+  skyBottom: number;
+  accent: number;
+}
+
 export function renderGameplayBackground(
   scene: Phaser.Scene,
   width: number,
   height: number,
   layout: StyleConfig['gameplayLayout'],
+  worldPalette?: WorldPaletteOverride,
 ): void {
-  renderSky(scene, width, height, layout as GameplayLayout);
+  if (worldPalette) {
+    renderSkyDirect(scene, width, height, worldPalette.skyTop, worldPalette.skyBottom, layout as GameplayLayout);
+  } else {
+    renderSky(scene, width, height, layout as GameplayLayout);
+  }
   const layers = resolveLayers(layout as GameplayLayout);
   renderParallaxLayers(scene, width, layers);
   renderHaze(scene, width, height, layout as GameplayLayout);
+}
+
+/** Render sky gradient using direct color values (no swatch lookup). */
+function renderSkyDirect(
+  scene: Phaser.Scene,
+  width: number,
+  height: number,
+  topColor: number,
+  bottomColor: number,
+  layout: GameplayLayout,
+): void {
+  const top = Phaser.Display.Color.IntegerToColor(topColor);
+  const bottom = Phaser.Display.Color.IntegerToColor(bottomColor);
+  const graphics = scene.add.graphics();
+
+  const skyBands = 20;
+  const bandHeight = Math.max(1, Math.ceil(height / skyBands));
+  for (let i = 0; i < skyBands; i += 1) {
+    const step = i / (skyBands - 1 || 1);
+    const mixed = Phaser.Display.Color.Interpolate.ColorWithColor(top, bottom, skyBands - 1 || 1, step * (skyBands - 1 || 1));
+    graphics
+      .fillStyle(Phaser.Display.Color.GetColor(mixed.r, mixed.g, mixed.b), 1)
+      .fillRect(0, i * bandHeight, width, bandHeight);
+  }
+  graphics.setScrollFactor(0).setDepth(SKY_DEPTH);
+
+  // Still render depth cue if present
+  const profile = resolveProfile(layout);
+  const cue = profile?.depthCue;
+  if (!cue?.enabled) {
+    return;
+  }
+
+  const cueTop = colorObject(cue.topSwatch);
+  const cueMid = colorObject(cue.midSwatch);
+  const bandRows = Math.max(1, cue.bands);
+  const cueHeight = Math.max(1, cue.bandHeightPx);
+  const cueStart = Math.max(0, cue.startY);
+  for (let i = 0; i < bandRows; i += 1) {
+    const blended = Phaser.Display.Color.Interpolate.ColorWithColor(cueTop, cueMid, bandRows - 1 || 1, i);
+    const t = bandRows > 1 ? i / (bandRows - 1) : 0;
+    const stripHeight = Math.max(1, Math.floor(cueHeight / bandRows));
+    graphics
+      .fillStyle(Phaser.Display.Color.GetColor(blended.r, blended.g, blended.b), cue.maxAlpha * (1 - t))
+      .fillRect(0, cueStart + i * stripHeight, width, stripHeight);
+  }
+  graphics.setDepth(HORIZON_DEPTH);
 }

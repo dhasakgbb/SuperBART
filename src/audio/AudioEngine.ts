@@ -100,6 +100,11 @@ export class AudioEngine {
     this.musicSynth?.stop();
   }
 
+  /** Override music tempo (for time-warning speedup). Pass null to revert. */
+  setMusicTempoOverride(bpm: number | null): void {
+    this.musicSynth?.setTempoOverride(bpm);
+  }
+
   private ensureGraph(): boolean {
     if (typeof window === 'undefined') {
       return false;

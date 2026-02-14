@@ -19,14 +19,6 @@ export function isValidCampaignLevel(world: number, levelIndex: number): boolean
   return levels > 0 && levelIndex >= 1 && levelIndex <= levels;
 }
 
-export function starsNeededForBonus(world: number): number {
-  return world * 3;
-}
-
-export function isBonusUnlocked(world: number, stars: number): boolean {
-  return stars >= starsNeededForBonus(world);
-}
-
 export function nextLevel(world: number, levelIndex: number): CampaignLevelRef | null {
   if (!isValidCampaignLevel(world, levelIndex)) {
     return { world: 1, levelIndex: 1 };

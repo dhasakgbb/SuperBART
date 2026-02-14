@@ -22,7 +22,10 @@ export type SfxKey =
   | 'land'
   | 'skid'
   | 'death_jingle'
-  | 'victory_fanfare';
+  | 'victory_fanfare'
+  | 'boss_hurt'
+  | 'boss_die'
+  | 'fire_spit';
 
 export interface SfxDefinition {
   wave: OscillatorType;
@@ -79,7 +82,10 @@ export const REQUIRED_SFX_KEYS: SfxKey[] = [
   'land',
   'skid',
   'death_jingle',
-  'victory_fanfare'
+  'victory_fanfare',
+  'boss_hurt',
+  'boss_die',
+  'fire_spit'
 ];
 
 export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
@@ -348,6 +354,39 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     sustain: 0.4,
     releaseSec: 0.06,
     gain: 0.18
+  },
+  boss_hurt: {
+    wave: 'square',
+    startHz: 120,
+    endHz: 60,
+    durationSec: 0.2,
+    attackSec: 0.01,
+    decaySec: 0.1,
+    sustain: 0.1,
+    releaseSec: 0.1,
+    gain: 0.4
+  },
+  boss_die: {
+    wave: 'sawtooth',
+    startHz: 400,
+    endHz: 40,
+    durationSec: 0.8,
+    attackSec: 0.05,
+    decaySec: 0.3,
+    sustain: 0.2,
+    releaseSec: 0.4,
+    gain: 0.35
+  },
+  fire_spit: {
+    wave: 'square',
+    startHz: 800,
+    endHz: 1200,
+    durationSec: 0.1,
+    attackSec: 0.005,
+    decaySec: 0.05,
+    sustain: 0.1,
+    releaseSec: 0.05,
+    gain: 0.25
   }
 };
 

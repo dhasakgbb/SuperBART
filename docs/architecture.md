@@ -20,7 +20,7 @@
 - Generator + deterministic behavior: `src/levelgen/**`
 - Visual style contract: `src/style/**`, `src/ui/**`, `tools/style_validate.ts`
 - Asset generation + validation: `tools/make_*.ts`, `tools/asset_validate.ts`
-- QA/release/perf docs and helpers: `docs/**`, `tools/profile_helpers/**`, `tools/build_release.py`
+- QA/release/perf docs and helpers: `docs/**`
 
 ## Integration Points
 1. Boot scene loads generated assets and bitmap font from asset manifest.

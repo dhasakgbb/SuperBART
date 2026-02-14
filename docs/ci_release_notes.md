@@ -12,7 +12,6 @@
 5. `npm run lint:audio`
 6. `npm test`
 7. `npm run build`
-8. `python3 tools/build_release.py --version <version> --profile release`
 
 ## Artifact Outputs
 - Built bundle: `dist/**`

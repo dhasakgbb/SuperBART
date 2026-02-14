@@ -1,5 +1,4 @@
 import { ENEMIES } from '../content/contentManifest';
-// Cache bust
 import type { EnemyHandle, EnemyKind, EnemyKillSource, EnemyKillEvent, EnemyContext } from './types';
 import { Hallucination } from './definitions/Hallucination';
 import { LegacySystem } from './definitions/LegacySystem';
@@ -53,20 +52,7 @@ function resolveEnemyKind(kind: string): EnemyKind {
 }
 
 function getEnemyDisplayName(kind: EnemyKind): string {
-  const canonicalByKind: Record<EnemyKind, EnemyKind> = {
-    walker: 'hallucination',
-    shell: 'legacy_system',
-    flying: 'hot_take',
-    spitter: 'analyst',
-    compliance_officer: 'compliance_officer',
-    technical_debt: 'technical_debt',
-    hallucination: 'hallucination',
-    legacy_system: 'legacy_system',
-    hot_take: 'hot_take',
-    analyst: 'analyst',
-  };
-
-  const canonical = canonicalByKind[kind] ?? kind;
+  const canonical = KIND_ALIASES[kind] ?? kind;
   const matched = ENEMIES.find((entry) => entry.id === canonical || entry.aliases.includes(canonical));
   return matched?.displayName ?? kind.toUpperCase();
 }
@@ -275,7 +261,7 @@ export function spawnEnemy(
           }
           return 'stomp';
         }
-        return state.complianceState === 'platform' ? 'damage' : 'damage';
+        return 'damage';
       },
       createKillEvent(source: EnemyKillSource): EnemyKillEvent {
         return {
@@ -309,13 +295,12 @@ export function spawnEnemy(
     };
   }
 
-  // Fallback for unknown types (shouldn't happen if resolved correctly) or remaining inline implementations
-  const state = sharedData;
+  // Fallback for unknown enemy types
   const baseY = y;
   const baseAmp = 16 + (Number(data?.amp) || 0);
-  state.phaseMs = 0;
-  state.phase = 'drift';
-  state.phaseDurationMs = 1400;
+  sharedData.phaseMs = 0;
+  sharedData.phase = 'drift';
+  sharedData.phaseDurationMs = 1400;
 
   return {
     kind,
@@ -348,6 +333,3 @@ export function spawnEnemy(
   };
 }
 
-function thisTime(): number {
-  return Date.now();
-}

@@ -8,9 +8,17 @@ import styleConfig from '../style/styleConfig';
 export function createPlayerAnimations(scene: Phaser.Scene): void {
   const config = styleConfig.playerAnimation;
 
-  const createForForm = (form: 'small' | 'big'): void => {
-    const key = form === 'small' ? 'bart_body_small' : 'bart_body_big';
-    const prefix = form === 'small' ? 'bart_s_' : 'bart_b_';
+  const forms: Array<['small' | 'big', boolean]> = [
+    ['small', false],
+    ['big', false],
+    ['small', true],
+    ['big', true],
+  ];
+
+  for (const [form, isFire] of forms) {
+    const suffix = isFire ? '_fire' : '';
+    const key = `bart_body_${form}${suffix}`;
+    const prefix = `bart_${form[0]}${suffix}_`;
 
     scene.anims.create({
       key: `${prefix}idle`,
@@ -19,28 +27,30 @@ export function createPlayerAnimations(scene: Phaser.Scene): void {
       repeat: -1,
     });
 
+    // We only have 4 run frames (1,2,3,4) in the new sheet.
+    // Use them for both walk and run for now, maybe different speed.
     scene.anims.create({
       key: `${prefix}walk`,
-      frames: scene.anims.generateFrameNumbers(key, { start: 1, end: 3 }),
+      frames: scene.anims.generateFrameNumbers(key, { start: 1, end: 4 }),
       frameRate: config.walkFps,
       repeat: -1,
     });
 
     scene.anims.create({
       key: `${prefix}run`,
-      frames: scene.anims.generateFrameNumbers(key, { start: 4, end: 6 }),
+      frames: scene.anims.generateFrameNumbers(key, { start: 1, end: 4 }),
       frameRate: config.runFps,
       repeat: -1,
     });
 
     const singleFrames: Array<[string, number]> = [
       ['skid', 7],
-      ['jump', 8],
-      ['fall', 9],
-      ['land', 10],
-      ['hurt', 11],
-      ['win', 12],
-      ['dead', 13],
+      ['jump', 5],
+      ['fall', 6],
+      ['land', 0], // Revert to idle
+      ['hurt', 6], // Use fall frame for hurt for now
+      ['win', 5],  // Use jump frame for win
+      ['dead', 6], // Use fall frame for dead
     ];
 
     for (const [name, frame] of singleFrames) {
@@ -51,8 +61,5 @@ export function createPlayerAnimations(scene: Phaser.Scene): void {
         repeat: 0,
       });
     }
-  };
-
-  createForForm('small');
-  createForForm('big');
+  }
 }

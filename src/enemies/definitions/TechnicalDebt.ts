@@ -2,8 +2,6 @@ import Phaser from 'phaser';
 import { BaseEnemy, EnemyConfig, EnemyState, EnemyKind } from '../BaseEnemy';
 import { EnemyContext } from '../types';
 
-export type TechnicalDebtState = 'patrol' | 'lunge' | 'chase' | 'cooldown';
-
 export class TechnicalDebt extends BaseEnemy {
   private anchorX: number;
   private anchorY: number;
@@ -32,12 +30,9 @@ export class TechnicalDebt extends BaseEnemy {
         this.body.setSize(14, 14);
         this.body.setOffset(1, 1);
     }
-    this.setTint(0x8d5fd3); // Purple tint as per registry
+    this.setTint(0x8d5fd3);
     this.setScale(1.75);
-
-    // Disable gravity for chain chomp as it lunges in air?
-    // Registry implementation used velocity setting directly.
-    this.setGravityY(0); 
+    this.setGravityY(0);
 
     this.transitionTo('patrol');
 
@@ -117,12 +112,10 @@ export class TechnicalDebt extends BaseEnemy {
           }
       }
 
-      // Chain logic (visuals) could be updated here if we had a graphics object.
   }
 
   public onPlayerCollision(player: Phaser.Physics.Arcade.Sprite): 'stomp' | 'damage' {
-      if (this.currentState === 'idle') return 'damage'; // Can't stomp while returning? Or standard stomp rules?
-      // Registry says stomp is valid if strict conditions met.
+      if (this.currentState === 'idle') return 'damage';
       if (!this.body || !player.body) return 'damage';
       
       const stomp = player.body.bottom < this.body.top + 12 && player.body.velocity.y > 0;

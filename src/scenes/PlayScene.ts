@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
+import { ASSET_MANIFEST } from '../core/assetManifest';
 import { DISPLAY_NAMES, PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
 import { buildRuntimeState, runtimeStore } from '../core/runtime';
 import { spawnEnemy } from '../enemies/registry';
@@ -21,7 +22,8 @@ import { EffectManager } from '../systems/EffectManager';
 import { PopupManager } from '../systems/PopupManager';
 import { createDustPuff, DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
-import { renderGameplayBackground } from '../rendering/parallax';
+import { renderGameplayBackground, type WorldPaletteOverride } from '../rendering/parallax';
+import { CONTENT_WORLD_MAP } from '../content/contentManifest';
 import styleConfig, { stylePalette } from '../style/styleConfig';
 import { computeSeed, setLevelCollectibleStatus, setLevelEvalStatus } from '../systems/progression';
 import { persistSave } from '../systems/save';
@@ -107,6 +109,10 @@ export class PlayScene extends Phaser.Scene {
   private levelIndex = 1;
   private worldModifiers: WorldModifiers = { ...DEFAULT_WORLD_MODIFIERS };
 
+  /** Time warning threshold (seconds). Music speeds up when below this. */
+  private static readonly TIME_WARNING_SEC = 60;
+  private timeWarningActive = false;
+
   /** Auto-scroll segment definitions from level metadata. */
   private autoScrollSegments: Array<{
     startX: number;
@@ -161,7 +167,106 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.difficultyTier = level.metadata.difficultyTier;
     runtimeStore.chunksUsed = [...level.metadata.chunksUsed];
 
-    renderGameplayBackground(this, level.width * TILE_SIZE, VIEW_HEIGHT, styleConfig.gameplayLayout);
+    // Per-world sky palette from content manifest
+    const worldDef = CONTENT_WORLD_MAP.find((w) => w.index === this.world);
+    const worldPalette: WorldPaletteOverride | undefined = worldDef
+      ? { skyTop: worldDef.generation.palette.skyTop, skyBottom: worldDef.generation.palette.skyBottom, accent: worldDef.generation.palette.accent }
+      : undefined;
+
+    // Override background for World 1
+    const layout = { ...styleConfig.gameplayLayout };
+    
+    // Helper to patch parallax layers
+    const patchLayers = (farKey: string, nearKey: string) => {
+      if (layout.parallaxProfile?.layers) {
+        layout.parallaxProfile = {
+          ...layout.parallaxProfile,
+          layers: layout.parallaxProfile.layers.map(layer => {
+            if (layer.key === 'hill_far') return { ...layer, key: farKey };
+            if (layer.key === 'hill_near') return { ...layer, key: nearKey };
+            return layer;
+          }) as unknown as typeof layout.parallaxProfile.layers
+        };
+      }
+    };
+
+    if (this.world === 1) {
+      layout.hills = {
+        far: { ...layout.hills.far, key: 'hill_far_w1' as any },
+        near: { ...layout.hills.near, key: 'hill_near_w1' as any },
+      };
+      patchLayers('hill_far_w1', 'hill_near_w1');
+      
+      patchLayers('hill_far_w1', 'hill_near_w1');
+      
+      // Custom Sky for Cryo-Server (Icy Blue)
+      layout.sky = {
+        topSwatch: 'skyBlue' as any,
+        bottomSwatch: 'hudText' as any,
+      };
+      
+      // Failsafe removed - moved to end of create
+      patchLayers('hill_far_w1', 'hill_near_w1');
+
+    } else if (this.world === 2) {
+      layout.hills = {
+        far: { ...layout.hills.far, key: 'hill_far_w2' as any },
+        near: { ...layout.hills.near, key: 'hill_near_w2' as any },
+      };
+      patchLayers('hill_far_w2', 'hill_near_w2');
+
+      // Quantum Void Sky (Deep Purple/Black)
+      layout.sky = {
+        topSwatch: 'skyDeep' as any, // Black
+        bottomSwatch: 'skyMid' as any, // Dark Grey
+      };
+      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyDeep')?.hex);
+
+    } else if (this.world === 3) {
+      layout.hills = {
+        far: { ...layout.hills.far, key: 'hill_far_w3' as any },
+        near: { ...layout.hills.near, key: 'hill_near_w3' as any },
+      };
+      patchLayers('hill_far_w3', 'hill_near_w3');
+
+      // Deep Web Catacombs (Green tint)
+      layout.sky = {
+        topSwatch: 'skyDeep' as any, // Black
+        bottomSwatch: 'grassMid' as any, // Greenish hint? Or just black.
+      };
+      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyDeep')?.hex);
+
+    } else if (this.world === 4) {
+      layout.hills = {
+        far: { ...layout.hills.far, key: 'hill_far_w4' as any },
+        near: { ...layout.hills.near, key: 'hill_near_w4' as any },
+      };
+      patchLayers('hill_far_w4', 'hill_near_w4');
+
+      // Volcanic Fallout (Red/Orange)
+      layout.sky = {
+        topSwatch: 'inkDark' as any, // Dark
+        bottomSwatch: 'groundWarm' as any, // Orange/Red
+      };
+      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'inkDark')?.hex);
+
+    } else if (this.world === 5) {
+      layout.hills = {
+        far: { ...layout.hills.far, key: 'hill_far_w5' as any },
+        near: { ...layout.hills.near, key: 'hill_near_w5' as any },
+      };
+      patchLayers('hill_far_w5', 'hill_near_w5');
+
+      // Digital Graveyard (Monochrome)
+      layout.sky = {
+        topSwatch: 'inkDark' as any,
+        bottomSwatch: 'inkSoft' as any,
+      };
+      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'inkDark')?.hex);
+
+    }
+    
+    renderGameplayBackground(this, level.width * TILE_SIZE, VIEW_HEIGHT, layout, worldPalette);
 
     this.physics.world.setBounds(0, 0, level.width * TILE_SIZE, level.height * TILE_SIZE);
 
@@ -179,15 +284,25 @@ export class PlayScene extends Phaser.Scene {
     this.enemiesGroup = this.physics.add.group();
     this.damageZones = this.physics.add.staticGroup();
 
+    // Determine world-specific tile keys
+    const w = this.world;
+    const groundTop = ASSET_MANIFEST.images[`tile_ground_w${w}_top`] ? `tile_ground_w${w}_top` : 'tile_ground';
+    const groundMid = ASSET_MANIFEST.images[`tile_ground_w${w}_mid`] ? `tile_ground_w${w}_mid` : 'tile_ground';
+    const onewayKey = ASSET_MANIFEST.images[`tile_oneway_w${w}`] ? `tile_oneway_w${w}` : 'tile_oneway';
+    
     for (let y = 0; y < level.height; y += 1) {
       for (let x = 0; x < level.width; x += 1) {
         const tile = level.tileGrid[y]![x]!;
         if (tile === 1) {
-          const block = this.solids.create(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 'tile_ground') as Phaser.Physics.Arcade.Sprite;
+          // Check top neighbor for autotiling
+          const isTop = y === 0 || (level.tileGrid[y - 1] && level.tileGrid[y - 1]![x] !== 1);
+          const key = isTop ? groundTop : groundMid;
+          
+          const block = this.solids.create(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, key) as Phaser.Physics.Arcade.Sprite;
           block.refreshBody();
         }
         if (tile === 2) {
-          const block = this.oneWay.create(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 'tile_oneway') as Phaser.Physics.Arcade.Sprite;
+          const block = this.oneWay.create(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, onewayKey) as Phaser.Physics.Arcade.Sprite;
           block.refreshBody();
         }
       }
@@ -259,6 +374,30 @@ export class PlayScene extends Phaser.Scene {
         star.refreshBody();
         this.attachCollectibleGlow(star, 'pickup_eval');
       } else if (
+        e.type === 'gpu_allocation' || e.type === 'copilot_mode'
+        || e.type === 'semantic_kernel' || e.type === 'deploy_to_prod'
+        || e.type === 'works_on_my_machine'
+      ) {
+        // Canonical powerup entities - render as collectible stars with powerup texture
+        const textureKey = `pickup_${e.type}`;
+        const powerup = this.stars.create(e.x, e.y, textureKey) as Phaser.Physics.Arcade.Sprite;
+        powerup.setData('collectibleId', e.id);
+        powerup.setData('powerupType', e.type);
+        powerup.setScale(actorScale.star).setDepth(28);
+        powerup.refreshBody();
+        this.attachCollectibleGlow(powerup, textureKey);
+      } else if (
+        e.type === 'fire_flower' || e.type === 'power_up' || e.type === 'assist_bot'
+        || e.type === 'green_button' || e.type === 'woom'
+      ) {
+        // Legacy powerup aliases - treat as question block rewards (coins)
+        const coin = this.coins.create(e.x, e.y, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
+        coin.setData('collectibleId', e.id);
+        coin.setScale(actorScale.coin).setDepth(28);
+        coin.refreshBody();
+        this.attachCollectibleGlow(coin, 'pickup_token');
+        this.startCoinSpin(coin);
+      } else if (
         e.type === 'walker' || e.type === 'shell' || e.type === 'flying' || e.type === 'spitter'
         || e.type === 'compliance_officer' || e.type === 'technical_debt'
         || e.type === 'hallucination' || e.type === 'legacy_system' || e.type === 'hot_take' || e.type === 'analyst'
@@ -280,7 +419,7 @@ export class PlayScene extends Phaser.Scene {
       (this.player.body as Phaser.Physics.Arcade.Body).setMaxVelocity(PLAYER_CONSTANTS.maxSpeed * 3, PLAYER_CONSTANTS.maxFallSpeed);
     }
     const bodyH = this.playerForm === 'big' ? 30 : 22;
-    this.player.body?.setSize(12, bodyH).setOffset(2, 1);
+    this.player.body?.setSize(12, bodyH).setOffset(10, 1);
 
     // Head sprite (visual overlay, no physics)
     const headKey = this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48';
@@ -290,6 +429,7 @@ export class PlayScene extends Phaser.Scene {
     this.playerHead = this.add.sprite(spawn.x, spawn.y, headKey);
     this.playerHead.setScale(headScale);
     this.playerHead.setDepth(this.player.depth + 1);
+    this.playerHead.setVisible(false);
 
     // Animation system
     createPlayerAnimations(this);
@@ -468,6 +608,11 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.registerDebugHooks();
+
+    // FINAL FAILSAFE: Force background color
+    if (this.world === 1) {
+       this.cameras.main.setBackgroundColor(0x6b8cff);
+    }
   }
 
   private registerDebugHooks(): void {
@@ -812,6 +957,7 @@ export class PlayScene extends Phaser.Scene {
     sprite.setData('collectibleBaseY', undefined);
   }
 
+  /** NES-style stomp: squash flat, pause, then flip upside-down and slide off screen. */
   private squashAndDisableSprite(sprite: Phaser.Physics.Arcade.Sprite): void {
     if (!sprite.active) {
       return;
@@ -819,18 +965,93 @@ export class PlayScene extends Phaser.Scene {
     const scaleX = sprite.scaleX;
     const scaleY = sprite.scaleY;
     const baselineY = sprite.y;
-    const baselineX = sprite.x;
+
+    // Phase 1: flatten squash (80ms)
     this.tweens.add({
       targets: sprite,
-      scaleX: scaleX * 1.05,
-      scaleY: Math.max(0.18, scaleY * 0.2),
+      scaleX: scaleX * 1.15,
+      scaleY: Math.max(0.15, scaleY * 0.15),
+      y: baselineY + (scaleY * 8),
       duration: 80,
       ease: 'Quad.easeIn',
       onComplete: () => {
-        if (sprite.active) {
-          sprite.setPosition(baselineX, baselineY);
-          sprite.disableBody(true, true);
-        }
+        if (!sprite.active) return;
+
+        // Phase 2: hold squash flat for 120ms, then flip and fall
+        this.time.delayedCall(120, () => {
+          if (!sprite.active) return;
+
+          // Flip upside-down
+          sprite.setFlipY(true);
+          sprite.setTint(0x888888);
+
+          // Disable physics collision so it falls through the world
+          if (sprite.body) {
+            (sprite.body as Phaser.Physics.Arcade.Body).checkCollision.none = true;
+          }
+
+          // Phase 3: fall off screen (NES Mario enemy death arc)
+          this.tweens.add({
+            targets: sprite,
+            y: sprite.y - 30,
+            scaleX: scaleX * 0.9,
+            scaleY: scaleY * 0.9,
+            duration: 150,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+              if (!sprite.active) return;
+              // Now drop off screen
+              this.tweens.add({
+                targets: sprite,
+                y: sprite.y + 300,
+                alpha: 0,
+                duration: 400,
+                ease: 'Quad.easeIn',
+                onComplete: () => {
+                  if (sprite.active) {
+                    sprite.disableBody(true, true);
+                    sprite.destroy();
+                  }
+                },
+              });
+            },
+          });
+        });
+      },
+    });
+  }
+
+  /** Shell-kill: enemy flips upside-down and slides off the bottom of the screen. */
+  private flipAndSlideOffScreen(sprite: Phaser.Physics.Arcade.Sprite, dirX: number): void {
+    if (!sprite.active) return;
+    sprite.setFlipY(true);
+    sprite.setTint(0x888888);
+    if (sprite.body) {
+      (sprite.body as Phaser.Physics.Arcade.Body).checkCollision.none = true;
+    }
+    this.effects.emitSparkle(sprite.x, sprite.y, 0xffff00, 4);
+    this.tweens.add({
+      targets: sprite,
+      y: sprite.y - 40,
+      x: sprite.x + dirX * 30,
+      duration: 180,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (!sprite.active) return;
+        this.tweens.add({
+          targets: sprite,
+          y: sprite.y + 350,
+          x: sprite.x + dirX * 60,
+          alpha: 0,
+          duration: 450,
+          ease: 'Quad.easeIn',
+          onComplete: () => {
+            if (sprite.active) {
+              sprite.disableBody(true, true);
+              sprite.destroy();
+            }
+          },
+        });
       },
     });
   }
@@ -887,7 +1108,7 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.entityCounts.movingPlatforms = this.movingPlatforms.countActive(true);
   }
 
-  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'block_hit' | 'land' | 'skid' | 'death_jingle' | 'victory_fanfare'): void {
+  private playSfx(kind: 'jump' | 'coin' | 'stomp' | 'hurt' | 'power' | 'shell' | 'flag' | 'block_hit' | 'land' | 'skid' | 'death_jingle' | 'victory_fanfare' | 'time_warning'): void {
     const keyMap = {
       jump: 'jump',
       coin: 'coin',
@@ -900,7 +1121,8 @@ export class PlayScene extends Phaser.Scene {
       land: 'land',
       skid: 'skid',
       death_jingle: 'death_jingle',
-      victory_fanfare: 'victory_fanfare'
+      victory_fanfare: 'victory_fanfare',
+      time_warning: 'time_warning'
     } as const;
     this.audio.playSfx(keyMap[kind]);
   }
@@ -1241,12 +1463,35 @@ export class PlayScene extends Phaser.Scene {
   private simulateStep(dtMs: number): void {
     if (this.completed) return;
     this.levelTimeMs += dtMs * this.worldModifiers.tokenBurnRate;
+
+    // Time warning: speed up music when running low on time (NES-style urgency)
+    const timeSec = Math.floor(this.levelTimeMs / 1000);
+    if (!this.timeWarningActive && timeSec >= PlayScene.TIME_WARNING_SEC) {
+      // Deliberately inverted: levelTimeMs counts UP, so warning fires at 60s elapsed
+      // Override to ~1.4x the base tempo for that panicked NES feel
+      this.timeWarningActive = true;
+      const rules = getWorldRules(this.world);
+      const baseTempo = rules.campaign?.speedMultiplier
+        ? 126 * rules.campaign.speedMultiplier
+        : 126;
+      this.audio.setMusicTempoOverride(Math.round(baseTempo * 1.4));
+      this.playSfx('time_warning');
+    }
+
     if (this.invulnMsRemaining > 0) {
       this.invulnMsRemaining = Math.max(0, this.invulnMsRemaining - dtMs);
-      const alpha = this.invulnMsRemaining % 120 < 60 ? 0.6 : 1;
+
+      // NES-style invincibility: rapid color cycling through 6 hues
+      const INVULN_COLORS = [0xffffff, 0xff4444, 0x44ff44, 0x4488ff, 0xffff44, 0xff44ff];
+      const colorIdx = Math.floor(this.levelTimeMs / 60) % INVULN_COLORS.length;
+      const alpha = this.invulnMsRemaining % 120 < 60 ? 0.7 : 1;
+      this.player.setTint(INVULN_COLORS[colorIdx]!);
+      this.playerHead.setTint(INVULN_COLORS[colorIdx]!);
       this.player.setAlpha(alpha);
       this.playerHead.setAlpha(alpha);
     } else {
+      this.player.clearTint();
+      this.playerHead.clearTint();
       this.player.setAlpha(1);
       this.playerHead.setAlpha(1);
     }
@@ -1272,10 +1517,12 @@ export class PlayScene extends Phaser.Scene {
     this.enemyHandles.forEach((shell) => {
       if (shell.kind !== 'shell' || !shell.sprite.active) return;
       if (!shell.sprite.body || Math.abs(shell.sprite.body.velocity.x) < 150) return;
+      const shellDirX = Math.sign(shell.sprite.body.velocity.x);
       this.enemyHandles.forEach((other) => {
         if (other === shell || !other.sprite.active) return;
         if (Phaser.Math.Distance.Between(shell.sprite.x, shell.sprite.y, other.sprite.x, other.sprite.y) < 20) {
-          other.sprite.disableBody(true, true);
+          this.flipAndSlideOffScreen(other.sprite, shellDirX);
+          runtimeStore.save.progression.score += SCORE_VALUES.stomp;
         }
       });
     });

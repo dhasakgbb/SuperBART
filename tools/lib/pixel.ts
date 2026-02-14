@@ -229,3 +229,30 @@ export function imageDimensions(filePath: string): { width: number; height: numb
   const png = PNG.sync.read(fs.readFileSync(filePath), { checkCRC: false });
   return { width: png.width, height: png.height };
 }
+
+/** Outlines all non-transparent pixels with the given color */
+export function outlineOpaquePixels(image: PixelImage, color: Rgba): void {
+  const source = cloneImage(image);
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      if (getPixel(source, x, y)[3] > 0) continue; // Already opaque
+
+      // Check neighbors
+      let hasOpaqueNeighbor = false;
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (dx === 0 && dy === 0) continue;
+          if (getPixel(source, x + dx, y + dy)[3] > 0) {
+            hasOpaqueNeighbor = true;
+            break;
+          }
+        }
+        if (hasOpaqueNeighbor) break;
+      }
+
+      if (hasOpaqueNeighbor) {
+        setPixel(image, x, y, color);
+      }
+    }
+  }
+}

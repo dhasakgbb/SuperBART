@@ -8,7 +8,7 @@ type AssetAnchor = {
   y: number;
 };
 
-type ArtPass = 'enemy' | 'hazard' | 'object' | 'hud' | 'system';
+type ArtPass = 'enemy' | 'hazard' | 'object' | 'hud' | 'system' | 'tile';
 
 type AssetImageDescriptor = {
   path: string;
@@ -39,35 +39,29 @@ export const ASSET_MANIFEST: {
     dust_puff: image('/assets/sprites/dust_puff.png', {
       pass: 'object',
     }),
-    enemy_walker: image('/assets/sprites/enemy_walker.png', {
-      pass: 'enemy',
-      palette: ['inkDark', 'groundShadow', 'groundMid', 'groundWarm'],
-      frameTiming: { fps: 8, frameCount: 4 },
-      anchorPx: { x: 8, y: 16 },
+    particle_spark: image('/assets/sprites/particle_spark.png', {
+      pass: 'object',
+      anchorPx: { x: 4, y: 4 },
     }),
-    enemy_shell: image('/assets/sprites/enemy_shell.png', {
-      pass: 'enemy',
-      palette: ['inkDark', 'groundShadow', 'groundMid', 'groundWarm'],
-      frameTiming: { fps: 8, frameCount: 3 },
-      anchorPx: { x: 8, y: 16 },
+    particle_chain: image('/assets/sprites/particle_chain.png', {
+      pass: 'object',
+      anchorPx: { x: 4, y: 4 },
+    }),
+    boss_health_bg: image('/assets/sprites/boss_health_bg.png', {
+      pass: 'hud',
+      anchorPx: { x: 0, y: 0 },
+    }),
+    boss_health_fill: image('/assets/sprites/boss_health_fill.png', {
+      pass: 'hud',
+      anchorPx: { x: 0, y: 0 },
     }),
     enemy_shell_retracted: image('/assets/sprites/enemy_shell_retracted.png', {
       pass: 'enemy',
-      palette: ['inkDark', 'groundShadow', 'groundMid', 'groundWarm'],
-      frameTiming: { fps: 10, frameCount: 1 },
       anchorPx: { x: 8, y: 16 },
     }),
-    enemy_flying: image('/assets/sprites/enemy_flying.png', {
+    enemy_microservice: image('/assets/sprites/enemy_microservice.png', {
       pass: 'enemy',
-      palette: ['inkDark', 'groundMid', 'groundWarm', 'skyMid'],
-      frameTiming: { fps: 8, frameCount: 2 },
-      anchorPx: { x: 8, y: 16 },
-    }),
-    enemy_spitter: image('/assets/sprites/enemy_spitter.png', {
-      pass: 'enemy',
-      palette: ['inkDark', 'groundMid', 'groundWarm', 'coinCore'],
-      frameTiming: { fps: 8, frameCount: 2 },
-      anchorPx: { x: 8, y: 16 },
+      anchorPx: { x: 8, y: 8 },
     }),
     projectile: image('/assets/sprites/projectile.png', {
       pass: 'object',
@@ -227,17 +221,86 @@ export const ASSET_MANIFEST: {
     }),
     tile_ground: image('/assets/tiles/tile_ground.png', { pass: 'object' }),
     tile_oneway: image('/assets/tiles/tile_oneway.png', { pass: 'object' }),
+    tile_ground_w1_top: image('/assets/tiles/tile_ground_w1_top.png', { pass: 'tile' }),
+    tile_ground_w1_mid: image('/assets/tiles/tile_ground_w1_mid.png', { pass: 'tile' }),
+    tile_ground_w1_bot: image('/assets/tiles/tile_ground_w1_bot.png', { pass: 'tile' }),
+    tile_oneway_w1: image('/assets/tiles/tile_oneway_w1.png', { pass: 'tile' }),
+
+    // Placeholders for other worlds (using default for now, or copy w1 if preferred)
+    tile_ground_w2_top: image('/assets/tiles/tile_ground_w2_top.png', { pass: 'tile' }),
+    tile_ground_w2_mid: image('/assets/tiles/tile_ground_w2_mid.png', { pass: 'tile' }),
+    tile_ground_w2_bot: image('/assets/tiles/tile_ground_w2_bot.png', { pass: 'tile' }),
+    
+    tile_ground_w3_top: image('/assets/tiles/tile_ground_w3_top.png', { pass: 'tile' }),
+    tile_ground_w3_mid: image('/assets/tiles/tile_ground_w3_mid.png', { pass: 'tile' }),
+    tile_ground_w3_bot: image('/assets/tiles/tile_ground_w3_bot.png', { pass: 'tile' }),
+    
+    tile_ground_w4_top: image('/assets/tiles/tile_ground_w4_top.png', { pass: 'tile' }),
+    tile_ground_w4_mid: image('/assets/tiles/tile_ground_w4_mid.png', { pass: 'tile' }),
+    tile_ground_w4_bot: image('/assets/tiles/tile_ground_w4_bot.png', { pass: 'tile' }),
+    
+    tile_ground_w5_top: image('/assets/tiles/tile_ground_w5_top.png', { pass: 'tile' }),
+    tile_ground_w5_mid: image('/assets/tiles/tile_ground_w5_mid.png', { pass: 'tile' }),
+    tile_ground_w5_bot: image('/assets/tiles/tile_ground_w5_bot.png', { pass: 'tile' }),
+    
+    tile_oneway_w2: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
+    tile_oneway_w3: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
+    tile_oneway_w4: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
+    tile_oneway_w5: image('/assets/tiles/tile_oneway.png', { pass: 'tile' }),
+
+    // World 1: Glacial Mainframe
+    hill_far_w1: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
+    hill_near_w1: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
+
+    // World 2-5 backgrounds (fallback to W1 until per-world assets exist)
+    hill_far_w2: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
+    hill_near_w2: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
+    hill_far_w3: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
+    hill_near_w3: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
+    hill_far_w4: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
+    hill_near_w4: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
+    hill_far_w5: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
+    hill_near_w5: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
   },
   spritesheets: {
-    bart_body_small: {
-      path: '/assets/sprites/bart_body_small.png',
+    bart_body_small: { path: '/assets/sprites/bart_body_small.png', frameWidth: 32, frameHeight: 32 },
+    bart_body_big: { path: '/assets/sprites/bart_body_big.png', frameWidth: 32, frameHeight: 48 },
+    bart_body_small_fire: { path: '/assets/sprites/bart_body_small_fire.png', frameWidth: 32, frameHeight: 32 },
+    bart_body_big_fire: { path: '/assets/sprites/bart_body_big_fire.png', frameWidth: 32, frameHeight: 48 },
+    enemy_walker: {
+      path: '/assets/sprites/enemy_walker.png',
       frameWidth: 16,
-      frameHeight: 24,
+      frameHeight: 16,
     },
-    bart_body_big: {
-      path: '/assets/sprites/bart_body_big.png',
+    enemy_shell: {
+      path: '/assets/sprites/enemy_shell.png',
       frameWidth: 16,
-      frameHeight: 32,
+      frameHeight: 16,
+    },
+    enemy_flying: {
+      path: '/assets/sprites/enemy_flying.png',
+      frameWidth: 16,
+      frameHeight: 16,
+    },
+    enemy_spitter: {
+      path: '/assets/sprites/enemy_spitter.png',
+      frameWidth: 16,
+      frameHeight: 16,
+    },
+    enemy_compliance: {
+      path: '/assets/sprites/enemy_compliance.png',
+      frameWidth: 16,
+      frameHeight: 16,
+    },
+    enemy_techdebt: {
+      path: '/assets/sprites/enemy_techdebt.png',
+      frameWidth: 16,
+      frameHeight: 16,
+    },
+    boss_sheet: {
+      path: '/assets/sprites/boss_sheet.png',
+      frameWidth: 64,
+      frameHeight: 64,
     },
   },
   bitmapFonts: {

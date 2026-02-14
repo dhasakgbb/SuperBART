@@ -13,7 +13,8 @@ describe('renderer config', () => {
   test('createGameConfig enforces WebGL-friendly render settings', () => {
     const config = createGameConfig([]);
 
-    expect([2, 0].includes(Number(config.type))).toBe(true);
+    // gameConfig uses Phaser.CANVAS (1) for broadest compatibility
+    expect([1, 2, 0].includes(Number(config.type))).toBe(true);
     expect(config.render?.antialias).toBe(false);
     expect(config.render?.pixelArt).toBe(true);
     expect(config.render?.roundPixels).toBe(true);

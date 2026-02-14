@@ -185,14 +185,14 @@ export class TitleScene extends Phaser.Scene {
 
     const logo = this.add
       .image(titleLayout.wordmark.x, titleLayout.wordmark.y, 'title_logo')
-      .setOrigin(0.5, 0)
+      .setOrigin(0.5, 0.1) // Adjusted for better vertical balance
       .setScrollFactor(0)
       .setDepth(40);
     logo.setScale(titleLayout.wordmark.scale);
 
     this.add
       .image(titleLayout.portrait.x, titleLayout.portrait.y, titleLayout.portrait.textureKey)
-      .setOrigin(0, 0)
+      .setOrigin(0.5, 0.5) // Centered portrait
       .setScale(titleLayout.portrait.scale)
       .setScrollFactor(0)
       .setDepth(44);

@@ -23,17 +23,7 @@ export class Analyst extends BaseEnemy {
     
     this.setScale(1.8);
 
-    // Initial timer offset to stagger or start immediately? 
-    // Registry initialized shellMoveSpeed (timer) to 0. So it shoots immediately?
-    // "if ((local.phaseMs ?? 0) >= (local.shellMoveSpeed ?? 0))" -> 0 >= 0 is true.
-    // So yes, immediate shot.
-    this.timer = this.cadence; // Force immediate shot?
-    // Actually, let's start at 0 and fire when it reaches 0?
-    // Registry logic: `phaseMs += dt`. `if phaseMs >= limit`. limit starts 0.
-    // So fire at t=0. Then limit becomes cadence.
-    // So distinct from `timer -= dt`.
-    // Let's use `timer` counting up to `cadence`.
-    this.timer = this.cadence; // Trigger immediately
+    this.timer = this.cadence; // Trigger first shot immediately
   }
 
   public get kind(): EnemyKind {
@@ -64,15 +54,8 @@ export class Analyst extends BaseEnemy {
           this.fireProjectiles();
       }
 
-      // Recoil recovery
-      if (this.y < this.baseY - 4 && this.timer > 2000) { 
-          // Registry: `if (sprite.y < baseY - 4 && (local.phaseMs ?? 0) > 2000)`
-          // This implies it recoils UPWARDS and drifts down?
-          // Or wait, `sprite.setY(sprite.y + 0.3)` moves DOWN.
-          // So it must have moved UP during firing?
-          // Registry didn't show recoil usage. Maybe it was manual or physics recoil?
-          // "b1.setVelocity(-130, 0)" .. physics doesn't apply recoil to thrower unless coded.
-          // Maybe I should add recoil.
+      // Recoil recovery: drift back down after firing recoil
+      if (this.y < this.baseY - 4 && this.timer > 2000) {
           this.y += 0.3;
       }
   }
