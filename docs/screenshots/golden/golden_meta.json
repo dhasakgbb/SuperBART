@@ -1,36 +1,36 @@
 {
   "schema": "visual-regression-v1",
-  "generatedAt": "2026-02-14T09:17:40.462Z",
+  "generatedAt": "2026-02-15T03:43:45.279Z",
   "layoutVersion": "1.0.0",
   "scenes": [
     {
       "scene": "title",
       "sourceScene": "TitleScene",
-      "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/title_scene_golden.png",
-      "captureHash": "a54ea4ae2597c49ca3b68d2f07e533bfebdcf6493d58629314600a4229a1bddb",
-      "width": 966,
-      "height": 546,
-      "createdAt": "2026-02-14T09:17:40.462Z",
+      "targetFile": "title_scene_golden.png",
+      "captureHash": "b50808e4ea9d609df57a6bd566fb14383a5753313fe875edf61e29f8e39166a5",
+      "width": 960,
+      "height": 540,
+      "createdAt": "2026-02-15T03:43:45.279Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "map",
       "sourceScene": "WorldMapScene",
-      "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/map_scene_golden.png",
-      "captureHash": "53c4613813e8f9cfb6eeb4d3719ffbf700fdbeddd37bdcb9c84d44da6b3b387b",
-      "width": 966,
-      "height": 546,
-      "createdAt": "2026-02-14T09:17:40.462Z",
+      "targetFile": "map_scene_golden.png",
+      "captureHash": "03971a0aafa27bfcd86f5dbc8fc56862401bfcf20762b425222c9a4fa9a904ee",
+      "width": 960,
+      "height": 540,
+      "createdAt": "2026-02-15T03:43:45.279Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "play",
       "sourceScene": "PlayScene",
-      "targetFile": "/Users/damian/GitHub/NES/SuperBART/docs/screenshots/golden/play_scene_golden.png",
-      "captureHash": "ba8e47f47536f57b40aa285a54ddb232a511198dd79e0e9ae798d24a0ae9606b",
-      "width": 966,
-      "height": 546,
-      "createdAt": "2026-02-14T09:17:40.462Z",
+      "targetFile": "play_scene_golden.png",
+      "captureHash": "30b6ee09815480a5a6f003c89a9fa7c0d811a013483c82777776ecabe8513408",
+      "width": 960,
+      "height": 540,
+      "createdAt": "2026-02-15T03:43:45.279Z",
       "layoutVersion": "1.0.0"
     }
   ]

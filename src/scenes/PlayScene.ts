@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { ASSET_MANIFEST } from '../core/assetManifest';
-import { DISPLAY_NAMES, PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
+import { CAMPAIGN_WORLD_LAYOUT, DISPLAY_NAMES, PLAYER_CONSTANTS, SCORE_VALUES, TILE_SIZE, VIEW_HEIGHT, VIEW_WIDTH } from '../core/constants';
 import { buildRuntimeState, runtimeStore } from '../core/runtime';
 import { spawnEnemy } from '../enemies/registry';
 import type { EnemyHandle, EnemyContext } from '../enemies/types';
@@ -13,10 +13,12 @@ import {
   createFeelState,
   DEFAULT_WORLD_MODIFIERS,
   stepMovement,
+  type MotionHint,
   type WorldModifiers,
   type FeelState,
 } from '../player/movement';
 import { PlayerAnimator } from '../player/PlayerAnimator';
+import { PingCompanion } from '../player/Ping';
 import { EffectManager } from '../systems/EffectManager';
 import { createDustPuff, DustPuffEmitter } from '../player/dustPuff';
 import { createPlayerAnimations } from '../anim/playerAnims';
@@ -24,11 +26,26 @@ import { renderGameplayBackground, type WorldPaletteOverride } from '../renderin
 import { CONTENT_WORLD_MAP } from '../content/contentManifest';
 import styleConfig, { stylePalette } from '../style/styleConfig';
 import { computeSeed, setLevelCollectibleStatus, setLevelEvalStatus } from '../systems/progression';
-import { persistSave } from '../systems/save';
-import type { PlayerForm, SuperBartRuntimeState } from '../types/game';
+import { clearActiveBonusRouteId, collectPersonnelFile, persistSave, setActiveBonusRouteId } from '../systems/save';
+import { collectShellChainKillPairs } from '../systems/shellChain';
+import type { BonusRouteId, PlayerForm, SuperBartRuntimeState } from '../types/game';
 import { createHud, renderHud, updateHudPosition, type HudRefs } from '../ui/hud';
+import { isBossStage } from '../content/scriptCampaign';
 import { SCENE_TEXT } from '../content/contentManifest';
 import { transitionToScene } from './sceneFlow';
+import {
+  createStorytellingState,
+  getWorldMonitorMessage,
+  shouldShowMonitorMessage,
+  updateMonitorDisplayTime,
+  type StorytellingState,
+} from '../systems/storytelling';
+import {
+  applyMaintenanceDensity,
+  getMaintenanceFileCounterText,
+} from '../systems/maintenanceAccess';
+import { arePowerUpsDisabled, areCheckpointsDisabled } from '../systems/bartsRules';
+import type { EntityType, SetPieceMode } from '../types/levelgen';
 
 type StompHitstopTelemetry = {
   lastAppliedStompAtFrame: number;
@@ -47,6 +64,7 @@ type MovementDebugState = {
   jumpCutWindowMsLeft: number;
   prevJumpHeld: boolean;
   skidMsLeft: number;
+  lastMotionHint: MotionHint;
 };
 
 type CollectibleGlowHandle =
@@ -63,6 +81,11 @@ export class PlayScene extends Phaser.Scene {
   private stars!: Phaser.Physics.Arcade.StaticGroup;
   private spikes!: Phaser.Physics.Arcade.StaticGroup;
   private springs!: Phaser.Physics.Arcade.StaticGroup;
+  private diagnosticNodes!: Phaser.Physics.Arcade.StaticGroup;
+  private monitors!: Phaser.Physics.Arcade.StaticGroup;
+  private posters!: Phaser.Physics.Arcade.StaticGroup;
+  private personalEffects!: Phaser.Physics.Arcade.StaticGroup;
+  private personnelFiles!: Phaser.Physics.Arcade.StaticGroup;
   private checkpoints!: Phaser.Physics.Arcade.StaticGroup;
   private questionBlocks!: Phaser.Physics.Arcade.StaticGroup;
   private goal!: Phaser.Physics.Arcade.Sprite;
@@ -71,6 +94,7 @@ export class PlayScene extends Phaser.Scene {
   private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private damageZones!: Phaser.Physics.Arcade.StaticGroup;
   private enemyHandles: EnemyHandle[] = [];
+  private enemyHandleMap: Map<Phaser.Physics.Arcade.Sprite, EnemyHandle> = new Map();
   private collectibleGlows = new Map<number, CollectibleGlowHandle>();
   private glowIdCounter = 1;
   private cameraBloom?: Phaser.FX.Bloom;
@@ -78,6 +102,15 @@ export class PlayScene extends Phaser.Scene {
   private hud!: HudRefs;
   private readonly audio = AudioEngine.shared();
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
+
+  private startStageMusic(): void {
+    if (isBossStage(this.world, this.levelIndex)) {
+      this.audio.startBossMusic(this.world);
+      return;
+    }
+
+    this.audio.startWorldMusic(this.world);
+  }
 
   private playerForm: PlayerForm = 'small';
   private lives = 3;
@@ -87,7 +120,12 @@ export class PlayScene extends Phaser.Scene {
   private feel = createFeelState();
   private levelTimeMs = 0;
   private jumpHeldLast = false;
+  private lastMotionHint: MotionHint = 'air';
   private runHeld = false;
+  private pulseChargeMs = 0;
+  private manualCheckHoldMs = 0;
+  private airJumpsUsed = 0;
+  private isGroundPounding = false;
   private stompHitstop?: Phaser.Time.TimerEvent;
   private stompHitstopHistory: Array<{ frame: number; appliedMs: number; paused: boolean; resumed: boolean }> = [];
   private lastAppliedStompAtFrame = -1;
@@ -100,11 +138,21 @@ export class PlayScene extends Phaser.Scene {
   private effects!: EffectManager;
   private dustPuff!: DustPuffEmitter;
   private wasOnGround = true;
+  private ping: PingCompanion | null = null;
 
   private completed = false;
   private world = 1;
   private levelIndex = 1;
+  private setPieceMode: SetPieceMode | null = null;
+  private setPieceModeMessageShown = false;
+  private setPieceCollapseHazards: Phaser.Physics.Arcade.Sprite[] = [];
+  private setPieceCollapseHazardIndex = 0;
+  private setPieceCollapseHazardTimerMs = 0;
+  private maintenanceAccess = false;
+  private bonusRouteId: BonusRouteId | null = null;
   private worldModifiers: WorldModifiers = { ...DEFAULT_WORLD_MODIFIERS };
+  private storytelling!: StorytellingState;
+  private monitorNearby = false;
 
   /** Time warning threshold (seconds). Music speeds up when below this. */
   private static readonly TIME_WARNING_SEC = 60;
@@ -125,13 +173,25 @@ export class PlayScene extends Phaser.Scene {
     super('PlayScene');
   }
 
-  init(data: { world?: number; level?: number; bonus?: boolean }): void {
+  init(data: {
+    world?: number;
+    level?: number;
+    stage?: number;
+    bonus?: boolean;
+    bonusRouteId?: BonusRouteId | null;
+    maintenance?: boolean;
+  }): void {
     this.levelBonus = Boolean(data?.bonus);
+    this.maintenanceAccess = Boolean(data?.maintenance);
+    this.bonusRouteId = data?.bonusRouteId ?? runtimeStore.save.campaign.activeBonusRouteId ?? null;
+    runtimeStore.save = setActiveBonusRouteId(runtimeStore.save, this.bonusRouteId);
     if (data?.world != null) {
       runtimeStore.save.campaign.world = data.world;
     }
-    if (data?.level != null) {
-      runtimeStore.save.campaign.levelIndex = data.level;
+    const requestedStage = data?.stage ?? data?.level;
+    if (requestedStage != null) {
+      runtimeStore.save.campaign.stage = requestedStage;
+      runtimeStore.save.campaign.levelIndex = requestedStage;
     }
   }
 
@@ -141,10 +201,12 @@ export class PlayScene extends Phaser.Scene {
     this.canUsePostFx = this.canUsePostFxRender();
 
     this.world = runtimeStore.save.campaign.world;
-    this.levelIndex = runtimeStore.save.campaign.levelIndex;
+    this.levelIndex = runtimeStore.save.campaign.stage ?? runtimeStore.save.campaign.levelIndex;
 
     const forcedSeed = (window as any).__SUPER_BART__?.forceSeed;
-    const seed = typeof forcedSeed === 'number' ? forcedSeed : computeSeed(this.world, this.levelIndex + (this.levelBonus ? 100 : 0));
+    const seed = typeof forcedSeed === 'number'
+      ? forcedSeed
+      : computeSeed(this.world, this.levelIndex + (this.levelBonus ? 100 : 0), this.bonusRouteId);
     const level = generateLevel({
       world: this.world,
       levelIndex: this.levelIndex,
@@ -157,7 +219,20 @@ export class PlayScene extends Phaser.Scene {
     }
 
     const rules = getWorldRules(this.world);
+    this.setPieceMode = level.metadata.setPiece?.mode ?? null;
+    this.setPieceModeMessageShown = false;
+    this.setPieceCollapseHazards = [];
+    this.setPieceCollapseHazardIndex = 0;
+    this.setPieceCollapseHazardTimerMs = 0;
     this.worldModifiers = { ...DEFAULT_WORLD_MODIFIERS, ...rules.modifiers };
+    if (this.setPieceMode === 'collapse') {
+      this.worldModifiers.gravityMultiplier = this.worldModifiers.gravityMultiplier * 1.12;
+    } else if (this.setPieceMode === 'approach') {
+      this.worldModifiers.speedMultiplier = this.worldModifiers.speedMultiplier * 0.94;
+    }
+    if (this.setPieceMode && level.metadata.setPiece?.description) {
+      this.showHudToast(level.metadata.setPiece.description.toUpperCase());
+    }
 
     // Store auto-scroll segments from level metadata (World 5 benchmark)
     this.autoScrollSegments = level.metadata.benchmarkAutoScroll ?? [];
@@ -192,76 +267,30 @@ export class PlayScene extends Phaser.Scene {
       }
     };
 
-    if (this.world === 1) {
-      layout.hills = {
-        far: { ...layout.hills.far, key: 'hill_far_w1' as any },
-        near: { ...layout.hills.near, key: 'hill_near_w1' as any },
-      };
-      patchLayers('hill_far_w1', 'hill_near_w1');
-      
-      // Custom Sky for Cryo-Server (Icy Blue)
-      layout.sky = {
-        topSwatch: 'skyBlue' as any,
-        bottomSwatch: 'hudText' as any,
-      };
-      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyBlue')?.hex);
+    const worldKey = Math.min(CAMPAIGN_WORLD_LAYOUT.length, Math.max(1, this.world));
+    const farKey = `hill_far_w${worldKey}`;
+    const nearKey = `hill_near_w${worldKey}`;
+    layout.hills = {
+      far: { ...layout.hills.far, key: farKey as any },
+      near: { ...layout.hills.near, key: nearKey as any },
+    };
+    patchLayers(farKey, nearKey);
 
-    } else if (this.world === 2) {
-      layout.hills = {
-        far: { ...layout.hills.far, key: 'hill_far_w2' as any },
-        near: { ...layout.hills.near, key: 'hill_near_w2' as any },
-      };
-      patchLayers('hill_far_w2', 'hill_near_w2');
-
-      // Quantum Void Sky (Deep Purple/Black)
-      layout.sky = {
-        topSwatch: 'skyDeep' as any, // Black
-        bottomSwatch: 'skyMid' as any, // Dark Grey
-      };
-      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyDeep')?.hex);
-
-    } else if (this.world === 3) {
-      layout.hills = {
-        far: { ...layout.hills.far, key: 'hill_far_w3' as any },
-        near: { ...layout.hills.near, key: 'hill_near_w3' as any },
-      };
-      patchLayers('hill_far_w3', 'hill_near_w3');
-
-      // Deep Web Catacombs (Green tint)
-      layout.sky = {
-        topSwatch: 'skyDeep' as any, // Black
-        bottomSwatch: 'grassMid' as any, // Greenish hint? Or just black.
-      };
-      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'skyDeep')?.hex);
-
-    } else if (this.world === 4) {
-      layout.hills = {
-        far: { ...layout.hills.far, key: 'hill_far_w4' as any },
-        near: { ...layout.hills.near, key: 'hill_near_w4' as any },
-      };
-      patchLayers('hill_far_w4', 'hill_near_w4');
-
-      // Volcanic Fallout (Red/Orange)
-      layout.sky = {
-        topSwatch: 'inkDark' as any, // Dark
-        bottomSwatch: 'groundWarm' as any, // Orange/Red
-      };
-      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'inkDark')?.hex);
-
-    } else if (this.world === 5) {
-      layout.hills = {
-        far: { ...layout.hills.far, key: 'hill_far_w5' as any },
-        near: { ...layout.hills.near, key: 'hill_near_w5' as any },
-      };
-      patchLayers('hill_far_w5', 'hill_near_w5');
-
-      // Digital Graveyard (Monochrome)
-      layout.sky = {
-        topSwatch: 'inkDark' as any,
-        bottomSwatch: 'inkSoft' as any,
-      };
-      this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find(s => s.name === 'inkDark')?.hex);
-    }
+    const skyByWorld: Record<number, { top: string; bottom: string; bg: string }> = {
+      1: { top: 'skyBlue', bottom: 'hudText', bg: 'skyBlue' },
+      2: { top: 'skyDeep', bottom: 'skyMid', bg: 'skyDeep' },
+      3: { top: 'skyDeep', bottom: 'grassMid', bg: 'skyDeep' },
+      4: { top: 'inkDark', bottom: 'groundWarm', bg: 'inkDark' },
+      5: { top: 'inkDark', bottom: 'inkSoft', bg: 'inkDark' },
+      6: { top: 'inkDark', bottom: 'skyMid', bg: 'inkDark' },
+      7: { top: 'skyDeep', bottom: 'inkSoft', bg: 'skyDeep' },
+    };
+    const skyConfig = skyByWorld[worldKey] ?? skyByWorld[1];
+    layout.sky = {
+      topSwatch: skyConfig.top as any,
+      bottomSwatch: skyConfig.bottom as any,
+    };
+    this.cameras.main.setBackgroundColor(styleConfig.palette.swatches.find((swatch) => swatch.name === skyConfig.bg)?.hex);
     
     renderGameplayBackground(this, VIEW_WIDTH, VIEW_HEIGHT, layout, worldPalette);
 
@@ -274,6 +303,11 @@ export class PlayScene extends Phaser.Scene {
     this.stars = this.physics.add.staticGroup();
     this.spikes = this.physics.add.staticGroup();
     this.springs = this.physics.add.staticGroup();
+    this.diagnosticNodes = this.physics.add.staticGroup();
+    this.monitors = this.physics.add.staticGroup();
+    this.posters = this.physics.add.staticGroup();
+    this.personalEffects = this.physics.add.staticGroup();
+    this.personnelFiles = this.physics.add.staticGroup();
     this.checkpoints = this.physics.add.staticGroup();
     this.questionBlocks = this.physics.add.staticGroup();
     this.projectiles = this.physics.add.group({ allowGravity: false });
@@ -300,6 +334,9 @@ export class PlayScene extends Phaser.Scene {
         }
         if (tile === 2) {
           const block = this.oneWay.create(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, onewayKey) as Phaser.Physics.Arcade.Sprite;
+          if (this.setPieceMode === 'collapse') {
+            this.setPieceCollapseHazards.push(block);
+          }
           block.refreshBody();
         }
       }
@@ -316,8 +353,18 @@ export class PlayScene extends Phaser.Scene {
       platform.setImmovable(true);
     }
 
+    if (this.setPieceMode === 'collapse' && this.setPieceCollapseHazards.length > 1) {
+      this.setPieceCollapseHazards.sort((a, b) => b.x - a.x);
+    }
+
     let spawn = { x: 48, y: 48 };
     for (const e of level.entities) {
+      if (this.shouldSuppressScorePickup(e.type)) {
+        continue;
+      }
+      if (this.shouldSuppressEntityInSetPieceMode(e.type)) {
+        continue;
+      }
       if (e.type === 'spawn') {
         spawn = { x: e.x, y: e.y };
       } else if (e.type === 'coin') {
@@ -344,6 +391,41 @@ export class PlayScene extends Phaser.Scene {
         const cp = this.checkpoints.create(e.x, e.y, 'checkpoint') as Phaser.Physics.Arcade.Sprite;
         cp.setData('checkpointId', String(e.data?.checkpointId ?? e.id));
         cp.refreshBody();
+      } else if (e.type === 'diagnostic_node') {
+        const node = this.diagnosticNodes.create(e.x, e.y, 'checkpoint') as Phaser.Physics.Arcade.Sprite;
+        node.setData('nodeId', e.id);
+        node.setTint(0x6ce0d8);
+        node.setAlpha(0.88);
+        node.refreshBody();
+      } else if (e.type === 'monitor') {
+        const monitor = this.monitors.create(e.x, e.y, 'question_block_used') as Phaser.Physics.Arcade.Sprite;
+        monitor.setScale(1.35);
+        monitor.setTint(0x7ee6ff);
+        monitor.setAlpha(0.9);
+        monitor.setData('monitorId', e.id);
+        monitor.refreshBody();
+      } else if (e.type === 'poster') {
+        const poster = this.posters.create(e.x, e.y, 'question_block_used') as Phaser.Physics.Arcade.Sprite;
+        poster.setScale(1.8);
+        poster.setTint(0xc8c8a4);
+        poster.refreshBody();
+      } else if (e.type === 'personal_effect') {
+        const effect = this.personalEffects.create(e.x, e.y, 'pickup_token') as Phaser.Physics.Arcade.Sprite;
+        effect.setScale(1.2);
+        effect.setTint(0xe4d6c2);
+        effect.refreshBody();
+      } else if (e.type === 'personnel_file') {
+        const fileId = String(e.data?.fileId ?? e.id);
+        if (runtimeStore.save.personnelFilesCollected.includes(fileId)) {
+          continue;
+        }
+        const file = this.personnelFiles.create(e.x, e.y, 'pickup_eval') as Phaser.Physics.Arcade.Sprite;
+        file.setData('fileId', fileId);
+        file.setData('fileWorld', Number(e.data?.world ?? this.world));
+        file.setScale(actorScale.star);
+        file.setTint(0xfff4aa);
+        file.refreshBody();
+        this.attachCollectibleGlow(file, 'pickup_eval');
       } else if (e.type === 'goal') {
         this.goal = this.physics.add.staticSprite(e.x, e.y, 'flag');
       } else if (e.type === 'spike') {
@@ -396,11 +478,19 @@ export class PlayScene extends Phaser.Scene {
         this.startCoinSpin(coin);
       } else if (
         e.type === 'walker' || e.type === 'shell' || e.type === 'flying' || e.type === 'spitter'
+        || e.type === 'boss'
         || e.type === 'compliance_officer' || e.type === 'technical_debt'
         || e.type === 'hallucination' || e.type === 'legacy_system' || e.type === 'hot_take' || e.type === 'analyst'
+        || e.type === 'snowman_sentry' || e.type === 'cryo_drone' || e.type === 'qubit_swarm'
+        || e.type === 'crawler' || e.type === 'glitch_phantom' || e.type === 'fungal_node'
+        || e.type === 'ghost_process' || e.type === 'tape_wraith' || e.type === 'resume_bot'
       ) {
+        if (!this.shouldSpawnEnemyInMaintenance(e.id, e.type)) {
+          continue;
+        }
         const handle = spawnEnemy(e.type as import('../enemies/types').EnemyKind, this, e.x, e.y, this.buildEnemyContext(), e.data);
         this.enemyHandles.push(handle);
+        this.enemyHandleMap.set(handle.sprite, handle);
         this.enemiesGroup.add(handle.sprite);
       }
     }
@@ -434,6 +524,12 @@ export class PlayScene extends Phaser.Scene {
     this.effects = new EffectManager({ scene: this });
     this.dustPuff = createDustPuff(this);
     this.wasOnGround = true;
+
+    // Initialize Ping companion (active from World 4 onward)
+    this.ping = new PingCompanion(this);
+    if (this.world >= 4) {
+      this.ping.activate(spawn.x + 20, spawn.y - 16);
+    }
 
     this.checkpointXY = { ...spawn };
 
@@ -477,6 +573,16 @@ export class PlayScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.player, this.stars, (_p, star) => {
       const pickup = star as Phaser.Physics.Arcade.Sprite;
+      const powerupType = pickup.getData('powerupType') as string | undefined;
+
+      // Bart's Rule #1 (No Handouts): Suppress power-ups entirely
+      if (arePowerUpsDisabled() && powerupType) {
+        // Still collect the item visually but don't apply effect
+        this.collectItem(pickup);
+        this.showHudToast('NO HANDOUTS');
+        return;
+      }
+
       const evalId = String(pickup.getData('collectibleId') ?? '');
       if (evalId) {
         runtimeStore.save = setLevelEvalStatus(runtimeStore.save, this.world, this.levelIndex, evalId);
@@ -491,7 +597,26 @@ export class PlayScene extends Phaser.Scene {
       this.playSfx('power');
     });
 
+    this.physics.add.overlap(this.player, this.personnelFiles, (_p, fileObj) => {
+      const file = fileObj as Phaser.Physics.Arcade.Sprite;
+      const fileId = String(file.getData('fileId') ?? '');
+      const fileWorld = Number(file.getData('fileWorld') ?? this.world);
+      if (!fileId) {
+        return;
+      }
+      runtimeStore.save = collectPersonnelFile(runtimeStore.save, fileWorld, fileId);
+      persistSave(runtimeStore.save);
+      this.showHudToast(`PERSONNEL FILE ${runtimeStore.save.personnelFilesCollected.length}/25`);
+      this.collectItem(file);
+      this.effects.emitSparkle(this.player.x, this.player.y - 12, 0xfff6b5, 7);
+      this.playSfx('coin');
+    });
+
     this.physics.add.overlap(this.player, this.checkpoints, (_p, cpObj) => {
+      // Bart's Rule #2 (Manual Override): Checkpoints disabled
+      if (areCheckpointsDisabled()) {
+        return;
+      }
       const point = cpObj as Phaser.Physics.Arcade.Sprite;
       const prevId = this.checkpointId;
       this.checkpointId = String(point.getData('checkpointId'));
@@ -516,6 +641,20 @@ export class PlayScene extends Phaser.Scene {
       this.playSfx('jump');
     });
 
+    // Monitor proximity detection for environmental storytelling
+    this.physics.add.overlap(this.player, this.monitors, () => {
+      this.monitorNearby = true;
+      if (shouldShowMonitorMessage(this.storytelling, this.time.now)) {
+        const msg = getWorldMonitorMessage(
+          this.world,
+          this.maintenanceAccess,
+          runtimeStore.save.unlocks.omegaLogs,
+        );
+        this.showHudToast(msg);
+        updateMonitorDisplayTime(this.storytelling, this.time.now);
+      }
+    });
+
     this.physics.add.collider(this.player, this.solids, (_p, obj) => {
       const platform = obj as Phaser.Physics.Arcade.Sprite;
       if (platform.body && (platform.body as Phaser.Physics.Arcade.Body).touching.up && this.player.body?.touching.down) {
@@ -527,9 +666,10 @@ export class PlayScene extends Phaser.Scene {
 
     this.physics.add.collider(this.player, this.enemiesGroup, (pObj, eObj) => {
       const p = pObj as Phaser.Physics.Arcade.Sprite;
-      const target = this.enemyHandles.find((h) => h.sprite === eObj);
+      const target = this.enemyHandleMap.get(eObj as Phaser.Physics.Arcade.Sprite);
       if (!target) return;
       const result = target.onPlayerCollision(p);
+      if (result === 'harmless') return;
       if (result === 'stomp') {
         const stompFrame = this.game.loop.frame;
         const shouldProcessStomp = this.lastStompFrame !== stompFrame;
@@ -580,10 +720,12 @@ export class PlayScene extends Phaser.Scene {
     this.keys = this.input.keyboard!.addKeys({
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      down: Phaser.Input.Keyboard.KeyCodes.DOWN,
       a: Phaser.Input.Keyboard.KeyCodes.A,
       d: Phaser.Input.Keyboard.KeyCodes.D,
       up: Phaser.Input.Keyboard.KeyCodes.UP,
       w: Phaser.Input.Keyboard.KeyCodes.W,
+      j: Phaser.Input.Keyboard.KeyCodes.J,
       shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       r: Phaser.Input.Keyboard.KeyCodes.R,
@@ -592,11 +734,16 @@ export class PlayScene extends Phaser.Scene {
     }) as Record<string, Phaser.Input.Keyboard.Key>;
 
     this.hud = createHud(this);
+    this.storytelling = createStorytellingState();
     this.lives = 3;
+    if (this.maintenanceAccess) {
+      const omegaTag = runtimeStore.save.unlocks.omegaLogs ? ' [OMEGA LOGS]' : '';
+      this.showHudToast(`MAINTENANCE ACCESS ACTIVE${omegaTag}`);
+    }
 
     this.audio.configureFromSettings(runtimeStore.save.settings);
     this.audio.stopMusic();
-    this.audio.startWorldMusic(this.world);
+    this.startStageMusic();
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       runtimeStore.mode = 'playing';
@@ -654,6 +801,10 @@ export class PlayScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.POST_UPDATE, onPostUpdate);
       this.stompHitstop?.remove();
+      if (this.physics?.world?.isPaused) {
+        this.physics.world.resume();
+      }
+      this.stompHitstop = undefined;
       this.cameraBloom?.destroy();
       this.cameraBloom = undefined;
       this.collectibleGlows.forEach((glow) => {
@@ -664,6 +815,8 @@ export class PlayScene extends Phaser.Scene {
         }
       });
       this.collectibleGlows.clear();
+      this.ping?.destroy();
+      this.ping = null;
       if (this.physics?.world?.isPaused) {
         this.physics.world.resume();
       }
@@ -706,6 +859,7 @@ export class PlayScene extends Phaser.Scene {
       {},
     );
     this.enemyHandles.push(walker);
+    this.enemyHandleMap.set(walker.sprite, walker);
     this.enemiesGroup.add(walker.sprite);
   }
 
@@ -720,9 +874,62 @@ export class PlayScene extends Phaser.Scene {
       nowMs: () => this.time.now,
       onSpawnEnemy: (handle) => {
         this.enemyHandles.push(handle);
+        this.enemyHandleMap.set(handle.sprite, handle);
         this.enemiesGroup.add(handle.sprite);
       },
     };
+  }
+
+  private shouldSuppressScorePickup(entityType: string): boolean {
+    if (!this.maintenanceAccess) {
+      return false;
+    }
+    return entityType === 'coin'
+      || entityType === 'star'
+      || entityType === 'token'
+      || entityType === 'eval'
+      || entityType === 'question_block';
+  }
+
+  private shouldSuppressEntityInSetPieceMode(entityType: string): boolean {
+    if (this.setPieceMode !== 'approach') {
+      return false;
+    }
+    return (
+      entityType === 'walker'
+      || entityType === 'shell'
+      || entityType === 'flying'
+      || entityType === 'spitter'
+      || entityType === 'boss'
+      || entityType === 'compliance_officer'
+      || entityType === 'technical_debt'
+      || entityType === 'hallucination'
+      || entityType === 'legacy_system'
+      || entityType === 'hot_take'
+      || entityType === 'analyst'
+      || entityType === 'spike'
+      || entityType === 'spring'
+      || entityType === 'thwomp'
+      || entityType === 'moving_platform'
+      || entityType === 'diagnostic_node'
+      || entityType === 'monitor'
+      || entityType === 'poster'
+      || entityType === 'personal_effect'
+      || entityType === 'checkpoint'
+    );
+  }
+
+  private shouldSpawnEnemyInMaintenance(entityId: string, enemyType: string): boolean {
+    if (!this.maintenanceAccess || enemyType === 'boss') {
+      return true;
+    }
+    const maintenanceChancePercent = Math.max(1, applyMaintenanceDensity(100));
+    let hash = 0;
+    const source = `${entityId}|${this.world}|${this.levelIndex}`;
+    for (let index = 0; index < source.length; index += 1) {
+      hash = (hash * 33 + source.charCodeAt(index)) % 10_007;
+    }
+    return (hash % 100) < maintenanceChancePercent;
   }
 
   private attachCollectibleGlow(sprite: Phaser.Physics.Arcade.Sprite, textureKey: string): void {
@@ -842,6 +1049,7 @@ export class PlayScene extends Phaser.Scene {
       stars: runtimeStore.save.progression.stars,
       lives: this.lives,
       form: this.playerForm,
+      maintenanceFileCounterText: this.maintenanceAccess ? getMaintenanceFileCounterText(this.world) : undefined,
       timeSec: Math.floor(this.levelTimeMs / 1000)
     });
   }
@@ -1017,6 +1225,21 @@ export class PlayScene extends Phaser.Scene {
     animState: string;
     sceneFrame: number;
     feel: FeelState;
+    abilities: {
+      pulseChargeMs: number;
+      manualCheckHoldMs: number;
+      doubleJumpUnlocked: boolean;
+      airJumpsUsed: number;
+      groundPoundActive: boolean;
+    };
+    playfeel: {
+      jumpCutApplied: boolean;
+      jumpCutWindowMsLeft: number;
+      skidMsLeft: number;
+      lastMotionHint: MotionHint;
+      stompHitstopActive: boolean;
+      stompHitstopFrame: number;
+    };
   } {
     const onGround = this.player?.body?.blocked.down || this.player?.body?.touching.down || false;
     const movement: MovementDebugState = {
@@ -1029,16 +1252,32 @@ export class PlayScene extends Phaser.Scene {
       jumpCutWindowMsLeft: this.feel.jumpCutWindowMsLeft,
       prevJumpHeld: this.feel.prevJumpHeld,
       skidMsLeft: this.feel.skidMsLeft,
+      lastMotionHint: this.lastMotionHint,
     };
 
     return {
       ...this.getRuntimeState(),
       stompHitstopTelemetry: this.getStompHitstopTelemetry(),
       movement,
-      animState: this.animator.getState(),
+      animState: this.animator?.getState ? this.animator.getState() : 'idle',
       sceneFrame: this.game.loop.frame,
       // Non-serialized feel contract state for deterministic feel telemetry in QA harnesses.
       feel: this.feel,
+      playfeel: {
+        jumpCutApplied: this.feel.jumpCutApplied,
+        jumpCutWindowMsLeft: this.feel.jumpCutWindowMsLeft,
+        skidMsLeft: this.feel.skidMsLeft,
+        lastMotionHint: this.lastMotionHint,
+        stompHitstopActive: this.stompHitstop !== undefined && this.stompHitstop !== null,
+        stompHitstopFrame: this.getStompHitstopTelemetry().lastAppliedStompAtFrame,
+      },
+      abilities: {
+        pulseChargeMs: this.pulseChargeMs,
+        manualCheckHoldMs: this.manualCheckHoldMs,
+        doubleJumpUnlocked: runtimeStore.save.unlocks.doubleJump,
+        airJumpsUsed: this.airJumpsUsed,
+        groundPoundActive: this.isGroundPounding,
+      },
     };
   }
 
@@ -1096,15 +1335,112 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private triggerStompHitstop(): void {
-    if (!this.physics?.world || this.physics?.world?.isPaused) {
+  private emitRackPulse(charged: boolean): void {
+    const radius = charged ? 140 : 88;
+    const scoreDelta = charged ? SCORE_VALUES.stomp * 2 : SCORE_VALUES.stomp;
+    let hits = 0;
+    for (const handle of this.enemyHandles) {
+      if (!handle.sprite.active) {
+        continue;
+      }
+      const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, handle.sprite.x, handle.sprite.y);
+      if (distance > radius) {
+        continue;
+      }
+      hits += 1;
+      const direction = Math.sign(handle.sprite.x - this.player.x) || 1;
+      handle.sprite.setVelocityX(direction * (charged ? 180 : 90));
+      handle.sprite.setVelocityY(charged ? -220 : -90);
+      this.effects.emitSparkle(handle.sprite.x, handle.sprite.y, charged ? 0xffef9c : 0xa7dfff, charged ? 8 : 4);
+      if (charged && handle.kind !== 'shell') {
+        this.squashAndDisableSprite(handle.sprite);
+        runtimeStore.save.progression.score += scoreDelta;
+      }
+    }
+    this.effects.emitSparkle(this.player.x, this.player.y - 8, charged ? 0xffef9c : 0x9ad8ff, charged ? 10 : 6);
+    this.playSfx('power');
+    if (hits > 0) {
+      this.showHudToast(charged ? 'CHARGED RACK PULSE' : 'RACK PULSE');
+    }
+  }
+
+  private runManualCheck(): void {
+    const nearest = this.diagnosticNodes?.getChildren()
+      .map((node) => node as Phaser.Physics.Arcade.Sprite)
+      .reduce((best, node) => {
+        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, node.x, node.y);
+        return Math.min(best, distance);
+      }, Number.POSITIVE_INFINITY);
+    if (!Number.isFinite(nearest) || nearest > 56) {
+      this.showHudToast('NO DIAGNOSTIC NODE IN RANGE');
       return;
     }
+
+    const nearbyFile = this.personnelFiles?.getChildren()
+      .map((file) => file as Phaser.Physics.Arcade.Sprite)
+      .find((file) => Phaser.Math.Distance.Between(this.player.x, this.player.y, file.x, file.y) <= 220);
+
+    const messages = [
+      'MANUAL CHECK: PATROL ROUTE REVEALED',
+      'MANUAL CHECK: HAZARD CYCLE LOGGED',
+      nearbyFile ? 'MANUAL CHECK: FILE PING WITHIN RANGE' : 'MANUAL CHECK: NO FILE PING',
+      'MANUAL CHECK: CRACKED SURFACE MARKED',
+    ];
+    const index = Math.floor((this.levelTimeMs / 1000) % messages.length);
+    this.showHudToast(messages[index]!);
+    this.effects.emitSparkle(this.player.x, this.player.y - 16, 0x7fffd4, 6);
+    this.playSfx('coin');
+  }
+
+  private isRackPulseEnabled(): boolean {
+    return this.setPieceMode !== 'avalanche-alley';
+  }
+
+  private revealCollapseHazard(dtMs: number): void {
+    if (this.setPieceMode !== 'collapse' || this.setPieceCollapseHazards.length === 0 || this.setPieceCollapseHazardIndex >= this.setPieceCollapseHazards.length) {
+      return;
+    }
+    const revealIntervalMs = 420;
+    this.setPieceCollapseHazardTimerMs += dtMs;
+    while (this.setPieceCollapseHazardTimerMs >= revealIntervalMs && this.setPieceCollapseHazardIndex < this.setPieceCollapseHazards.length) {
+      this.setPieceCollapseHazardTimerMs -= revealIntervalMs;
+      const platform = this.setPieceCollapseHazardHazardAt(this.setPieceCollapseHazardIndex);
+      this.setPieceCollapseHazardIndex += 1;
+      if (!platform?.active) {
+        continue;
+      }
+      this.tweens.add({
+        targets: platform,
+        alpha: 0,
+        y: platform.y + 8,
+        duration: 280,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          platform.disableBody(true, true);
+        },
+      });
+    }
+  }
+
+  private setPieceCollapseHazardAt(index: number): Phaser.Physics.Arcade.Sprite | undefined {
+    const platform = this.setPieceCollapseHazards[index];
+    if (!platform || !platform.body) {
+      return undefined;
+    }
+    return platform;
+  }
+
+  private triggerStompHitstop(): void {
+    if (!this.physics?.world) {
+      return;
+    }
+
+    const didPauseForHitstop = !this.physics.world.isPaused;
     const record = {
       frame: this.game.loop.frame,
       appliedMs: PLAYER_CONSTANTS.stompHitstopMs,
-      paused: true,
-      resumed: false,
+      paused: didPauseForHitstop,
+      resumed: !didPauseForHitstop,
     };
     this.lastAppliedStompAtFrame = record.frame;
     this.stompHitstopHistory.push(record);
@@ -1114,16 +1450,24 @@ export class PlayScene extends Phaser.Scene {
 
     const amount = SCORE_VALUES.stomp;
     this.showHudToast(`+${amount} ${DISPLAY_NAMES.stomp}`);
-    this.effects.hitStop(PLAYER_CONSTANTS.stompHitstopMs);
-    // Note: Record resume status is now decoupled from the actual resume in EffectManager
-    // but we can still track it for telemetry if needed by passing a callback.
-    this.time.delayedCall(PLAYER_CONSTANTS.stompHitstopMs, () => {
+    if (!didPauseForHitstop) {
+      return;
+    }
+
+    this.physics.world.pause();
+    const delayMs = PLAYER_CONSTANTS.stompHitstopMs;
+    this.stompHitstop = this.time.delayedCall(delayMs, () => {
+      if (this.physics?.world?.isPaused) {
+        this.physics.world.resume();
+      }
+      this.stompHitstop = undefined;
       record.resumed = true;
     });
   }
 
   private getStompHitstopTelemetry(): StompHitstopTelemetry {
-    const isWorldPaused = Boolean(this.physics?.world?.isPaused);
+    const world = this.physics?.world;
+    const isWorldPaused = Boolean(world && world.isPaused);
     return {
       lastAppliedStompAtFrame: this.lastAppliedStompAtFrame,
       lastAppliedMs: PLAYER_CONSTANTS.stompHitstopMs,
@@ -1206,7 +1550,7 @@ export class PlayScene extends Phaser.Scene {
         this.player.clearTint();
         this.playerHead.setAlpha(1);
         this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
-        this.audio.startWorldMusic(this.world);
+        this.startStageMusic();
       }
 
       if (reason === 'pit' && runtimeStore.save.settings.screenShakeEnabled) {
@@ -1286,6 +1630,7 @@ export class PlayScene extends Phaser.Scene {
 
   private onGoalReached(): void {
     if (this.completed) return;
+    const wasBonusRoute = this.bonusRouteId != null;
     this.completed = true;
     this.animator.triggerWin();
     this.audio.stopMusic();
@@ -1296,6 +1641,7 @@ export class PlayScene extends Phaser.Scene {
 
     runtimeStore.save.progression.score += SCORE_VALUES.completeBonus;
     runtimeStore.save.progression.timeMs += this.levelTimeMs;
+    runtimeStore.save = clearActiveBonusRouteId(runtimeStore.save);
     persistSave(runtimeStore.save);
 
     // Celebration effects: sparkle burst around goal
@@ -1314,7 +1660,13 @@ export class PlayScene extends Phaser.Scene {
 
     // Delay transition so the fanfare plays out (~2.5s)
     this.time.delayedCall(2600, () => {
-      transitionToScene(this, 'LevelCompleteScene', {
+      if (wasBonusRoute) {
+        transitionToScene(this, 'WorldMapScene', undefined, { durationMs: 150, fadeInMs: 180 });
+        return;
+      }
+      transitionToScene(this, 'InterludeScene', {
+        completedWorld: this.world,
+        completedStage: this.levelIndex,
         stats: {
           timeSec: Math.floor(this.levelTimeMs / 1000),
           coins: runtimeStore.save.progression.coins,
@@ -1421,8 +1773,11 @@ export class PlayScene extends Phaser.Scene {
 
     // -- Auto-scroll logic (World 5 benchmark segments) --
     this.updateAutoScroll(dtMs);
+    this.revealCollapseHazard(dtMs);
 
-    updateMovingPlatforms(this.movingPlatforms);
+    if (this.setPieceMode !== 'approach') {
+      updateMovingPlatforms(this.movingPlatforms);
+    }
     updateThwomps(this.thwomps, this.player.x);
 
     for (const handle of this.enemyHandles) {
@@ -1437,18 +1792,29 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    this.enemyHandles.forEach((shell) => {
-      if (shell.kind !== 'shell' || !shell.sprite.active) return;
-      if (!shell.sprite.body || Math.abs(shell.sprite.body.velocity.x) < 150) return;
-      const shellDirX = Math.sign(shell.sprite.body.velocity.x);
-      this.enemyHandles.forEach((other) => {
-        if (other === shell || !other.sprite.active) return;
-        if (Phaser.Math.Distance.Between(shell.sprite.x, shell.sprite.y, other.sprite.x, other.sprite.y) < 20) {
-          this.flipAndSlideOffScreen(other.sprite, shellDirX);
-          runtimeStore.save.progression.score += SCORE_VALUES.stomp;
-        }
-      });
-    });
+    const shellChain = collectShellChainKillPairs(
+      this.enemyHandles.map((handle) => ({
+        active: handle.sprite.active,
+        kind: handle.kind,
+        x: handle.sprite.x,
+        y: handle.sprite.y,
+        velocityX: handle.sprite.body?.velocity.x ?? 0,
+      })),
+    );
+    const processedTargets = new Set<number>();
+    for (const pair of shellChain) {
+      const target = this.enemyHandles[pair.targetIndex];
+      const source = this.enemyHandles[pair.sourceIndex];
+      if (!source || !target || !source.sprite.active || !target.sprite.active || source.kind !== 'shell') {
+        continue;
+      }
+      if (processedTargets.has(pair.targetIndex)) {
+        continue;
+      }
+      this.flipAndSlideOffScreen(target.sprite, pair.shellDirX);
+      processedTargets.add(pair.targetIndex);
+      runtimeStore.save.progression.score += SCORE_VALUES.stomp;
+    }
 
     if (this.player.y > this.physics.world.bounds.height + 40) {
       this.damagePlayer('pit');
@@ -1465,6 +1831,7 @@ export class PlayScene extends Phaser.Scene {
       lives: this.lives,
       form: this.playerForm,
       modifiers: this.worldModifiers,
+      maintenanceFileCounterText: this.maintenanceAccess ? getMaintenanceFileCounterText(this.world) : undefined,
       timeSec: Math.floor(this.levelTimeMs / 1000)
     });
     updateHudPosition(this.hud, this.cameras.main);
@@ -1485,7 +1852,13 @@ export class PlayScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.r)) {
-      this.scene.restart({ bonus: this.levelBonus });
+      this.scene.restart({
+        world: this.world,
+        stage: this.levelIndex,
+        bonus: this.levelBonus,
+        bonusRouteId: this.bonusRouteId,
+        maintenance: this.maintenanceAccess,
+      });
       return;
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.p)) {
@@ -1497,8 +1870,12 @@ export class PlayScene extends Phaser.Scene {
 
     const left = this.keys.left.isDown || this.keys.a.isDown;
     const right = this.keys.right.isDown || this.keys.d.isDown;
+    const downHeld = this.keys.down.isDown;
     const jumpHeld = this.keys.space.isDown || this.keys.up.isDown || this.keys.w.isDown;
     const jumpPressed = jumpHeld && !this.jumpHeldLast;
+    const pulseHeld = this.keys.j.isDown;
+    const pulseJustReleased = Phaser.Input.Keyboard.JustUp(this.keys.j);
+    const onGroundBeforeStep = this.player.body?.blocked.down || this.player.body?.touching.down || false;
     this.runHeld = this.keys.shift.isDown;
 
     const step = stepMovement({
@@ -1514,9 +1891,40 @@ export class PlayScene extends Phaser.Scene {
     }, this.worldModifiers);
     this.feel = step.feel;
 
+    if (onGroundBeforeStep) {
+      this.airJumpsUsed = 0;
+      this.isGroundPounding = false;
+    }
+
+    if (downHeld && jumpPressed && !onGroundBeforeStep && !this.isGroundPounding) {
+      this.isGroundPounding = true;
+      step.vy = Math.max(step.vy, 520);
+      this.effects.emitSparkle(this.player.x, this.player.y + 12, 0xffffff, 5);
+      this.showHudToast('GROUND POUND');
+    }
+
+    if (this.isGroundPounding && !onGroundBeforeStep) {
+      step.vy = Math.max(step.vy, 560);
+    }
+
+    if (
+      jumpPressed
+      && !onGroundBeforeStep
+      && !step.jumped
+      && runtimeStore.save.unlocks.doubleJump
+      && this.airJumpsUsed < 1
+    ) {
+      step.vy = PLAYER_CONSTANTS.jumpVelocity * 0.86;
+      this.airJumpsUsed += 1;
+      this.playSfx('jump');
+      this.effects.emitSparkle(this.player.x, this.player.y, 0x9cdaff, 6);
+      this.showHudToast('DOUBLE JUMP');
+    }
+
     this.player.setVelocityX(step.vx);
     this.player.setVelocityY(step.vy);
     if (step.jumped) this.playSfx('jump');
+    this.lastMotionHint = step.motionHint;
 
     if ((this.player.body?.velocity.x ?? 0) > 0) this.player.setFlipX(false);
     if ((this.player.body?.velocity.x ?? 0) < 0) this.player.setFlipX(true);
@@ -1545,6 +1953,23 @@ export class PlayScene extends Phaser.Scene {
     );
     this.playerHead.setFlipX(this.player.flipX);
 
+    // Update Ping companion
+    this.ping?.update(this.player.x, this.player.y, Math.min(40, delta));
+    // Check for nearby personnel files to increase Ping brightness
+    if (this.ping && this.ping.isActive()) {
+      let nearestFileDistance = Number.POSITIVE_INFINITY;
+      for (const file of this.personnelFiles.getChildren()) {
+        const fileSprite = file as Phaser.Physics.Arcade.Sprite;
+        const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, fileSprite.x, fileSprite.y);
+        if (distance < nearestFileDistance) {
+          nearestFileDistance = distance;
+        }
+      }
+      // Brightness increases when near files (within ~200px), max at ~80px
+      const fileBrightness = Math.max(0.5, 1.0 - (nearestFileDistance / 200));
+      this.ping.setBrightness(fileBrightness);
+    }
+
     // Dust puff + SFX on skid/land
     if (this.animator.justEntered('land')) {
       this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
@@ -1553,6 +1978,34 @@ export class PlayScene extends Phaser.Scene {
     if (this.animator.justEntered('skid')) {
       this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
       this.playSfx('skid');
+    }
+
+    if (pulseHeld && !downHeld && this.isRackPulseEnabled()) {
+      this.pulseChargeMs = Math.min(1800, this.pulseChargeMs + Math.min(40, delta));
+      this.manualCheckHoldMs = 0;
+    } else if (downHeld && pulseHeld) {
+      this.manualCheckHoldMs = Math.min(1300, this.manualCheckHoldMs + Math.min(40, delta));
+      this.pulseChargeMs = 0;
+      if (this.manualCheckHoldMs >= 1000) {
+        this.manualCheckHoldMs = 0;
+        this.runManualCheck();
+      }
+    } else {
+      this.manualCheckHoldMs = 0;
+    }
+
+    if (pulseJustReleased) {
+      if (!this.isRackPulseEnabled()) {
+        if (!this.setPieceModeMessageShown) {
+          this.showHudToast('NO RACK PULSE');
+          this.setPieceModeMessageShown = true;
+        }
+        this.pulseChargeMs = 0;
+        return;
+      }
+      const charged = this.pulseChargeMs >= 1500;
+      this.emitRackPulse(charged);
+      this.pulseChargeMs = 0;
     }
 
     const lookAhead = Phaser.Math.Clamp((this.player.body?.velocity.x ?? 0) * 0.18, -90, 90);

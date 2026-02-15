@@ -1,4 +1,7 @@
-export type MusicPresetKey = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark';
+// Preset keys are legacy internal identifiers. Mapping to current worlds:
+// azure=W1(City), pipeline=W2(Tundra), enterprise=W3(Void),
+// gpu=W4(Catacombs), graveyard=W5(Graveyard), benchmark=W6(Singularity)
+export type MusicPresetKey = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'graveyard' | 'benchmark';
 
 export interface InstrumentPreset {
   wave: OscillatorType;
@@ -344,6 +347,77 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
       ...DRUMS_HEAVY
     }
   },
+  graveyard: {
+    key: 'graveyard',
+    tempoBpm: 108,
+    rootHz: 146.83,
+    // Natural minor: sparse, ghostly graveyard theme (World 5)
+    scale: [0, 2, 3, 5, 7, 8, 10],
+    lead: {
+      steps: [
+        // A: sparse descending motif with rests
+        0, null, null, 3, null, 5, null, 3, 0, null, null, null, 5, null, 3, null,
+        0, null, null, 5, null, 8, null, 5, 3, null, null, null, 0, null, -2, null,
+        // B: sustained notes with longer rests, more ethereal
+        0, null, null, null, 3, null, null, 5, 7, null, null, 8, 7, null, 5, null,
+        3, null, 0, null, null, null, -2, 0, null, 3, null, 5, null, null, 0, null
+      ],
+      noteBeats: 0.5,
+      instrument: {
+        wave: 'sine',
+        attack: 0.02,
+        decay: 0.15,
+        sustain: 0.4,
+        release: 0.2,
+        gain: 0.12,
+        filterHz: 2200,
+        filterQ: 0.8,
+        octaveShift: 0,
+        vibratoHz: 3,
+        vibratoDepth: 8
+      }
+    },
+    bass: {
+      steps: [
+        // A: slow root movement, lots of rests
+        0, null, null, null, 3, null, null, null, 0, null, null, null, 5, null, null, null,
+        0, null, null, null, 3, null, null, null, 5, null, null, null, 0, null, null, null,
+        // B: sustained notes under sparse melody
+        0, 0, 0, null, 3, null, null, null, 5, 5, null, null, 0, null, null, null,
+        -2, null, 0, null, null, null, 3, null, 0, null, null, null, -2, null, 0, null
+      ],
+      noteBeats: 0.5,
+      instrument: {
+        wave: 'sine',
+        attack: 0.01,
+        decay: 0.12,
+        sustain: 0.5,
+        release: 0.18,
+        gain: 0.14,
+        filterHz: 1100,
+        filterQ: 0.9,
+        octaveShift: -1
+      }
+    },
+    drums: {
+      steps: [
+        // A: very sparse, minimal percussion
+        'kick', null, null, null, 'snare', null, null, null,
+        'kick', null, null, null, 'snare', null, 'kick', null,
+        'kick', null, null, null, 'snare', null, null, null,
+        'kick', null, 'snare', null, 'kick', null, 'snare', null,
+        // B: slightly more active but still sparse
+        'kick', null, 'hat', null, 'snare', null, 'hat', null,
+        'kick', null, null, 'hat', 'snare', null, 'kick', null,
+        'kick', 'hat', null, null, 'snare', null, 'hat', 'kick',
+        'snare', null, 'kick', null, 'snare', null, 'kick', null
+      ],
+      noteBeats: 0.5,
+      kick: { filterHz: 160, gain: 0.1 },
+      hat: { filterHz: 6500, gain: 0.035 },
+      snare: { filterHz: 3200, gain: 0.08 }
+    }
+  },
   benchmark: {
     key: 'benchmark',
     tempoBpm: 152,
@@ -394,9 +468,10 @@ export const MUSIC_PRESETS: Record<MusicPresetKey, MusicPreset> = {
 };
 
 export function presetForWorld(world: number): MusicPresetKey {
-  if (world === 1) return 'azure';
-  if (world === 2) return 'pipeline';
-  if (world === 3) return 'enterprise';
-  if (world === 4) return 'gpu';
-  return 'benchmark';
+  if (world === 1) return 'azure';      // The City (Prologue)
+  if (world === 2) return 'pipeline';    // Cryo-Server Tundra
+  if (world === 3) return 'enterprise';  // Quantum Void
+  if (world === 4) return 'gpu';         // Deep Web Catacombs
+  if (world === 5) return 'graveyard';   // Digital Graveyard
+  return 'benchmark';                    // Singularity Core
 }

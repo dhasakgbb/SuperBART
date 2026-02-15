@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
-import { CAMPAIGN_25_LEVELS } from '../src/levelgen/campaign_25_levels';
+import { SCRIPT_CAMPAIGN_LEVELS } from '../src/levelgen/scriptCampaignLevels';
 import { validateCampaignSpec } from '../src/levelgen/generator';
 
 type CampaignFixture = {
@@ -24,18 +24,18 @@ function levelKey(world: number, level: number): string {
 }
 
 describe('campaign specs', () => {
-  test('docs and runtime 25-level spec stay synchronized', () => {
+  test('docs and runtime script campaign stay synchronized', () => {
     const fixturePath = path.resolve(
-      fileURLToPath(new URL('../docs/level_specs/campaign_25_levels.json', import.meta.url)),
+      fileURLToPath(new URL('../docs/level_specs/script_campaign_v3.json', import.meta.url)),
     );
     const fixtureRaw = readFileSync(fixturePath, 'utf8');
     const fixture = JSON.parse(fixtureRaw) as CampaignFixture;
 
-    expect(fixture.levels.length).toBe(CAMPAIGN_25_LEVELS.levels.length);
+    expect(fixture.levels.length).toBe(SCRIPT_CAMPAIGN_LEVELS.levels.length);
 
     const fixtureByKey = new Map(fixture.levels.map((level) => [levelKey(level.world, level.level), level]));
     const runtimeByKey = new Map(
-      CAMPAIGN_25_LEVELS.levels.map((level) => [levelKey(level.world, level.level), level]),
+      SCRIPT_CAMPAIGN_LEVELS.levels.map((level) => [levelKey(level.world, level.level), level]),
     );
 
     expect([...fixtureByKey.keys()].sort()).toEqual([...runtimeByKey.keys()].sort());
@@ -50,7 +50,7 @@ describe('campaign specs', () => {
   });
 
   test('runtime campaign level specs satisfy campaign validator', () => {
-    for (const level of CAMPAIGN_25_LEVELS.levels) {
+    for (const level of SCRIPT_CAMPAIGN_LEVELS.levels) {
       const errors = validateCampaignSpec(level);
       expect(errors).toEqual([]);
     }

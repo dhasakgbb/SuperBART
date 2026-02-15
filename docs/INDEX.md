@@ -18,6 +18,12 @@ This index is the entry point for Super BART project documentation. It explains 
   Asset naming/sizing/metadata rules.
 - `docs/pipeline_import_rules.md`
   Pipeline intake and rejection policy.
+- `docs/unity_media_curation.md`
+  Unity media asset curation strategy for M1 baseline versus deferred profiles.
+- `docs/unity_port.md`
+  Unity dual-track runbook and first-playable workflow.
+- `docs/unity_m1_status.md`
+  Progress and contract status for the current Unity M1 milestone.
 - `docs/qa_repro_playbook.md`
   Repro-first QA workflow and evidence requirements.
 - `docs/ci_release_notes.md`

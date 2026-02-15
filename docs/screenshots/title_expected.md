@@ -4,12 +4,10 @@ This gate describes the required title-screen composition for `TitleScene`.
 
 ## Required Visual Layout
 
-- Upper third shows generated `title_logo.png` centered and reading `SUPER BART`.
+- Upper third shows `title_logo.png` centered and reading `SUPER BART: CLOUD QUEST`.
 - Portrait (`bart_portrait_96.png`) appears near the wordmark as a brand marker.
-- Subtitle line below the logo:
-  - `4 WORLDS X 6 LEVELS + FINAL BENCHMARK`
-- Bottom area includes blinking `PRESS ENTER` and hint row:
-  - `N: NEW DEPLOYMENT   L: SERVICE MAP   S: SETTINGS`
+- There is no additional title subtitle, prompt, or hint text required in the title scene anymore.
+- The canonical title source is `GAME_TITLE` from `src/content/contentManifest.ts`.
 
 ## Camera Lock Requirement
 

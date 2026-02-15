@@ -12,7 +12,11 @@ import {
 } from './lib/pixel';
 
 // Find the latest generated sprite sheet in artifacts
-const ARTIFACTS_DIR = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6';
+const ARTIFACTS_DIR = process.argv[2] ?? process.env.SUPERBART_ARTIFACTS_DIR;
+if (!ARTIFACTS_DIR) {
+  console.error('Usage: tsx tools/slice_bart_sprites.ts <artifactsDir>');
+  process.exit(1);
+}
 const files = fs.readdirSync(ARTIFACTS_DIR)
   .filter(f => f.startsWith('bart_spritesheet') && f.endsWith('.png'));
 

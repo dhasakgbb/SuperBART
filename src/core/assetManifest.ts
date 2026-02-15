@@ -87,6 +87,14 @@ export const ASSET_MANIFEST: {
       frameTiming: { fps: 1, frameCount: 1 },
       anchorPx: { x: 256, y: 80 },
     }),
+    title_bg_city: image('/assets/bg/title/title_bg_city.png', { pass: 'hud' }),
+    title_bg_tundra: image('/assets/bg/title/title_bg_tundra.png', { pass: 'hud' }),
+    title_bg_void: image('/assets/bg/title/title_bg_void.png', { pass: 'hud' }),
+    title_bg_catacombs: image('/assets/bg/title/title_bg_catacombs.png', { pass: 'hud' }),
+    title_bg_graveyard: image('/assets/bg/title/title_bg_graveyard.png', { pass: 'hud' }),
+    title_bg_singularity: image('/assets/bg/title/title_bg_singularity.png', { pass: 'hud' }),
+    world_map_pixel: image('/assets/world_map_pixel.png', { pass: 'hud' }), 
+    world_map_premium: image('/assets/world_map_premium.png', { pass: 'hud' }),
     cloud_1: image('/assets/sprites/cloud_1.png', {
       pass: 'hud',
       palette: ['hudText', 'skyMid'],
@@ -141,9 +149,9 @@ export const ASSET_MANIFEST: {
       frameTiming: { fps: 1, frameCount: 1 },
       anchorPx: { x: 4, y: 4 },
     }),
-    pickup_token: image('/assets/sprites/pickup_token.png', {
+    pickup_token: image('/assets/sprites/pickup_data_cube.png', {
       pass: 'object',
-      palette: ['hudText', 'coinCore', 'coinEdge'],
+      palette: ['hudText', 'coinCore', 'coinEdge'], // Legacy palette link
       frameTiming: { fps: 1, frameCount: 1 },
       anchorPx: { x: 8, y: 8 },
     }),
@@ -226,10 +234,12 @@ export const ASSET_MANIFEST: {
     tile_ground_w1_bot: image('/assets/tiles/tile_ground_w1_bot.png', { pass: 'tile' }),
     tile_oneway_w1: image('/assets/tiles/tile_oneway_w1.png', { pass: 'tile' }),
 
-    // Placeholders for other worlds (using default for now, or copy w1 if preferred)
+    // Per-world tile variants
+    // World 2: Cryo-Server Tundra (Hi-Bit)
     tile_ground_w2_top: image('/assets/tiles/tile_ground_w2_top.png', { pass: 'tile' }),
     tile_ground_w2_mid: image('/assets/tiles/tile_ground_w2_mid.png', { pass: 'tile' }),
-    tile_ground_w2_bot: image('/assets/tiles/tile_ground_w2_bot.png', { pass: 'tile' }),
+    tile_ground_w2_bot: image('/assets/tiles/tile_ground_w2_mid.png', { pass: 'tile' }), // Reuse mid for bot for now
+    tile_oneway_w2: image('/assets/tiles/tile_oneway_w2.png', { pass: 'tile' }),
     
     tile_ground_w3_top: image('/assets/tiles/tile_ground_w3_top.png', { pass: 'tile' }),
     tile_ground_w3_mid: image('/assets/tiles/tile_ground_w3_mid.png', { pass: 'tile' }),
@@ -242,43 +252,65 @@ export const ASSET_MANIFEST: {
     tile_ground_w5_top: image('/assets/tiles/tile_ground_w5_top.png', { pass: 'tile' }),
     tile_ground_w5_mid: image('/assets/tiles/tile_ground_w5_mid.png', { pass: 'tile' }),
     tile_ground_w5_bot: image('/assets/tiles/tile_ground_w5_bot.png', { pass: 'tile' }),
+    tile_ground_w6_top: image('/assets/tiles/tile_ground_w5_top.png', { pass: 'tile' }),
+    tile_ground_w6_mid: image('/assets/tiles/tile_ground_w5_mid.png', { pass: 'tile' }),
+    tile_ground_w6_bot: image('/assets/tiles/tile_ground_w5_bot.png', { pass: 'tile' }),
     
-    tile_oneway_w2: image('/assets/tiles/tile_oneway_w2.png', { pass: 'tile' }),
+    // tile_oneway_w2 is defined above at line 244. Removing duplicate here.
     tile_oneway_w3: image('/assets/tiles/tile_oneway_w3.png', { pass: 'tile' }),
     tile_oneway_w4: image('/assets/tiles/tile_oneway_w4.png', { pass: 'tile' }),
     tile_oneway_w5: image('/assets/tiles/tile_oneway_w5.png', { pass: 'tile' }),
+    tile_oneway_w6: image('/assets/tiles/tile_oneway_w5.png', { pass: 'tile' }),
 
-    // World 1: Glacial Mainframe
+    // World 1: The City (Prologue)
     hill_far_w1: image('/assets/bg/hill_far_w1.png', { pass: 'object' }),
     hill_near_w1: image('/assets/bg/hill_near_w1.png', { pass: 'object' }),
 
-    // World 2-5 backgrounds (placeholder copies until per-world assets exist)
+    // World 2: Cryo-Server Tundra (Hi-Bit)
     hill_far_w2: image('/assets/bg/hill_far_w2.png', { pass: 'object' }),
     hill_near_w2: image('/assets/bg/hill_near_w2.png', { pass: 'object' }),
+    
     hill_far_w3: image('/assets/bg/hill_far_w3.png', { pass: 'object' }),
     hill_near_w3: image('/assets/bg/hill_near_w3.png', { pass: 'object' }),
     hill_far_w4: image('/assets/bg/hill_far_w4.png', { pass: 'object' }),
     hill_near_w4: image('/assets/bg/hill_near_w4.png', { pass: 'object' }),
     hill_far_w5: image('/assets/bg/hill_far_w5.png', { pass: 'object' }),
     hill_near_w5: image('/assets/bg/hill_near_w5.png', { pass: 'object' }),
+    hill_far_w6: image('/assets/bg/hill_far_w5.png', { pass: 'object' }),
+    hill_near_w6: image('/assets/bg/hill_near_w5.png', { pass: 'object' }),
   },
   spritesheets: {
     bart_body_small: { path: '/assets/sprites/bart_body_small.png', frameWidth: 32, frameHeight: 32 },
     bart_body_big: { path: '/assets/sprites/bart_body_big.png', frameWidth: 32, frameHeight: 48 },
     bart_body_small_fire: { path: '/assets/sprites/bart_body_small_fire.png', frameWidth: 32, frameHeight: 32 },
     bart_body_big_fire: { path: '/assets/sprites/bart_body_big_fire.png', frameWidth: 32, frameHeight: 48 },
+    bart_map_animated: { path: '/assets/BART_ANIMATED.png', frameWidth: 32, frameHeight: 32 },
+    // Enemies - The City (World 1)
+    enemy_bug: {
+      path: '/assets/sprites/enemy_bug_w1.png',
+      frameWidth: 32,
+      frameHeight: 32,
+    },
+    enemy_snake: {
+      path: '/assets/sprites/enemy_snake_w1.png',
+      frameWidth: 32,
+      frameHeight: 32,
+    },
+    
+    // Enemies - Cryo-Server (World 2)
+    enemy_cryo_sentry: {
+      path: '/assets/sprites/enemy_cryo_sentry.png',
+      frameWidth: 32,
+      frameHeight: 32,
+    },
+    enemy_cryo_drone: {
+      path: '/assets/sprites/enemy_cryo_drone.png',
+      frameWidth: 32,
+      frameHeight: 32,
+    },
+    
     enemy_walker: {
-      path: '/assets/sprites/enemy_walker.png',
-      frameWidth: 16,
-      frameHeight: 16,
-    },
-    enemy_shell: {
-      path: '/assets/sprites/enemy_shell.png',
-      frameWidth: 16,
-      frameHeight: 16,
-    },
-    enemy_flying: {
-      path: '/assets/sprites/enemy_flying.png',
+      path: '/assets/sprites/enemy_walker.png', // Generic fallback? Or maybe mapped to bug?
       frameWidth: 16,
       frameHeight: 16,
     },

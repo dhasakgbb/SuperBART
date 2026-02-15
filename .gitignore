@@ -7,6 +7,7 @@ pnpm-debug.log*
 
 # Build outputs
 dist/
+dist_check/
 .vite/
 coverage/
 
@@ -26,31 +27,27 @@ __pycache__/
 *.pyc
 
 # Playwright artifacts
-output/playwright/
+.playwright-mcp/
 playwright-report/
+test-results/
 
-# Gate logs
+# Gate logs and telemetry
 artifacts/
+telemetry/
 
 # Local env
 .env
 .env.*
 !.env.example
 
-# Dev screenshots (should not be committed)
+# Dev screenshots and debug images
 *.screenshot.png
+cloud_test.png
+current_state.png
 
 # Source archives
 *.zip
 
-# Imagegen
-tmp/imagegen/
-output/imagegen/
-
-# Imagegen
-tmp/imagegen/
-output/imagegen/
-
-# Imagegen
-tmp/imagegen/
-output/imagegen/
+# Temp and generated outputs
+tmp/
+output/

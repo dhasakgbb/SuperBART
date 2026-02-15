@@ -254,32 +254,44 @@ function renderHaze(scene: Phaser.Scene, width: number, height: number, layout: 
   const graphics = scene.add.graphics();
   graphics.setScrollFactor(0).setDepth(HAZE_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
 
+  // Render as horizontal strips instead of per-pixel for performance.
+  // Edge fade is approximated with a few graduated strips per row.
+  const EDGE_STEPS = Math.min(8, Math.max(2, Math.ceil(edgeFadeWidth / 4)));
+
   for (let row = 0; row < bandHeight; row += 1) {
     const yPos = y + row;
-    if (yPos >= height) {
-      break;
-    }
+    if (yPos >= height) break;
 
     const tRow = bandHeight > 1 ? row / (bandHeight - 1) : 0;
     const rowFade = 1 - Math.abs(tRow - 0.5) * 2;
     const localAlpha = alpha * clamp01(rowFade);
-    if (localAlpha <= 0) {
-      continue;
+    if (localAlpha <= 0) continue;
+
+    // Center strip (full alpha region)
+    const innerLeft = left + edgeFadeWidth;
+    const innerWidth = Math.max(0, bandWidth - edgeFadeWidth * 2);
+    if (innerWidth > 0) {
+      graphics.fillStyle(color.color, localAlpha * 0.85);
+      graphics.fillRect(innerLeft, yPos, innerWidth, 1);
     }
 
-    for (let col = 0; col < bandWidth; col += 1) {
-      const xPos = left + col;
-      if (xPos >= width) {
-        break;
-      }
-      const distToEdge = Math.min(col, bandWidth - col - 1);
-      const edgeFade = Math.min(1, distToEdge / edgeFadeWidth);
-      const pixelAlpha = localAlpha * edgeFade;
-      if (pixelAlpha <= 0) {
-        continue;
-      }
-      graphics.fillStyle(color.color, pixelAlpha * 0.85);
-      graphics.fillRect(xPos, yPos, 1, 1);
+    // Edge fade strips (left and right)
+    for (let s = 0; s < EDGE_STEPS; s++) {
+      const t0 = s / EDGE_STEPS;
+      const t1 = (s + 1) / EDGE_STEPS;
+      const edgeAlpha = localAlpha * ((t0 + t1) / 2) * 0.85;
+      if (edgeAlpha <= 0) continue;
+
+      const stripStart = Math.round(edgeFadeWidth * t0);
+      const stripEnd = Math.round(edgeFadeWidth * t1);
+      const stripW = stripEnd - stripStart;
+      if (stripW <= 0) continue;
+
+      graphics.fillStyle(color.color, edgeAlpha);
+      // Left edge
+      graphics.fillRect(left + stripStart, yPos, stripW, 1);
+      // Right edge (mirror)
+      graphics.fillRect(left + bandWidth - stripEnd, yPos, stripW, 1);
     }
   }
 }

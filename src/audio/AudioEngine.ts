@@ -1,6 +1,8 @@
 import type { GameSettings } from '../types/game';
+import { CAMPAIGN_WORLD_LAYOUT } from '../core/constants';
 import { PatternMusicSynth } from './music';
-import { presetForWorld, type MusicPresetKey } from './musicPresets';
+import { type MusicPresetKey } from './musicPresets';
+import { AI_MUSIC_ENABLED_DEFAULT, getAiMusicTrack, type AiMusicTrackConfig, type AiMusicTrackKey } from './aiMusic';
 import { type SfxKey, SfxSynth } from './sfx';
 
 export const AUDIO_CAPS = {
@@ -9,6 +11,8 @@ export const AUDIO_CAPS = {
   sfxBusMax: 0.72,
   limiterThresholdDb: -4
 } as const;
+const WORLD_BOSS_MIN_DURATION_SECONDS = 47;
+const TITLE_WORLD_MAP_MIN_DURATION_SECONDS = 50;
 
 export class AudioEngine {
   private static singleton: AudioEngine | null = null;
@@ -28,7 +32,11 @@ export class AudioEngine {
   private sfxLimiter: DynamicsCompressorNode | null = null;
   private sfxSynth: SfxSynth | null = null;
   private musicSynth: PatternMusicSynth | null = null;
-  private activeMusicPreset: MusicPresetKey | null = null;
+  private aiAudio: HTMLAudioElement | null = null;
+  private aiAudioSource: MediaElementAudioSourceNode | null = null;
+  private aiTransitionId = 0;
+  private useAiMusic = AI_MUSIC_ENABLED_DEFAULT;
+  private activeMusicPreset: MusicPresetKey | AiMusicTrackKey | null = null;
   private userGestureUnlocked = false;
   private settings: GameSettings | null = null;
 
@@ -54,7 +62,7 @@ export class AudioEngine {
     void this.ctx?.resume();
 
     if (this.activeMusicPreset && this.settings && !this.settings.musicMuted) {
-      this.musicSynth?.start(this.activeMusicPreset);
+      this.startMusicTrack(this.activeMusicPreset);
     }
   }
 
@@ -75,11 +83,32 @@ export class AudioEngine {
   }
 
   startWorldMusic(world: number): boolean {
-    return this.startMusicPreset(presetForWorld(world));
+    const safeWorld = Math.min(CAMPAIGN_WORLD_LAYOUT.length, Math.max(1, Math.floor(world)));
+    return this.startMusicTrack(`world-${safeWorld}` as AiMusicTrackKey);
+  }
+
+  startBossMusic(world: number): boolean {
+    const safeWorld = Math.min(CAMPAIGN_WORLD_LAYOUT.length, Math.max(1, Math.floor(world)));
+    return this.startMusicTrack(`boss-${safeWorld}` as AiMusicTrackKey);
+  }
+
+  startTitleMusic(): boolean {
+    return this.startMusicTrack('title');
+  }
+
+  startWorldMapMusic(): boolean {
+    return this.startMusicTrack('world-map');
   }
 
   startMusicPreset(preset: MusicPresetKey): boolean {
-    this.activeMusicPreset = preset;
+    if (!this.userGestureUnlocked) {
+      return false;
+    }
+    return this.startMusicTrack(preset);
+  }
+
+  private startMusicTrack(track: MusicPresetKey | AiMusicTrackKey): boolean {
+    this.activeMusicPreset = track;
     if (!this.ensureGraph()) {
       return false;
     }
@@ -92,12 +121,215 @@ export class AudioEngine {
     if (this.ctx?.state === 'suspended') {
       void this.ctx.resume();
     }
-    this.musicSynth?.start(preset);
-    return true;
+
+    this.aiTransitionId += 1;
+    const requestId = this.aiTransitionId;
+    this.musicSynth?.stop();
+    this.stopAiMusic();
+
+    if (this.useAiMusic && this.startAiMusic(track, requestId)) {
+      return true;
+    }
+
+    return false;
   }
 
   stopMusic(): void {
+    this.aiTransitionId += 1;
     this.musicSynth?.stop();
+    this.stopAiMusic();
+  }
+
+  private startAiMusic(track: MusicPresetKey | AiMusicTrackKey, requestId: number): boolean {
+    const trackCandidates = this.getAiMusicTrackWithFallback(track);
+    if (trackCandidates.length === 0 || !this.ctx || !this.musicGain) {
+      return false;
+    }
+
+    void this.startAiMusicFromCandidates(track, trackCandidates, requestId, 0);
+
+    return true;
+  }
+
+  private startAiMusicFromCandidates(
+    track: MusicPresetKey | AiMusicTrackKey,
+    trackCandidates: readonly AiMusicTrackConfig[],
+    requestId: number,
+    index: number
+  ): void {
+    if (requestId !== this.aiTransitionId || index >= trackCandidates.length || !this.ctx || !this.musicGain) {
+      return;
+    }
+
+    const trackConfig = trackCandidates[index];
+    if (!trackConfig) {
+      this.stopAiMusic();
+      return;
+    }
+
+    const minimumDuration = this.getAiTrackMinimumDuration(track);
+
+    try {
+      const audio = new Audio(trackConfig.url);
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.crossOrigin = 'anonymous';
+      const source = this.ctx.createMediaElementSource(audio);
+      source.connect(this.musicGain);
+
+      const handleFailure = (): void => {
+        if (requestId !== this.aiTransitionId) {
+          return;
+        }
+        this.stopAiMusic();
+        if (index + 1 < trackCandidates.length) {
+          this.startAiMusicFromCandidates(track, trackCandidates, requestId, index + 1);
+          return;
+        }
+        this.startAiMusicFallback(track, requestId);
+      };
+
+      const handleMetadata = (): void => {
+        if (requestId !== this.aiTransitionId || !Number.isFinite(audio.duration)) {
+          return;
+        }
+        if (audio.duration + 0.25 < minimumDuration) {
+          handleFailure();
+        }
+      };
+
+      audio.addEventListener('loadedmetadata', handleMetadata, { once: true });
+      audio.addEventListener('error', handleFailure, { once: true });
+      this.aiAudio = audio;
+      this.aiAudioSource = source;
+      const playback = audio.play();
+      if (playback && typeof playback.catch === 'function') {
+        playback.catch(handleFailure);
+      }
+    } catch (_error) {
+      if (requestId === this.aiTransitionId && index + 1 < trackCandidates.length) {
+        this.startAiMusicFromCandidates(track, trackCandidates, requestId, index + 1);
+        return;
+      }
+      this.startAiMusicFallback(track, requestId);
+    }
+  }
+
+  private startAiMusicFallback(track: MusicPresetKey | AiMusicTrackKey, requestId: number): void {
+    if (requestId !== this.aiTransitionId || !this.musicSynth) {
+      return;
+    }
+
+    const fallback = this.getAiTrackFallbackPreset(track);
+    if (!fallback) {
+      return;
+    }
+
+    this.musicSynth.start(fallback);
+  }
+
+  private getAiTrackMinimumDuration(track: MusicPresetKey | AiMusicTrackKey): number {
+    if (track === 'title' || track === 'world-map') {
+      return TITLE_WORLD_MAP_MIN_DURATION_SECONDS;
+    }
+    return WORLD_BOSS_MIN_DURATION_SECONDS;
+  }
+
+  private getAiTrackFallbackPreset(track: MusicPresetKey | AiMusicTrackKey): MusicPresetKey | null {
+    const worldPresetMap: Record<number, MusicPresetKey> = {
+      1: 'azure',
+      2: 'pipeline',
+      3: 'enterprise',
+      4: 'gpu',
+      5: 'graveyard',
+      6: 'benchmark',
+      7: 'benchmark',
+    };
+
+    if (track === 'title' || track === 'world-map') {
+      return 'azure';
+    }
+    if (track.startsWith('world-')) {
+      const world = Number(track.slice('world-'.length));
+      if (Number.isInteger(world)) {
+        return worldPresetMap[world] ?? 'azure';
+      }
+      return 'azure';
+    }
+    if (track.startsWith('boss-')) {
+      const world = Number(track.slice('boss-'.length));
+      if (Number.isInteger(world)) {
+        return worldPresetMap[world] ?? 'azure';
+      }
+      return 'azure';
+    }
+
+    return 'azure';
+  }
+
+  private getAiMusicTrackWithFallback(track: MusicPresetKey | AiMusicTrackKey): AiMusicTrackConfig[] {
+    const fallbackTrackCandidates: AiMusicTrackConfig[] = [];
+    const seen = new Set<string>();
+
+    const addCandidate = (candidate: AiMusicTrackConfig | null): void => {
+      if (candidate && !seen.has(candidate.id)) {
+        fallbackTrackCandidates.push(candidate);
+        seen.add(candidate.id);
+      }
+    };
+
+    addCandidate(getAiMusicTrack(track));
+    const fallbackKeys = this.getAiTrackFallbackKeys(track);
+    for (const fallbackKey of fallbackKeys) {
+      addCandidate(getAiMusicTrack(fallbackKey));
+    }
+
+    return fallbackTrackCandidates;
+  }
+
+  private getAiTrackFallbackKeys(track: MusicPresetKey | AiMusicTrackKey): readonly AiMusicTrackKey[] {
+    if (!this.isAiTrackKey(track)) {
+      return [];
+    }
+
+    if (track === 'title' || track === 'world-map') {
+      return ['world-1', 'boss-1'];
+    }
+
+    if (track.startsWith('world-')) {
+      const world = Number(track.slice('world-'.length));
+      if (Number.isInteger(world)) {
+        return [`boss-${world}` as AiMusicTrackKey, 'world-1', 'boss-1'];
+      }
+      return [];
+    }
+
+    if (track.startsWith('boss-')) {
+      const world = Number(track.slice('boss-'.length));
+      if (Number.isInteger(world)) {
+        return [`world-${world}` as AiMusicTrackKey, 'world-1', 'boss-1'];
+      }
+      return [];
+    }
+
+    return [];
+  }
+
+  private isAiTrackKey(track: MusicPresetKey | AiMusicTrackKey): track is AiMusicTrackKey {
+    return track.startsWith('world-') || track.startsWith('boss-') || track === 'title' || track === 'world-map';
+  }
+
+  private stopAiMusic(): void {
+    if (this.aiAudioSource) {
+      this.aiAudioSource.disconnect();
+      this.aiAudioSource = null;
+    }
+    if (this.aiAudio) {
+      this.aiAudio.pause();
+      this.aiAudio.src = '';
+      this.aiAudio.load();
+      this.aiAudio = null;
+    }
   }
 
   /** Override music tempo (for time-warning speedup). Pass null to revert. */
@@ -163,7 +395,7 @@ export class AudioEngine {
     if (this.settings.musicMuted) {
       this.musicSynth?.stop();
     } else if (this.activeMusicPreset && this.userGestureUnlocked) {
-      this.musicSynth?.start(this.activeMusicPreset);
+      this.startMusicTrack(this.activeMusicPreset);
     }
   }
 }

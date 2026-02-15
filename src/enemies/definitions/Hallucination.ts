@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { BaseEnemy, EnemyConfig, EnemyState, EnemyKind } from '../BaseEnemy';
 
 export class Hallucination extends BaseEnemy {

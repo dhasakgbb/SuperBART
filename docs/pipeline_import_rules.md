@@ -13,6 +13,7 @@ Defines accepted asset formats, intake rules, and rejection conditions for the c
 1. All runtime assets must live under `public/assets/`.
 2. Map references must point to local relative files only.
 3. New assets must be deterministic and reproducible by tool scripts where possible.
+4. Unity baseline media sync uses `src/core/assetManifest.ts` + `src/audio/aiMusic.ts`; everything else is treated as deferred/post-M1 unless explicitly curated.
 
 ## Rejection Rules
 1. Reject external URLs in tilemap `tilesets[].image`.

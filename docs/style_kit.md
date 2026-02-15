@@ -104,7 +104,7 @@ If an exception is approved later, add rows below with the exact columns: `scene
 - `WorldMapScene` uses bitmap text and sprite-kit visuals only.
 - Node states use generated sprites:
   - `map_node_open`, `map_node_done`, `map_node_locked`, `map_node_selected`.
-- Layout is driven by `styleConfig.worldMapLayout` with all 25 campaign nodes.
+- Layout is driven by `styleConfig.worldMapLayout` with all 28 campaign nodes.
 
 ## Visual Regression Gate
 

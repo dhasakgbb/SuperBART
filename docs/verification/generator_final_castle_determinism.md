@@ -1,7 +1,7 @@
 # Feature Verification: generator_final_castle_determinism
 
 ## Acceptance Criteria Mapping
-1. Campaign layout `[6,6,6,6,1]`:
+1. Campaign layout `[4,4,4,4,4,4,4]`:
    - Referenced through progression/constants and used by tests.
 2. Final castle hazard/chunk bias:
    - Implemented in `src/levelgen/generator.ts` when `world=5` and `levelIndex=1`.

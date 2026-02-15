@@ -4,9 +4,9 @@
 This contract defines measurable gameplay-feel targets for the Mario-style movement and pacing confidence pass.
 
 ## Source
-- Canonical target: `/Users/damian/GitHub/NES/SuperBART/scripts/playfeel_contract.json`
+- Canonical target: `scripts/playfeel_contract.json`
 - Gate check anchor: `tests/quality.playfeel.test.ts`
-- Execution lock: use this alongside `/Users/damian/GitHub/NES/SuperBART/scripts/run_ci_gates.mjs`
+- Execution lock: use this alongside `scripts/run_ci_gates.mjs`
 
 ## Acceptance criteria
 - `run_speed >= 1.35 * walk_speed`

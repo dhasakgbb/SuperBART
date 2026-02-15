@@ -1,9 +1,9 @@
-import type { GameMode, PlayerForm, SaveGameV3, SuperBartRuntimeState, PlayerCombatState } from '../types/game';
+import type { GameMode, PlayerForm, SaveGame, SuperBartRuntimeState, PlayerCombatState } from '../types/game';
 import { defaultSave } from '../systems/save';
 
 export interface RuntimeStore {
   mode: GameMode;
-  save: SaveGameV3;
+  save: SaveGame;
   levelSeed: number;
   levelTheme: string;
   difficultyTier: number;
@@ -15,7 +15,7 @@ export const runtimeStore: RuntimeStore = {
   mode: 'title',
   save: defaultSave(),
   levelSeed: 0,
-  levelTheme: 'azure',
+  levelTheme: 'city',
   difficultyTier: 1,
   chunksUsed: [],
   entityCounts: {
@@ -60,6 +60,12 @@ export function buildRuntimeState(extra: {
       difficultyTier: runtimeStore.difficultyTier,
       chunksUsed: runtimeStore.chunksUsed
     },
-    entities: runtimeStore.entityCounts
+    entities: runtimeStore.entityCounts,
+    script: {
+      worldStates: runtimeStore.save.worldStates,
+      choiceFlags: runtimeStore.save.choiceFlags,
+      unlocks: runtimeStore.save.unlocks,
+      personnelFilesCollected: runtimeStore.save.personnelFilesCollected.length,
+    },
   };
 }

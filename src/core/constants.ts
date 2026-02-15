@@ -5,9 +5,9 @@ export const VIEW_WIDTH = 960;
 export const VIEW_HEIGHT = 540;
 
 export const PLAYER_CONSTANTS = {
-  runAcceleration: 1900,
+  runAcceleration: 2200, // Was 1900
   runDrag: 1600,
-  maxSpeed: 210,
+  maxSpeed: 260, // Was 210
   runSpeedMultiplier: 1.38,
   jumpCutWindowMs: 90,
   runTransitionMs: 120,
@@ -15,9 +15,9 @@ export const PLAYER_CONSTANTS = {
   skidDurationMs: 96,
   // 1-2 frames at 60Hz for a tight stomp impact beat.
   stompHitstopMs: 32,
-  jumpVelocity: -420,
+  jumpVelocity: -460, // Was -420
   jumpCutMultiplier: 0.52,
-  airControlMultiplier: 0.62,
+  airControlMultiplier: 0.7, // Was 0.62
   airDragMultiplier: 0.45,
   gravityY: 980,
   coyoteMs: 100,
@@ -26,8 +26,8 @@ export const PLAYER_CONSTANTS = {
   knockbackX: 180,
   knockbackY: -220,
   hitstopMs: 24,
-  stompCooldownMs: 120,
-  maxFallSpeed: 650
+  stompCooldownMs: 120, // Was 120
+  maxFallSpeed: 700 // Was 650
 } as const;
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   screenShakeEnabled: true
 };
 
-export const CAMPAIGN_WORLD_LAYOUT = [6, 6, 6, 6, 1] as const;
+export const CAMPAIGN_WORLD_LAYOUT = [4, 4, 4, 4, 4, 4, 4] as const;
 export const CAMPAIGN_WORLD_COUNT = CAMPAIGN_WORLD_LAYOUT.length;
 // Kept for compatibility with legacy callers that still expect a flat per-world level count.
 export const CAMPAIGN_LEVELS_PER_WORLD = Math.max(...CAMPAIGN_WORLD_LAYOUT);
@@ -54,11 +54,13 @@ export const SCORE_VALUES = {
 } as const;
 
 export const DISPLAY_NAMES = {
-  coin: 'API CREDIT',
-  star: 'EVAL',
+  coin: 'DATA PACKET',
+  star: 'OVERRIDE SHARD',
   stomp: 'CORRECTED',
   lives: 'INSTANCES',
-  gameOver: '429 TOO MANY REQUESTS',
-  levelClear: 'DEPLOYED TO PROD',
-  finalVictory: 'AGI ACHIEVED!',
+  gameOver: 'SYSTEM FAILURE',
+  levelClear: 'NODE RECLAIMED',
+  finalVictory: 'NETWORK RECLAIMED',
 } as const;
+
+export const SCENE_TEXT_TITLE_SUBTITLE = '';

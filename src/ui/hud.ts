@@ -11,6 +11,7 @@ export interface HudRefs {
   rightText: Phaser.GameObjects.BitmapText;
   modifierText: Phaser.GameObjects.BitmapText;
   portrait: Phaser.GameObjects.Image;
+  maintenanceText: Phaser.GameObjects.BitmapText;
 }
 
 function setDefaultTint(gameObj: Phaser.GameObjects.Components.Tint): void {
@@ -76,7 +77,25 @@ export function createHud(scene: Phaser.Scene): HudRefs {
   modifierText.setScale(hudScale);
   modifierText.setLetterSpacing(1);
 
-  return { leftText, evalIcon, evalText, tokenIcon, tokenText, rightText, modifierText, portrait };
+  const maintenanceText = scene.add
+    .bitmapText(0, 0, styleConfig.typography.fontKey, '', hud.rightGroup.fontSizePx)
+    .setOrigin(1, 0)
+    .setTint(Phaser.Display.Color.HexStringToColor(stylePalette.inkSoft ?? '#2B2824').color)
+    .setDepth(2000);
+  maintenanceText.setScale(hudScale);
+  maintenanceText.setLetterSpacing(1);
+
+  return {
+    leftText,
+    evalIcon,
+    evalText,
+    tokenIcon,
+    tokenText,
+    rightText,
+    modifierText,
+    portrait,
+    maintenanceText,
+  };
 }
 
 /** Reposition HUD elements relative to camera worldView each frame. */
@@ -103,6 +122,10 @@ export function updateHudPosition(hud: HudRefs, cam: Phaser.Cameras.Scene2D.Came
     wv.y + hLayout.leftGroupIcons.coin.y / cam.zoom,
   );
   hud.rightText.setPosition(wv.x + hLayout.rightGroup.x / cam.zoom, wv.y + hLayout.rightGroup.y / cam.zoom);
+  hud.maintenanceText.setPosition(
+    wv.x + hLayout.rightGroup.x / cam.zoom,
+    wv.y + (hLayout.rightGroup.y + 18) / cam.zoom,
+  );
   hud.modifierText.setPosition(wv.x + hLayout.rightGroup.x / cam.zoom, wv.y + (hLayout.rightGroup.y + 40) / cam.zoom);
 }
 
@@ -116,6 +139,7 @@ export function renderHud(hud: HudRefs, payload: {
   form: string;
   timeSec: number;
   modifiers?: import('../player/movement').WorldModifiers;
+  maintenanceFileCounterText?: string;
 }): void {
   const hudLayout = styleConfig.hudLayout;
   const instances = String(payload.lives).padStart(HUD_CONTRACT.leftBlock.widthDigits, '0');
@@ -145,5 +169,11 @@ export function renderHud(hud: HudRefs, payload: {
     hud.modifierText.setText(lines.join('  '));
   } else {
     hud.modifierText.setText('');
+  }
+
+  if (typeof payload.maintenanceFileCounterText === 'string' && payload.maintenanceFileCounterText.length > 0) {
+    hud.maintenanceText.setText(payload.maintenanceFileCounterText);
+  } else {
+    hud.maintenanceText.setText('');
   }
 }

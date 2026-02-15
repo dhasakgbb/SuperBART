@@ -104,28 +104,28 @@ function extractGeneratorChunkFamilies(): string[] {
 
 describe('content bible manifest contract', () => {
   test('manifest exports required world and chunk invariants', () => {
-    expect(CONTENT_WORLD_MAP).toHaveLength(5);
+    expect(CONTENT_WORLD_MAP).toHaveLength(7);
     for (const world of CONTENT_WORLD_MAP) {
       expect(world.physicsMultipliers).toHaveProperty('frictionMultiplier');
       expect(world.allowedChunkFamilies.length).toBeGreaterThan(0);
       expect(world.index).toBeGreaterThanOrEqual(1);
-      expect(world.index).toBeLessThanOrEqual(5);
+      expect(world.index).toBeLessThanOrEqual(7);
     }
 
     const manifestWorldKeys = CONTENT_WORLD_CHUNK_FAMILIES
       .map((entry) => entry.world)
       .sort((a, b) => a - b);
-    expect(manifestWorldKeys).toEqual([1, 2, 3, 4, 5]);
+    expect(manifestWorldKeys).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(WORLD_CHUNK_FAMILY_NAMES).toContain('azure_walkway');
     expect(WORLD_CHUNK_FAMILY_NAMES.sort()).toContain('server_room');
     expect(WORLD_CHUNK_FAMILY_NAMES).toContain('benchmark_sprint');
-    expect(CONTENT_WORLD_MAP[4].allowedChunkFamilies).toContain('benchmark_sprint');
+    expect(CONTENT_WORLD_MAP[6].allowedChunkFamilies).toContain('benchmark_sprint');
   });
 
   test('approved UI text includes canonical labels and regex patterns', () => {
-    expect(APPROVED_UI_TEXT.exact).toContain('429: TOO MANY REQUESTS');
-    expect(APPROVED_UI_TEXT.exact).toContain('DEPLOYED TO PROD');
-    expect(APPROVED_UI_TEXT.exact).toContain('BENCHMARKS IMPROVED');
+    expect(APPROVED_UI_TEXT.exact).toContain('SYSTEM FAILURE');
+    expect(APPROVED_UI_TEXT.exact).toContain('GLOBAL CLOUD NETWORK');
+    expect(APPROVED_UI_TEXT.exact).toContain('7 REGIONS • 28 STAGES • HUMAN COST');
     expect(APPROVED_UI_TEXT.patterns.map((entry) => entry.id)).toEqual(expect.arrayContaining([
       'HUD_BART',
       'HUD_COUNTER_EVAL',

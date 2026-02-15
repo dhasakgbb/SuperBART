@@ -5,13 +5,13 @@ This gate describes the required `WorldMapScene` look.
 ## Required Visual Layout
 
 - Header and hints use bitmap text only (no system fonts).
-- Map displays 25 campaign nodes with sprite states:
+- Map displays 28 campaign nodes with sprite states:
   - `map_node_open`
   - `map_node_done`
   - `map_node_locked`
   - `map_node_selected`
 - Path dots connect node order using `map_path_dot`.
-- World labels (`WORLD 1` ... `WORLD 5`) align to style-config rows.
+- World labels (`WORLD 1` ... `WORLD 7`) align to style-config rows.
 
 ## Required Behavior
 

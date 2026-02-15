@@ -9,7 +9,11 @@ import {
   type PixelImage,
 } from './lib/pixel';
 
-const ARTIFACTS_DIR = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6';
+const ARTIFACTS_DIR = process.argv[2] ?? process.env.SUPERBART_ARTIFACTS_DIR;
+if (!ARTIFACTS_DIR) {
+  console.error('Usage: tsx tools/slice_tileset.ts <artifactsDir>');
+  process.exit(1);
+}
 const OUT_DIR = 'public/assets/tiles';
 
 const WORLDS = ['w1', 'w2', 'w3', 'w4', 'w5'];

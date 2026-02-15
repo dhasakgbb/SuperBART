@@ -10,11 +10,23 @@ import { LevelCompleteScene } from './scenes/LevelCompleteScene';
 import { GameOverScene } from './scenes/GameOverScene';
 import { FinalVictoryScene } from './scenes/FinalVictoryScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { InterludeScene } from './scenes/InterludeScene';
+import { DebriefScene } from './scenes/DebriefScene';
+import { ChoiceScene } from './scenes/ChoiceScene';
+import { CreditsScene } from './scenes/CreditsScene';
+import { GalleryScene } from './scenes/GalleryScene';
+import { BartsRulesScene } from './scenes/BartsRulesScene';
 const scenes = [
   BootScene,
   TitleScene,
   WorldMapScene,
   PlayScene,
+  InterludeScene,
+  DebriefScene,
+  ChoiceScene,
+  CreditsScene,
+  GalleryScene,
+  BartsRulesScene,
   PauseScene,
   LevelCompleteScene,
   GameOverScene,
@@ -29,9 +41,10 @@ function init() {
   
   try {
     const game = new Phaser.Game(config);
-    (window as any).__SUPER_BART__ = { game };
+    const existing = (window as any).__SUPER_BART__ ?? {};
+    (window as any).__SUPER_BART__ = { ...existing, game };
 
-    // Wait slightly for boot to finish since we forced CANVAS
+    // Wait slightly for boot to finish for deterministic startup in tests.
     setTimeout(() => {
       if (!game.scene.isActive('BootScene') && game.scene.getScene('BootScene')) {
         game.scene.start('BootScene');

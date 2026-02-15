@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { runtimeStore } from '../core/runtime';
-import { defaultSave, persistSave } from '../systems/save';
+import { defaultSave, persistSave, setBartsRulesUnlocked } from '../systems/save';
 import styleConfig, { stylePalette } from '../style/styleConfig';
 import { SCENE_TEXT } from '../content/contentManifest';
 import { transitionToScene } from './sceneFlow';
@@ -17,6 +17,9 @@ export class FinalVictoryScene extends Phaser.Scene {
 
   create(): void {
     runtimeStore.mode = 'victory';
+    // Unlock Bart's Rules (NG+) on campaign completion
+    runtimeStore.save = setBartsRulesUnlocked(runtimeStore.save);
+    persistSave(runtimeStore.save);
     const audio = AudioEngine.shared();
     audio.configureFromSettings(runtimeStore.save.settings);
     audio.stopMusic();

@@ -284,11 +284,22 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
       const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
       await page.addInitScript(() => {
         try {
+          localStorage.removeItem('super_bart_save_v5');
+          localStorage.removeItem('super_bart_save_v4');
           localStorage.removeItem('super_bart_save_v3');
           localStorage.removeItem('super_bart_save_v2');
         } catch {
           // keep capture pipeline resilient in restricted environments
         }
+        const seed = 1337;
+        let s = seed >>> 0;
+        const next = (): number => {
+          s ^= s << 13;
+          s ^= s >>> 17;
+          s ^= s << 5;
+          return (s >>> 0) / 0xffffffff;
+        };
+        Math.random = () => next();
         (window as any).__SUPER_BART__ = { forceSeed: 1337 };
       });
       page.on('console', msg => console.log('PAGE LOG:', msg.text()));
@@ -303,7 +314,7 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
       await canvas.screenshot({ path: titlePath });
       assertCapturedFrameLooksRendered(titlePath, 'title');
 
-      await page.keyboard.press('Enter');
+      await page.keyboard.press('L');
       await waitForSceneReadyMarker(page, 'WorldMapScene', expectedVersion);
       await waitForSceneFrameSettle(page);
       const mapPath = path.resolve(outputDir, 'map_scene_current.png');

@@ -20,7 +20,7 @@ Scene headers are the primary text displayed when entering a non-gameplay scene.
 
 | Scene | String | Max Length | Notes |
 |-------|--------|-----------|-------|
-| Title | `SUPER BART` | 40 chars | Rendered large, center screen. This is the logo treatment. |
+| Title | `SUPER BART: CLOUD QUEST` | 40 chars | Rendered large, center screen. This is the canonical game-title treatment. No other title-scene copy is rendered in normal mode. |
 | World Map | `SERVICE MAP` | 40 chars | Displayed as the scene title. Reinforces infrastructure metaphor. |
 | Pause | `PAUSED` | 40 chars | Simple. No joke. The player chose to stop; respect that. |
 | Game Over | `429: TOO MANY REQUESTS` | 40 chars | HTTP status code humor. Bart ran out of retries. |

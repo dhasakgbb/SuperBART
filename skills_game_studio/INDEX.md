@@ -52,7 +52,7 @@ Use `medium` for structured content production:
 Run from repository root:
 
 ```bash
-cd /Users/damian/GitHub/NES/Mario
+cd <path-to-Mario>
 codex "Use $game-design-compiler to turn this concept into docs/GDD.md and tickets/phase_0_backlog.md."
 ```
 

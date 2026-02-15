@@ -30,4 +30,6 @@ canvas {
     0 0 0 2px #1d1d1d,
     0 24px 48px rgb(0 0 0 / 55%);
   image-rendering: pixelated;
+  /* Crucial: Kill any debug checkerboard background */
+  background: #1c2434 !important; 
 }

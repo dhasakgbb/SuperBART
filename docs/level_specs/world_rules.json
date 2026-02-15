@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2026-02-13T00:00:00.000Z",
-  "worldCount": 5,
+  "version": "3.0.0",
+  "generatedAt": "2026-02-14T13:11:47.296Z",
+  "worldCount": 7,
   "worlds": [
     {
       "world": 1,
@@ -33,8 +33,8 @@
       ],
       "hazardMix": {
         "spike": 0.65,
-        "flying": 0.2,
-        "thwomp": 0.15
+        "flying": 0.15,
+        "thwomp": 0.2
       },
       "enemyMix": {
         "walker": 0.82,
@@ -123,8 +123,7 @@
         "SPIKE_SWEEP",
         "THWOMP_DROP",
         "TURNAROUND_ENEMY",
-        "FLYER_DRIFT",
-        "BENCHMARK_AUTO_SCROLL"
+        "FLYER_DRIFT"
       ],
       "allowedHazardTags": [
         "SPIKE_LOW",
@@ -176,7 +175,6 @@
         "THWOMP_DROP",
         "TURNAROUND_ENEMY",
         "FLYER_DRIFT",
-        "BENCHMARK_AUTO_SCROLL",
         "VANISH_PLATFORM"
       ],
       "allowedHazardTags": [
@@ -245,6 +243,100 @@
       "modifiers": {
         "speedMultiplier": 1.08,
         "gravityMultiplier": 1.25,
+        "tokenBurnRate": 1.3
+      }
+    },
+    {
+      "world": 6,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 2,
+      "maxHazardClusters": 3,
+      "guidanceWindow": 3,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT",
+        "VANISH_PLATFORM",
+        "BENCHMARK_AUTO_SCROLL"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_SWEEP",
+        "THWOMP_DROP"
+      ],
+      "hazardMix": {
+        "spike": 0.3,
+        "flying": 0.4,
+        "thwomp": 0.3
+      },
+      "enemyMix": {
+        "walker": 0.38,
+        "shell": 0.22,
+        "flying": 0.28,
+        "thwomp": 0.12
+      },
+      "modifiers": {
+        "speedMultiplier": 1.08,
+        "gravityMultiplier": 1.1,
+        "tokenBurnRate": 1.25
+      }
+    },
+    {
+      "world": 7,
+      "maxNewMechanicsPerChunk": 1,
+      "minRecoveryGap": 2,
+      "maxHazardClusters": 3,
+      "guidanceWindow": 3,
+      "allowedChunkTags": [
+        "FLAT",
+        "RISE_STEP",
+        "DROP_STEP",
+        "GAP_SHORT",
+        "GAP_LONG",
+        "PLATFORM_BUBBLE",
+        "PLATFORM_STACK",
+        "POWERUP_HINT",
+        "COOLDOWN_LANE",
+        "COMEDY_VENT",
+        "WALKER_PATROL",
+        "BLOCKER",
+        "SPIKE_SWEEP",
+        "THWOMP_DROP",
+        "TURNAROUND_ENEMY",
+        "FLYER_DRIFT",
+        "VANISH_PLATFORM",
+        "BENCHMARK_AUTO_SCROLL"
+      ],
+      "allowedHazardTags": [
+        "SPIKE_SWEEP",
+        "THWOMP_DROP"
+      ],
+      "hazardMix": {
+        "spike": 0.28,
+        "flying": 0.36,
+        "thwomp": 0.36
+      },
+      "enemyMix": {
+        "walker": 0.34,
+        "shell": 0.2,
+        "flying": 0.3,
+        "thwomp": 0.16
+      },
+      "modifiers": {
+        "speedMultiplier": 1.12,
+        "gravityMultiplier": 1.12,
         "tokenBurnRate": 1.3
       }
     }

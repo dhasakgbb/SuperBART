@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { AudioEngine } from '../audio/AudioEngine';
 import { SfxKey } from '../audio/sfx';
 import type { EnemyKind, EnemyKillSource, EnemyKillEvent } from './types';
@@ -115,7 +116,7 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  public onPlayerCollision(player: Phaser.Physics.Arcade.Sprite): 'stomp' | 'damage' {
+  public onPlayerCollision(player: Phaser.Physics.Arcade.Sprite): 'stomp' | 'damage' | 'harmless' {
     if (this.currentState === 'dead') return 'damage';
     
     // Default collision logic

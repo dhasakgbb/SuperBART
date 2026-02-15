@@ -2,7 +2,13 @@
 import { readPng, getPixel } from './lib/pixel';
 import path from 'node:path';
 
-const SRC_PATH = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6/tileset_w1_gen_1771043431498.png';
+const args = process.argv.slice(2);
+if (args.length < 1) {
+    console.error('Usage: tsx tools/visualize_layout.ts <sourcePng>');
+    process.exit(1);
+}
+
+const SRC_PATH = args[0]!;
 
 try {
     const img = readPng(SRC_PATH);

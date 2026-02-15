@@ -1,0 +1,21 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='32' height='8' viewBox='0 0 32 8'>
+<rect width='32' height='8' fill='none'/>
+<rect x='0' y='0' width='32' height='2' fill='#5d6774'/>
+<rect x='0' y='2' width='32' height='6' fill='#666f7a'/>
+<rect x='1' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='4' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='7' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='10' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='13' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='16' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='19' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='22' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='25' y='2' width='2' height='1' fill='#8a95a0'/>
+<rect x='28' y='2' width='3' height='1' fill='#8a95a0'/>
+<rect x='1' y='3' width='30' height='1' fill='#4a535f'/>
+<rect x='0' y='5' width='32' height='1' fill='#1d1d1d'/>
+<rect x='2' y='6' width='5' height='1' fill='#f2cc62'/>
+<rect x='8' y='6' width='6' height='1' fill='#f2cc62'/>
+<rect x='15' y='6' width='5' height='1' fill='#f2cc62'/>
+<rect x='22' y='6' width='8' height='1' fill='#f2cc62'/>
+</svg>

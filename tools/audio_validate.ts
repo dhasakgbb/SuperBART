@@ -57,6 +57,14 @@ function validateSfx(errors: string[]): void {
       errors.push(`SFX gain out of cap for ${key}: ${def.gain} (expected >0 and <=0.3)`);
     }
   }
+
+  // Validate gain cap across ALL SFX definitions, not just required keys
+  for (const [key, def] of Object.entries(SFX_DEFINITIONS)) {
+    if (!def || !Number.isFinite(def.gain)) continue;
+    if (def.gain > 0.3) {
+      errors.push(`SFX gain exceeds 0.3 cap for "${key}": ${def.gain}`);
+    }
+  }
 }
 
 function validateCaps(errors: string[]): void {

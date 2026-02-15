@@ -3,7 +3,6 @@ import { readPng, writePng } from './lib/pixel';
 import { PNG } from 'pngjs';
 import path from 'node:path';
 
-const SRC = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6/hill_near_w1_magenta_1771045710000.png'; // Need actual timestamp
         const args = process.argv.slice(2);
         if (args.length < 2) {
             console.error("Usage: tsx tools/remove_magenta.ts <source_file> <dest_file>");

@@ -8,6 +8,7 @@ import styleConfig, {
   sceneStyleExceptions as CANONICAL_SCENE_EXCEPTIONS,
   type SceneStyleExceptionRationale,
 } from '../src/style/styleConfig';
+import { GAME_TITLE } from '../src/content/contentManifest';
 import { ASSET_MANIFEST } from '../src/core/assetManifest';
 import { parseHex, readPng } from './lib/pixel';
 
@@ -1524,6 +1525,26 @@ function validateTitleLayout(errors: ErrorList): void {
     return;
   }
 
+  if (title.titleMode === undefined || typeof title.titleMode !== 'string') {
+    errors.push('titleLayout.titleMode is required and must be "game-name-only" (default).');
+    return;
+  }
+  if (title.titleMode !== 'game-name-only' && title.titleMode !== 'full-ui') {
+    errors.push(`titleLayout.titleMode must be "game-name-only" or "full-ui", received "${title.titleMode}".`);
+    return;
+  }
+  if (title.titleMode === 'game-name-only') {
+    if (title.subtitle.text && title.subtitle.text.length > 0) {
+      errors.push('titleLayout.subtitle.text must be empty while titleMode is game-name-only.');
+    }
+    if (title.prompt.text && title.prompt.text.length > 0) {
+      errors.push('titleLayout.prompt.text must be empty while titleMode is game-name-only.');
+    }
+    if (title.hints.text && title.hints.text.length > 0) {
+      errors.push('titleLayout.hints.text must be empty while titleMode is game-name-only.');
+    }
+  }
+
   if (title.viewport.width !== 960 || title.viewport.height !== 540) {
     errors.push(
       `titleLayout.viewport must stay locked to 960x540, received ${title.viewport.width}x${title.viewport.height}`,
@@ -1536,8 +1557,10 @@ function validateTitleLayout(errors: ErrorList): void {
   if (title.wordmark.anchor !== 'top-center') {
     errors.push(`titleLayout.wordmark.anchor must be top-center, received ${title.wordmark.anchor}`);
   }
-  if (title.wordmark.copy !== 'SUPER BART') {
-    errors.push(`titleLayout.wordmark.copy must be "SUPER BART", received "${title.wordmark.copy}"`);
+  if (title.wordmark.copy !== GAME_TITLE) {
+    errors.push(
+      `titleLayout.wordmark.copy must be "${GAME_TITLE}", received "${title.wordmark.copy}"`,
+    );
   }
 
   assertRange(errors, 'titleLayout.portrait.x', title.portrait.x, 680, 860);
@@ -1650,11 +1673,11 @@ function validateWorldMapLayout(errors: ErrorList): void {
     );
   }
 
-  if (!Array.isArray(map.nodes) || map.nodes.length !== 25) {
-    errors.push(`worldMapLayout.nodes must contain 25 campaign nodes, received ${map.nodes.length}`);
+  if (!Array.isArray(map.nodes) || map.nodes.length !== 28) {
+    errors.push(`worldMapLayout.nodes must contain 28 campaign nodes, received ${map.nodes.length}`);
   }
-  if (!map.nodes.some((node) => node.key === '5-1')) {
-    errors.push('worldMapLayout.nodes must contain final castle key 5-1.');
+  if (!map.nodes.some((node) => node.key === '7-4')) {
+    errors.push('worldMapLayout.nodes must contain final boss key 7-4.');
   }
 
   assertRange(errors, 'worldMapLayout.nodeScale.base', map.nodeScale.base, 1.6, 2.3);
@@ -1686,9 +1709,13 @@ function validateTitleSceneContract(errors: ErrorList): void {
     errors.push('TitleScene may not use system text rendering.');
   }
 
+  const titleLayoutHasGameNameOnlyMode = styleConfig.titleLayout.titleMode === 'game-name-only';
   const scrollFactorHits = source.match(/setScrollFactor\(0\)/g)?.length ?? 0;
-  if (scrollFactorHits < 6) {
-    errors.push('TitleScene UI must pin logo/portrait/subtitle/prompt/hints with setScrollFactor(0).');
+  const requiredScrollFactorPins = titleLayoutHasGameNameOnlyMode ? 2 : 6;
+  if (scrollFactorHits < requiredScrollFactorPins) {
+    errors.push(
+      `TitleScene UI must pin required elements with setScrollFactor(0): expected at least ${requiredScrollFactorPins}, got ${scrollFactorHits}.`,
+    );
   }
 }
 
@@ -1904,7 +1931,10 @@ function validatePopupDurations(errors: ErrorList): void {
 
 function validateDocs(errors: ErrorList): void {
   const requiredDocs = [
-    { file: 'docs/screenshots/title_expected.md', mustContain: ['setScrollFactor(0)', 'title_logo.png', 'PRESS ENTER', 'N: NEW DEPLOYMENT'] },
+    {
+      file: 'docs/screenshots/title_expected.md',
+      mustContain: ['setScrollFactor(0)', 'title_logo.png', 'SUPER BART: CLOUD QUEST'],
+    },
     { file: 'docs/screenshots/world_map_expected.md', mustContain: ['WorldMapScene', 'map_node_selected', 'bitmap text'] },
     { file: 'docs/screenshots/play_expected.md', mustContain: ['BART x{instances}', '✦', '◎', 'WORLD W-L', 'TIME TTT'] },
   ];

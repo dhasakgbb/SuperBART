@@ -1,13 +1,61 @@
 import { CAMPAIGN_WORLD_LAYOUT, TOTAL_CAMPAIGN_LEVELS } from '../core/constants';
-import type { SaveGameV3 } from '../types/game';
+import type { BonusRouteId } from '../types/game';
+import type { SaveGame } from '../types/game';
 
 export interface CampaignLevelRef {
   world: number;
+  stage: number;
+  // Legacy compatibility alias.
   levelIndex: number;
 }
 
+function asStage(levelIndex: number): number {
+  return Math.max(1, Math.floor(levelIndex));
+}
+
+export interface BonusRouteTarget {
+  world: number;
+  levelIndex: number;
+  seedOffset: number;
+}
+
+const BONUS_ROUTE_TARGETS: Record<BonusRouteId, BonusRouteTarget> = {
+  'micro-level-1': {
+    world: 7,
+    levelIndex: 1,
+    seedOffset: 131,
+  },
+  'micro-level-2': {
+    world: 7,
+    levelIndex: 2,
+    seedOffset: 197,
+  },
+  'micro-level-3': {
+    world: 7,
+    levelIndex: 3,
+    seedOffset: 223,
+  },
+};
+
+export function isBonusRouteId(value: unknown): value is BonusRouteId {
+  return value === 'micro-level-1' || value === 'micro-level-2' || value === 'micro-level-3';
+}
+
+export function resolveBonusRouteTarget(routeId: BonusRouteId): BonusRouteTarget | null {
+  return BONUS_ROUTE_TARGETS[routeId] ?? null;
+}
+
+export function resolveBonusRouteByLevel(world: number, levelIndex: number): BonusRouteId | null {
+  for (const [routeId, target] of Object.entries(BONUS_ROUTE_TARGETS) as Array<[BonusRouteId, BonusRouteTarget]>) {
+    if (target.world === world && target.levelIndex === asStage(levelIndex)) {
+      return routeId;
+    }
+  }
+  return null;
+}
+
 export function levelKey(world: number, levelIndex: number): string {
-  return `${world}-${levelIndex}`;
+  return `${world}-${asStage(levelIndex)}`;
 }
 
 export function levelsInWorld(world: number): number {
@@ -16,23 +64,26 @@ export function levelsInWorld(world: number): number {
 
 export function isValidCampaignLevel(world: number, levelIndex: number): boolean {
   const levels = levelsInWorld(world);
-  return levels > 0 && levelIndex >= 1 && levelIndex <= levels;
+  const stage = asStage(levelIndex);
+  return levels > 0 && stage >= 1 && stage <= levels;
 }
 
 export function nextLevel(world: number, levelIndex: number): CampaignLevelRef | null {
-  if (!isValidCampaignLevel(world, levelIndex)) {
-    return { world: 1, levelIndex: 1 };
+  const stage = asStage(levelIndex);
+  if (!isValidCampaignLevel(world, stage)) {
+    return { world: 1, stage: 1, levelIndex: 1 };
   }
 
   const inWorld = levelsInWorld(world);
-  if (levelIndex < inWorld) {
-    return { world, levelIndex: levelIndex + 1 };
+  if (stage < inWorld) {
+    const nextStage = stage + 1;
+    return { world, stage: nextStage, levelIndex: nextStage };
   }
 
   for (let nextWorld = world + 1; nextWorld <= CAMPAIGN_WORLD_LAYOUT.length; nextWorld += 1) {
-    const worldLevels = levelsInWorld(nextWorld);
-    if (worldLevels > 0) {
-      return { world: nextWorld, levelIndex: 1 };
+    const worldStages = levelsInWorld(nextWorld);
+    if (worldStages > 0) {
+      return { world: nextWorld, stage: 1, levelIndex: 1 };
     }
   }
 
@@ -40,10 +91,11 @@ export function nextLevel(world: number, levelIndex: number): CampaignLevelRef |
 }
 
 export function campaignOrdinal(world: number, levelIndex: number): number {
-  if (!isValidCampaignLevel(world, levelIndex)) {
+  const stage = asStage(levelIndex);
+  if (!isValidCampaignLevel(world, stage)) {
     return 1;
   }
-  let ordinal = levelIndex;
+  let ordinal = stage;
   for (let w = 1; w < world; w += 1) {
     ordinal += levelsInWorld(w);
   }
@@ -56,16 +108,18 @@ export function campaignRefFromOrdinal(ordinal: number): CampaignLevelRef {
   for (let world = 1; world <= CAMPAIGN_WORLD_LAYOUT.length; world += 1) {
     const inWorld = levelsInWorld(world);
     if (offset <= inWorld) {
-      return { world, levelIndex: offset };
+      return { world, stage: offset, levelIndex: offset };
     }
     offset -= inWorld;
   }
-  return { world: 1, levelIndex: 1 };
+  return { world: 1, stage: 1, levelIndex: 1 };
 }
 
-export function computeSeed(world: number, levelIndex: number): number {
-  const ordinal = campaignOrdinal(world, levelIndex);
-  return world * 100_003 + levelIndex * 9_973 + ordinal * 379;
+export function computeSeed(world: number, levelIndex: number, bonusRouteId?: BonusRouteId | null): number {
+  const stage = asStage(levelIndex);
+  const ordinal = campaignOrdinal(world, stage);
+  const routeOffset = bonusRouteId ? (BONUS_ROUTE_TARGETS[bonusRouteId]?.seedOffset ?? 0) : 0;
+  return world * 100_003 + stage * 9_973 + ordinal * 379 + routeOffset;
 }
 
 const MAX_EVALS_PER_LEVEL = 3;
@@ -75,7 +129,7 @@ function normalizeEvalList(values: string[] | undefined): string[] {
 }
 
 export function getPerLevelStats(
-  save: SaveGameV3,
+  save: SaveGame,
   world: number,
   levelIndex: number,
 ): { evalsCollected: number; evalsCollectedIds: string[]; collectiblesPicked: string[] } {
@@ -93,16 +147,16 @@ export function getPerLevelStats(
   };
 }
 
-export function isLevelEvalComplete(save: SaveGameV3, world: number, levelIndex: number): boolean {
+export function isLevelEvalComplete(save: SaveGame, world: number, levelIndex: number): boolean {
   return getPerLevelStats(save, world, levelIndex).evalsCollected >= MAX_EVALS_PER_LEVEL;
 }
 
 export function setLevelEvalStatus(
-  save: SaveGameV3,
+  save: SaveGame,
   world: number,
   levelIndex: number,
   evalId: string,
-): SaveGameV3 {
+): SaveGame {
   const key = levelKey(world, levelIndex);
   if (!isValidCampaignLevel(world, levelIndex)) {
     return save;
@@ -123,11 +177,11 @@ export function setLevelEvalStatus(
 }
 
 export function setLevelCollectibleStatus(
-  save: SaveGameV3,
+  save: SaveGame,
   world: number,
   levelIndex: number,
   collectibleId: string,
-): SaveGameV3 {
+): SaveGame {
   const key = levelKey(world, levelIndex);
   if (!isValidCampaignLevel(world, levelIndex)) {
     return save;

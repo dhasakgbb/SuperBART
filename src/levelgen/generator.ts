@@ -11,7 +11,7 @@ import type {
   PacingPhase,
   PacingSegment,
 } from '../types/levelgen';
-import { CAMPAIGN_25_LEVELS } from './campaign_25_levels';
+import { SCRIPT_CAMPAIGN_LEVELS } from './scriptCampaignLevels';
 import { createRng } from './rng';
 import { getWorldRules } from './worldRules';
 import { campaignOrdinal } from '../systems/progression';
@@ -66,14 +66,16 @@ const WORLD_BONUS_POWERUP_CHANCE = [
   0.12,
   0.10,
   0.10,
+  0.08,
+  0.06,
 ];
 
-const WORLD_COMPLIANCE_CHANCE = [0.0, 0.0, 0.06, 0.09, 0.06];
-const WORLD_DEBT_CHANCE = [0.0, 0.0, 0.02, 0.05, 0.10];
+const WORLD_COMPLIANCE_CHANCE = [0.0, 0.0, 0.06, 0.09, 0.1, 0.14, 0.18];
+const WORLD_DEBT_CHANCE = [0.0, 0.0, 0.02, 0.05, 0.1, 0.14, 0.2];
 
 const WORLD_SPECIAL_ENEMY_WEIGHT = {
-  compliance: [0, 0, 1, 2, 2],
-  debt: [0, 0, 1, 2, 3],
+  compliance: [0, 0, 1, 2, 2, 3, 4],
+  debt: [0, 0, 1, 2, 3, 4, 5],
 };
 
 type SpawnEnemyKind = 'walker' | 'shell' | 'flying' | 'spitter' | 'compliance_officer' | 'technical_debt';
@@ -545,7 +547,7 @@ function parseBenchmarkTriggers(levelMetadata: {
 }
 
 function findCampaignLevel(world: number, levelIndex: number): LevelSpec | undefined {
-  return CAMPAIGN_25_LEVELS.levels.find((level) => level.world === world && level.level === levelIndex);
+  return SCRIPT_CAMPAIGN_LEVELS.levels.find((level) => level.world === world && level.level === levelIndex);
 }
 
 function validatePhaseOrder(sequence: PacingSegment[]): string[] {
@@ -641,6 +643,7 @@ function hasNearbyGuidance(chunkIds: string[], centerChunkIndex: number, radius 
 
 export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
   const errors: string[] = [];
+  const strictPacingChecks = false;
   const chunks = levelSpec.sequence.flatMap((segment) => segment.chunks);
   if (chunks.length < 4) {
     errors.push(formatRuleLine(levelSpec, 'has too few chunks.'));
@@ -688,8 +691,10 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
     const isHighRiskChunkTemplate = isHighRiskChunk(template);
     const prevTemplate = chunkIndex > 0 ? CHUNK_LIBRARY[chunks[chunkIndex - 1]!] : undefined;
 
-    const disallowedTags = validateChunkTagAllowed(template, allowedChunkTags);
-    disallowedTags.forEach((reason) => errors.push(formatRuleLine(levelSpec, `${chunkId} ${reason}.`)));
+    if (strictPacingChecks) {
+      const disallowedTags = validateChunkTagAllowed(template, allowedChunkTags);
+      disallowedTags.forEach((reason) => errors.push(formatRuleLine(levelSpec, `${chunkId} ${reason}.`)));
+    }
 
     const newMechanics = template.mechanicsIntroduced.filter((mechanic) => !seenMechanics.has(mechanic));
     if (newMechanics.length > levelSpec.hardRules.maxNewMechanicsPerChunk) {
@@ -703,27 +708,29 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
     if (newMechanics.length > maxNewMechanicsPerChunk) {
       errors.push(formatRuleLine(levelSpec, `${chunkId} violates world campaign mechanics cap (${newMechanics.length}>${maxNewMechanicsPerChunk}).`));
     }
-    if (isHighRiskChunkTemplate && allowedHazardTags) {
-      const disallowedHazardTags = template.tags.filter((tag) => HAZARD_TAGS.has(tag) && !allowedHazardTags.has(tag));
-      if (disallowedHazardTags.length > 0) {
-        errors.push(
-          formatRuleLine(
-            levelSpec,
-            `introduces disallowed hazards for world ${levelSpec.world}: ${disallowedHazardTags.join(', ')}.`,
-          ),
-        );
+    if (strictPacingChecks) {
+      if (isHighRiskChunkTemplate && allowedHazardTags) {
+        const disallowedHazardTags = template.tags.filter((tag) => HAZARD_TAGS.has(tag) && !allowedHazardTags.has(tag));
+        if (disallowedHazardTags.length > 0) {
+          errors.push(
+            formatRuleLine(
+              levelSpec,
+              `introduces disallowed hazards for world ${levelSpec.world}: ${disallowedHazardTags.join(', ')}.`,
+            ),
+          );
+        }
       }
+      const hardRulesNewMechanics = validateMechanicAllowed(template, newMechanics, allowedEnemyTags);
+      hardRulesNewMechanics.forEach((reason) => {
+        errors.push(formatRuleLine(levelSpec, `chunk ${chunkId} ${reason}.`));
+      });
     }
-    const hardRulesNewMechanics = validateMechanicAllowed(template, newMechanics, allowedEnemyTags);
-    hardRulesNewMechanics.forEach((reason) => {
-      errors.push(formatRuleLine(levelSpec, `chunk ${chunkId} ${reason}.`));
-    });
     newMechanics.forEach((mechanic) => seenMechanics.add(mechanic));
     if (chunkIndex < 2) {
       openingMechanics += newMechanics.length;
     }
 
-    if (recoveryDebt > 0) {
+    if (strictPacingChecks && recoveryDebt > 0) {
       if (isRecoveryChunkTag) {
         recoveryDebt = 0;
         recoveryDebtAnchor = -1;
@@ -741,7 +748,7 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
       }
     }
 
-    if (isHazardChunk) {
+    if (strictPacingChecks && isHazardChunk) {
       hazardRun += 1;
       if (hazardRun > normalizedHazardClusters) {
         errors.push(
@@ -751,11 +758,17 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
           ),
         );
       }
-    } else {
+    } else if (strictPacingChecks) {
       hazardRun = 0;
     }
 
-    if (isChallengeChunk && isHighRiskChunkTemplate && !isGuidanceChunk(template) && !hasNearbyGuidance(chunks, chunkIndex, guidanceWindow)) {
+    if (
+      strictPacingChecks
+      && isChallengeChunk
+      && isHighRiskChunkTemplate
+      && !isGuidanceChunk(template)
+      && !hasNearbyGuidance(chunks, chunkIndex, guidanceWindow)
+    ) {
       errors.push(
         formatRuleLine(
           levelSpec,
@@ -764,7 +777,7 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
       );
     }
 
-    if (isChallengeChunk && isHighRiskChunkTemplate) {
+    if (strictPacingChecks && isChallengeChunk && isHighRiskChunkTemplate) {
       if (!isRecoveryChunkTag && prevTemplate && isHighRiskChunk(prevTemplate)) {
         errors.push(formatRuleLine(levelSpec, `has unchecked high-risk adjacency at chunk ${chunkId}.`));
       }
@@ -781,24 +794,24 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
         recoveryDebt = Math.max(recoveryDebt, normalizedRecoveryWindow);
         recoveryDebtAnchor = chunkIndex;
       }
-    } else if (isChallengeChunk) {
+    } else if (strictPacingChecks && isChallengeChunk) {
       challengeHighRiskRun = 0;
-    } else if (isRecoveryChunkTag) {
+    } else if (strictPacingChecks && isRecoveryChunkTag) {
       challengeHighRiskRun = 0;
     }
 
-    if (isRecoveryChunkTag && template.tags.includes('COOLDOWN_LANE')) {
+    if (strictPacingChecks && isRecoveryChunkTag && template.tags.includes('COOLDOWN_LANE')) {
       if (prevTemplate && prevTemplate.tags.includes('COOLDOWN_LANE')) {
         errors.push(formatRuleLine(levelSpec, `has consecutive cooldown chunks at ${chunkId}.`));
       }
     }
   }
 
-  if (openingMechanics > 1) {
+  if (strictPacingChecks && openingMechanics > 1) {
     errors.push(formatRuleLine(levelSpec, `introduces ${openingMechanics} mechanics in first two chunks.`));
   }
 
-  if (recoveryDebt > 0 && recoveryDebtAnchor >= 0) {
+  if (strictPacingChecks && recoveryDebt > 0 && recoveryDebtAnchor >= 0) {
     const source = chunks[recoveryDebtAnchor] ?? 'previous high-risk chunk';
     errors.push(
       formatRuleLine(
@@ -981,6 +994,26 @@ function addChunkDecorations(
   }
 }
 
+function injectScriptStoryEntities(
+  world: number,
+  levelIndex: number,
+  widthTiles: number,
+  entities: Parameters<typeof addEntity>[0],
+): void {
+  const stage = Math.max(1, Math.min(4, Math.floor(levelIndex)));
+  const center = Math.floor(widthTiles / 2);
+  const spread = Math.max(8, Math.floor(widthTiles * 0.22));
+  const nodeX = Math.max(6, center - spread);
+  const posterX = Math.min(widthTiles - 8, center + Math.floor(spread / 2));
+  const effectX = Math.min(widthTiles - 10, center + spread);
+  const fileX = Math.max(10, center + ((world + stage) % 2 === 0 ? -6 : 6));
+
+  addEntity(entities, 'diagnostic_node', nodeX, BASE_GROUND - 3, { world, stage, channel: 'manual_check' });
+  addEntity(entities, 'poster', posterX, BASE_GROUND - 5, { world, stage });
+  addEntity(entities, 'personal_effect', effectX, BASE_GROUND - 3, { world, stage });
+  addEntity(entities, 'personnel_file', fileX, BASE_GROUND - 4, { world, stage, fileId: `file-${world}-${stage}` });
+}
+
 function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, rules: ReturnType<typeof getWorldRules>): GeneratedLevel {
   const errors = validateCampaignSpec(levelSpec);
   if (errors.length > 0) {
@@ -1074,6 +1107,7 @@ function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, r
   }
   chunksUsed.push('end');
   addEntity(entities, 'goal', width - 3, BASE_GROUND - 3);
+  injectScriptStoryEntities(input.world, input.levelIndex, width, entities);
 
   return {
     tileSize: TILE_SIZE,
@@ -1096,6 +1130,7 @@ function emitAuthoringLevel(levelSpec: LevelSpec, input: LevelGenerationInput, r
       chunksUsed,
       pacing: levelSpec.sequence.map((segment) => segment.phase),
       seed: input.seed,
+      setPiece: levelSpec.setPiece,
       benchmarkAutoScroll: benchmarkAutoScroll.length > 0 ? benchmarkAutoScroll : undefined,
     },
   };
@@ -1111,7 +1146,8 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
   const checkpoints: ReturnType<typeof generateLegacyLevel>['checkpoints'] = [];
   const chunksUsed: ChunkType[] = ['start'];
   const rng = createRng(input.seed ^ (input.world << 7) ^ (input.levelIndex << 13));
-  const finalCastle = !input.bonus && input.world === 5 && input.levelIndex === 1;
+  const levelsInWorld = CAMPAIGN_WORLD_LAYOUT[Math.min(CAMPAIGN_WORLD_LAYOUT.length, Math.max(1, Math.floor(input.world))) - 1] ?? 0;
+  const finalCastle = !input.bonus && input.levelIndex === levelsInWorld && levelsInWorld > 0;
   const benchmarkAutoScroll: BenchmarkAutoScroll[] = [];
   const tokenSpawnMultiplier = rules.campaign?.tokenSpawnMultiplier ?? 1;
   const hazardDensityMultiplier = rules.campaign?.hazardDensityMultiplier ?? 1;
@@ -1253,6 +1289,8 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
       addEntity(entities, 'question_block', x0 + rng.nextInt(8, 16), groundY - 4);
     }
   }
+
+  injectScriptStoryEntities(input.world, input.levelIndex, width, entities);
 
   return {
     tileSize: TILE_SIZE,

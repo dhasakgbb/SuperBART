@@ -20,8 +20,8 @@ describe('generator determinism hash', () => {
   });
 
   test('different seed changes generated hash', () => {
-    const a = levelHash(2, 6, 1001);
-    const b = levelHash(2, 6, 1002);
+    const a = levelHash(2, 3, 1001);
+    const b = levelHash(2, 3, 1002);
     expect(a).not.toBe(b);
   });
 });

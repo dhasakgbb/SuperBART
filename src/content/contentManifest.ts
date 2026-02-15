@@ -1,8 +1,26 @@
-export type WorldIndex = 1 | 2 | 3 | 4 | 5;
+import { SCRIPT_WORLD_DEFINITIONS, SCRIPT_WORLD_NAME_MAP, type ScriptWorldId } from './scriptCampaign';
 
-export type WorldTheme = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark';
+export type WorldIndex = ScriptWorldId;
 
-export type ChunkFamily = 'azure_walkway' | 'server_room' | 'training_run' | 'rag_pipeline' | 'rate_limiter' | 'benchmark_sprint' | 'technical_debt_sprint' | 'analyst_tower' | 'legacy_slide_01' | 'hot_take_gauntlet';
+export type WorldTheme =
+  | 'city'
+  | 'cryo_tundra'
+  | 'quantum_void'
+  | 'deep_web_catacombs'
+  | 'digital_graveyard'
+  | 'singularity_core';
+
+export type ChunkFamily =
+  | 'azure_walkway'
+  | 'server_room'
+  | 'training_run'
+  | 'rag_pipeline'
+  | 'rate_limiter'
+  | 'benchmark_sprint'
+  | 'technical_debt_sprint'
+  | 'analyst_tower'
+  | 'legacy_slide_01'
+  | 'hot_take_gauntlet';
 
 export interface WorldPhysicsMultipliers {
   frictionMultiplier: number;
@@ -141,217 +159,221 @@ export const WORLD_CHUNK_FAMILIES: Record<WorldIndex, ChunkFamily[]> = {
   1: ['azure_walkway', 'server_room'],
   2: ['training_run', 'rag_pipeline'],
   3: ['rag_pipeline', 'training_run', 'technical_debt_sprint'],
-  4: ['rate_limiter', 'rag_pipeline', 'technical_debt_sprint', 'analyst_tower', 'legacy_slide_01'],
-  5: ['benchmark_sprint', 'rate_limiter', 'training_run', 'hot_take_gauntlet', 'technical_debt_sprint'],
+  4: ['legacy_slide_01', 'hot_take_gauntlet', 'technical_debt_sprint'],
+  5: ['legacy_slide_01', 'rate_limiter', 'hot_take_gauntlet'],
+  6: ['benchmark_sprint', 'analyst_tower', 'hot_take_gauntlet'],
+  7: ['benchmark_sprint', 'analyst_tower', 'hot_take_gauntlet'],
 };
 
 export const CONTENT_WORLD_THEME_NAMES: Record<WorldIndex, string> = {
-  1: 'AZURE BASICS',
-  2: 'DATA PIPELINE',
-  3: 'ENTERPRISE POC',
-  4: 'GPU SHORTAGE',
-  5: 'THE BENCHMARK',
+  1: 'THE CITY',
+  2: 'THE CRYO-SERVER TUNDRA',
+  3: 'THE QUANTUM VOID',
+  4: 'THE DEEP WEB CATACOMBS',
+  5: 'THE DIGITAL GRAVEYARD',
+  6: 'THE SINGULARITY CORE',
+  7: 'THE SINGULARITY APEX',
 };
 
-export const WORLD_NAMES: Record<WorldIndex, string> = CONTENT_WORLD_THEME_NAMES;
+export const WORLD_NAMES: Record<WorldIndex, string> = SCRIPT_WORLD_NAME_MAP;
 
-const CAMPAIGN_BANNER = '4 WORLDS X 6 LEVELS + FINAL BENCHMARK';
-
+const CAMPAIGN_BANNER = 'THE GLOBAL CLOUD NETWORK';
+export const GAME_TITLE = 'SUPER BART: CLOUD QUEST';
+export const GAME_TITLE_PREMIUM = 'SUPER BART: CLOUD QUEST (PREMIUM BUILD)';
 export const WORLD_BANNERS: Record<WorldIndex, string> = {
   1: CAMPAIGN_BANNER,
   2: CAMPAIGN_BANNER,
   3: CAMPAIGN_BANNER,
   4: CAMPAIGN_BANNER,
   5: CAMPAIGN_BANNER,
+  6: CAMPAIGN_BANNER,
+  7: CAMPAIGN_BANNER,
 };
 
-export const CONTENT_WORLD_MAP: Array<WorldContract> = [
-  {
-    index: 1,
-    displayName: 'AZURE BASICS',
-    worldBanner: WORLD_BANNERS[1],
-    theme: 'azure',
-    physicsMultipliers: {
-      frictionMultiplier: 1,
-      gravityMultiplier: 1,
-      speedMultiplier: 1,
-      tokenBurnRate: 1,
-    },
-    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[1],
-    generation: {
-      groundVariance: 1,
-      gapFrequency: 0.09,
-      enemyDensity: 0.35,
-      projectileCadenceMs: 2300,
-      movingPlatformFrequency: 0.08,
-      checkpointSpacingChunks: 3,
-      coinDensity: 0.55,
-      starTarget: 3,
-      palette: { skyTop: 0x6ec6ff, skyBottom: 0xb3ecff, accent: 0x5cb85c },
-      audio: { tempo: 120, scale: [0, 2, 4, 7, 9] },
-    },
-  },
-  {
-    index: 2,
-    displayName: 'DATA PIPELINE',
-    worldBanner: WORLD_BANNERS[2],
-    theme: 'pipeline',
-    physicsMultipliers: {
-      frictionMultiplier: 1,
-      gravityMultiplier: 1,
-      speedMultiplier: 1.08,
-      tokenBurnRate: 1,
-    },
-    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[2],
-    generation: {
-      groundVariance: 2,
-      gapFrequency: 0.14,
-      enemyDensity: 0.45,
-      projectileCadenceMs: 1900,
-      movingPlatformFrequency: 0.16,
-      checkpointSpacingChunks: 3,
-      coinDensity: 0.42,
-      starTarget: 3,
-      palette: { skyTop: 0xf9d976, skyBottom: 0xf39f86, accent: 0xc97d10 },
-      audio: { tempo: 126, scale: [0, 2, 3, 7, 10] },
-    },
-  },
-  {
-    index: 3,
-    displayName: 'ENTERPRISE POC',
-    worldBanner: WORLD_BANNERS[3],
-    theme: 'enterprise',
-    physicsMultipliers: {
-      frictionMultiplier: 0.6,
-      gravityMultiplier: 1,
-      speedMultiplier: 1,
-      tokenBurnRate: 1,
-    },
-    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[3],
-    generation: {
-      groundVariance: 2,
-      gapFrequency: 0.17,
-      enemyDensity: 0.52,
-      projectileCadenceMs: 1750,
-      movingPlatformFrequency: 0.17,
-      checkpointSpacingChunks: 2,
-      coinDensity: 0.56,
-      starTarget: 3,
-      palette: { skyTop: 0x89cff0, skyBottom: 0xe0f7ff, accent: 0x55c0f9 },
-      audio: { tempo: 132, scale: [0, 2, 5, 7, 9] },
-    },
-  },
-  {
-    index: 4,
-    displayName: 'GPU SHORTAGE',
-    worldBanner: WORLD_BANNERS[4],
-    theme: 'gpu',
-    physicsMultipliers: {
-      frictionMultiplier: 1,
-      gravityMultiplier: 1.15,
-      speedMultiplier: 1.03,
-      tokenBurnRate: 1.2,
-    },
-    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[4],
-    generation: {
-      groundVariance: 2,
-      gapFrequency: 0.2,
-      enemyDensity: 0.62,
-      projectileCadenceMs: 1600,
-      movingPlatformFrequency: 0.23,
-      checkpointSpacingChunks: 2,
-      coinDensity: 0.40,
-      starTarget: 3,
-      palette: { skyTop: 0x101423, skyBottom: 0x2b2d42, accent: 0xff8c42 },
-      audio: { tempo: 138, scale: [0, 1, 5, 7, 8] },
-    },
-  },
-  {
-    index: 5,
-    displayName: 'THE BENCHMARK',
-    worldBanner: WORLD_BANNERS[5],
-    theme: 'benchmark',
-    physicsMultipliers: {
-      frictionMultiplier: 1,
-      gravityMultiplier: 1.25,
-      speedMultiplier: 1.08,
-      tokenBurnRate: 1.3,
-    },
-    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[5],
-    generation: {
-      groundVariance: 3,
-      gapFrequency: 0.3,
-      enemyDensity: 0.76,
-      projectileCadenceMs: 1325,
-      movingPlatformFrequency: 0.33,
-      checkpointSpacingChunks: 2,
-      coinDensity: 0.36,
-      starTarget: 3,
-      palette: { skyTop: 0x221122, skyBottom: 0x3b1f2b, accent: 0xd7263d },
-      audio: { tempo: 152, scale: [0, 1, 4, 6, 10] },
-    },
-  },
-];
+const WORLD_THEME_BY_INDEX: Record<WorldIndex, WorldTheme> = {
+  1: 'city',
+  2: 'cryo_tundra',
+  3: 'quantum_void',
+  4: 'deep_web_catacombs',
+  5: 'digital_graveyard',
+  6: 'singularity_core',
+  7: 'singularity_core',
+};
 
-export const CONTENT_WORLD_CHUNK_FAMILIES = Object.entries(WORLD_CHUNK_FAMILIES).map(
-  ([world, families]) => ({
-    world: Number(world) as WorldIndex,
-    families,
-  }),
-);
+const WORLD_PALETTES: Record<WorldIndex, { skyTop: number; skyBottom: number; accent: number }> = {
+  1: { skyTop: 0x2a1f0a, skyBottom: 0x6b4f2c, accent: 0xd4a24a },
+  2: { skyTop: 0x4e6da8, skyBottom: 0x97c9ff, accent: 0xbfe8ff },
+  3: { skyTop: 0x1a0a2e, skyBottom: 0x4a2d73, accent: 0xb388ff },
+  4: { skyTop: 0x1f2119, skyBottom: 0x4f5a31, accent: 0x9abf62 },
+  5: { skyTop: 0x17181f, skyBottom: 0x4a4d59, accent: 0x9ea4ba },
+  6: { skyTop: 0x050505, skyBottom: 0x2b2b2b, accent: 0xe3c66f },
+  7: { skyTop: 0x050505, skyBottom: 0x1f1f1f, accent: 0xf0d68f },
+};
+
+export const CONTENT_WORLD_MAP: Array<WorldContract> = SCRIPT_WORLD_DEFINITIONS.map((world) => {
+  const worldIndex = world.id;
+  const palette = WORLD_PALETTES[worldIndex];
+  return {
+    index: worldIndex,
+    displayName: world.displayName,
+    worldBanner: WORLD_BANNERS[worldIndex],
+    theme: WORLD_THEME_BY_INDEX[worldIndex],
+    physicsMultipliers: {
+      frictionMultiplier: worldIndex === 4 ? 0.6 : 1,
+      gravityMultiplier: worldIndex === 5 ? 1.15 : 1,
+      speedMultiplier: 1,
+      tokenBurnRate: worldIndex === 5 ? 1.2 : 1,
+    },
+    allowedChunkFamilies: WORLD_CHUNK_FAMILIES[worldIndex],
+    generation: {
+      groundVariance: worldIndex >= 6 ? 3 : 2,
+      gapFrequency: 0.1 + worldIndex * 0.022,
+      enemyDensity: 0.32 + worldIndex * 0.075,
+      projectileCadenceMs: Math.max(1050, 2450 - worldIndex * 170),
+      movingPlatformFrequency: 0.08 + worldIndex * 0.03,
+      checkpointSpacingChunks: worldIndex >= 5 ? 2 : 3,
+      coinDensity: Math.max(0.22, 0.56 - worldIndex * 0.04),
+      starTarget: 3,
+      palette,
+      audio: {
+        tempo: 118 + worldIndex * 5,
+        scale: worldIndex >= 6 ? [0, 1, 3, 6, 8] : [0, 2, 4, 7, 9],
+      },
+    },
+  };
+});
+
+export const CONTENT_WORLD_CHUNK_FAMILIES = Object.entries(WORLD_CHUNK_FAMILIES).map(([world, families]) => ({
+  world: Number(world) as WorldIndex,
+  families,
+}));
 
 export const COLLECTIBLES: CollectibleContract[] = [
-  { id: 'token', aliases: ['coin'], displayName: 'TOKEN', implemented: true },
-  { id: 'eval', aliases: ['star'], displayName: 'EVAL', implemented: true },
-  { id: 'gpu_allocation', aliases: ['fire_flower'], displayName: 'GPU ALLOCATION', implemented: true },
-  { id: 'copilot_mode', aliases: ['power_up'], displayName: 'COPILOT MODE', implemented: true },
-  { id: 'semantic_kernel', aliases: ['assist_bot'], displayName: 'SEMANTIC KERNEL', implemented: true },
-  { id: 'deploy_to_prod', aliases: ['green_button'], displayName: 'DEPLOY TO PROD', implemented: true },
-  { id: 'works_on_my_machine', aliases: ['woom'], displayName: 'WORKS ON MY MACHINE', implemented: true },
+  { id: 'token', aliases: ['coin', 'data_packet'], displayName: 'DATA PACKET', implemented: true },
+  { id: 'eval', aliases: ['star', 'override_shard'], displayName: 'OVERRIDE SHARD', implemented: true },
+  { id: 'firewall_shield', aliases: ['shield'], displayName: 'FIREWALL SHIELD', implemented: false },
+  { id: 'pulse_charge', aliases: ['triple_shot'], displayName: 'PULSE CHARGE', implemented: false },
+  { id: 'bandwidth_boost', aliases: ['speed_boost'], displayName: 'BANDWIDTH BOOST', implemented: false },
+  { id: 'cache_restore', aliases: ['health'], displayName: 'CACHE RESTORE', implemented: false },
+  { id: 'overclock', aliases: ['slow_motion'], displayName: 'OVERCLOCK', implemented: false },
 ];
+
+export const COLLECTIBLE_DISPLAY_NAME_BY_ID: Record<string, string> = Object.fromEntries(
+  COLLECTIBLES.map((collectible) => [collectible.id, collectible.displayName]),
+);
 
 export const ENEMIES: EnemyContract[] = [
   {
-    id: 'hallucination',
-    aliases: ['walker'],
-    displayName: 'HALLUCINATION',
+    id: 'walker',
+    aliases: ['hallucination', 'ai_robot'],
+    displayName: 'AI ROBOT',
     implemented: true,
-    behaviorNotes: 'Walker with short bursts of confident wrongness and occasional direction changes.',
+    behaviorNotes: 'Ground patrol bot with predictable rebounds.',
   },
   {
-    id: 'legacy_system',
-    aliases: ['shell'],
-    displayName: 'LEGACY SYSTEM',
+    id: 'shell',
+    aliases: ['legacy_system', 'firewall'],
+    displayName: 'FIREWALL',
     implemented: true,
-    behaviorNotes: 'Shell enemy. Kickable. Splits once into two services and then pauses.',
+    behaviorNotes: 'Armored blocker. Stomp to toggle vulnerability windows.',
   },
   {
-    id: 'hot_take',
-    aliases: ['flying'],
-    displayName: 'HOT TAKE',
+    id: 'flying',
+    aliases: ['hot_take', 'spam'],
+    displayName: 'SPAM',
     implemented: true,
-    behaviorNotes: 'Lunge flyer with burst telegraph and predictable cadence.',
+    behaviorNotes: 'Arcing flyer with staged dive timing.',
   },
   {
-    id: 'analyst',
-    aliases: ['spitter'],
-    displayName: 'ANALYST',
+    id: 'spitter',
+    aliases: ['analyst', 'bug'],
+    displayName: 'BUG',
     implemented: true,
-    behaviorNotes: 'Ranged spitter with 3-shot burst pattern.',
-  },
-  {
-    id: 'technical_debt',
-    aliases: ['tethered_debt'],
-    displayName: 'TECHNICAL DEBT',
-    implemented: true,
-    behaviorNotes: 'Chain-chomp style anchor-and-lunge with late-stage pursuit.',
+    behaviorNotes: 'Projectile caster with short burst cadence.',
   },
   {
     id: 'compliance_officer',
-    aliases: ['compliance'],
-    displayName: 'COMPLIANCE OFFICER',
+    aliases: ['compliance', 'compliance_drone'],
+    displayName: 'COMPLIANCE DRONE',
     implemented: true,
-    behaviorNotes: 'Stomp-gated platform converter with temporary persistence.',
+    behaviorNotes: 'Stomp-gated platform enemy used in late worlds.',
+  },
+  {
+    id: 'technical_debt',
+    aliases: ['tethered_debt', 'tech_debt_wraith'],
+    displayName: 'TECH DEBT WRAITH',
+    implemented: true,
+    behaviorNotes: 'Anchor-and-lunge chaser with delayed pressure.',
+  },
+  {
+    id: 'boss',
+    aliases: ['ai_overlord_omega'],
+    displayName: 'BOSS',
+    implemented: true,
+    behaviorNotes: 'Phase-driven boss actor controlled by scripted telegraph windows.',
+  },
+  {
+    id: 'snowman_sentry',
+    aliases: ['frost_bot'],
+    displayName: 'SNOWMAN SENTRY',
+    implemented: false,
+    behaviorNotes: 'Slow patrol, ice projectile throw.',
+  },
+  {
+    id: 'cryo_drone',
+    aliases: ['ice_drone'],
+    displayName: 'CRYO-DRONE',
+    implemented: false,
+    behaviorNotes: 'Floating unit, freezing beam.',
+  },
+  {
+    id: 'qubit_swarm',
+    aliases: ['crystal_swarm'],
+    displayName: 'QUBIT SWARM',
+    implemented: false,
+    behaviorNotes: 'Two-state dormant/active.',
+  },
+  {
+    id: 'crawler',
+    aliases: ['cable_crawler'],
+    displayName: 'CRAWLER',
+    implemented: false,
+    behaviorNotes: 'Emerges from walls.',
+  },
+  {
+    id: 'glitch_phantom',
+    aliases: ['phantom'],
+    displayName: 'GLITCH PHANTOM',
+    implemented: false,
+    behaviorNotes: 'Phases in/out, contact damage.',
+  },
+  {
+    id: 'fungal_node',
+    aliases: ['spore_node'],
+    displayName: 'FUNGAL NODE',
+    implemented: false,
+    behaviorNotes: 'Spore cloud, signal drift.',
+  },
+  {
+    id: 'ghost_process',
+    aliases: ['ghost'],
+    displayName: 'GHOST PROCESS',
+    implemented: false,
+    behaviorNotes: 'Drifts through walls.',
+  },
+  {
+    id: 'tape_wraith',
+    aliases: ['tape_ghost'],
+    displayName: 'TAPE WRAITH',
+    implemented: false,
+    behaviorNotes: 'Reforms unless source reel hit.',
+  },
+  {
+    id: 'resume_bot',
+    aliases: ['paper_bot'],
+    displayName: 'RESUME BOT',
+    implemented: false,
+    behaviorNotes: 'Non-hostile patrol, no drops.',
   },
 ];
 
@@ -371,40 +393,40 @@ export const HUD_CONTRACT: HudContract = {
 export const SCENE_TEXT: SceneText = {
   boot: {
     loadingHints: [
-      'FINE-TUNING...',
-      'REDUCING HALLUCINATIONS...',
-      'PROVISIONING GPUS...',
-      'WARMING INFERENCE CACHE...',
+      'SYNCING BADGE HANDSHAKE...',
+      'VALIDATING MANUAL OVERRIDES...',
+      'SCANNING RECLAIM NODES...',
+      'PATCHING OLD RAILS...',
     ],
   },
   title: {
-    subtitle: '4 WORLDS X 6 LEVELS + FINAL BENCHMARK',
+    subtitle: 'RECLAIM THE NETWORK',
     prompt: 'PRESS ENTER',
-    hints: 'N: NEW DEPLOYMENT   L: SERVICE MAP   S: SETTINGS',
+    hints: '',
   },
   levelComplete: {
-    heading: 'DEPLOYED TO PROD!',
-    hint: 'ENTER: NEXT DEPLOY   ESC: SERVICE MAP',
-    statsTemplate: 'Latency: {time}s\nTokens: {coins}\nEvals: {evals}\nRollbacks: {deaths}',
+    heading: 'NODE RECLAIMED',
+    hint: 'ENTER: CONTINUE',
+    statsTemplate: 'Time: {time}s\nPackets: {coins}\nShards: {evals}\nKnockdowns: {deaths}',
   },
   gameOver: {
-    heading: '429: TOO MANY REQUESTS',
-    hint: 'R: RESTART   ESC: TITLE',
+    heading: 'SYSTEM FAILURE',
+    hint: 'R: RETRY   ESC: TITLE',
   },
   finalVictory: {
-    heading: 'AGI ACHIEVED!',
-    subheading: 'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
-    hint: 'ENTER: SERVICE MAP   R: RESET DEPLOYMENT   ESC: TITLE',
-    statsTemplate: 'Tokens: {coins}\nEvals: {evals}\nRollbacks: {deaths}\nLatency: {time}s',
+    heading: 'NETWORK RECLAIMED',
+    subheading: 'THE MAP IS LIVE AGAIN.',
+    hint: 'ENTER: NETWORK MAP   R: RESET CAMPAIGN   ESC: TITLE',
+    statsTemplate: 'Packets: {coins}\nShards: {evals}\nKnockdowns: {deaths}\nTime: {time}s',
   },
   pause: {
     heading: 'PAUSED',
-    hint: 'ESC / P: RESUME   L: SERVICE MAP   T: LOGIN SCREEN',
+    hint: 'ESC / P: RESUME   L: NETWORK MAP   T: TITLE',
   },
   worldMap: {
-    title: 'SERVICE MAP',
-    subtitle: 'SELECT A DEPLOYMENT',
-    hints: 'ARROWS: SELECT   ENTER: PLAY   ESC: TITLE   S: SETTINGS',
+    title: 'GLOBAL CLOUD NETWORK',
+    subtitle: 'RECLAIM THE NEXT NODE',
+    hints: 'ARROWS: SELECT   ENTER: DEPLOY   ESC: TITLE   S: SETTINGS',
   },
   settings: {
     heading: 'SETTINGS',
@@ -417,88 +439,97 @@ export const SCENE_TEXT: SceneText = {
     shakeLabel: 'SCREEN SHAKE [H]:',
   },
   gameplay: {
-    checkpointSaved: 'SAVED TO BLOB STORAGE',
-    contextWindowExceeded: 'CONTEXT WINDOW EXCEEDED',
+    checkpointSaved: 'CHECKPOINT LOGGED',
+    contextWindowExceeded: 'MANUAL CHECK REQUIRED',
     correctedSuffix: 'CORRECTED',
   },
 };
 
 export const APPROVED_UI_TEXT: ApprovedUiTextRule = {
   exact: [
-    SCENE_TEXT.gameOver.heading,
+    ...SCENE_TEXT.boot.loadingHints,
     SCENE_TEXT.levelComplete.heading,
+    SCENE_TEXT.levelComplete.hint,
+    SCENE_TEXT.gameOver.heading,
+    SCENE_TEXT.gameOver.hint,
     SCENE_TEXT.finalVictory.heading,
     SCENE_TEXT.finalVictory.subheading,
-    'AGI ACHIEVED!',
-    'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
+    SCENE_TEXT.finalVictory.hint,
     SCENE_TEXT.pause.heading,
+    SCENE_TEXT.pause.hint,
     SCENE_TEXT.worldMap.title,
     SCENE_TEXT.worldMap.subtitle,
     SCENE_TEXT.worldMap.hints,
-    SCENE_TEXT.title.subtitle,
-    SCENE_TEXT.title.prompt,
-    SCENE_TEXT.title.hints,
-    ...SCENE_TEXT.boot.loadingHints,
-    'SUPER BART',
-    SCENE_TEXT.gameplay.checkpointSaved,
-    SCENE_TEXT.gameplay.contextWindowExceeded,
     SCENE_TEXT.settings.heading,
     SCENE_TEXT.settings.backHintTemplate,
-    SCENE_TEXT.levelComplete.hint,
-    SCENE_TEXT.gameOver.hint,
-    SCENE_TEXT.finalVictory.hint,
-    SCENE_TEXT.pause.hint,
+    SCENE_TEXT.gameplay.checkpointSaved,
+    SCENE_TEXT.gameplay.contextWindowExceeded,
     SCENE_TEXT.gameplay.correctedSuffix,
+    'CHARGED RACK PULSE',
+    'RACK PULSE',
+    'NO DIAGNOSTIC NODE IN RANGE',
+    'MANUAL CHECK: PATROL ROUTE REVEALED',
+    'MANUAL CHECK: HAZARD CYCLE LOGGED',
+    'MANUAL CHECK: FILE PING WITHIN RANGE',
+    'MANUAL CHECK: NO FILE PING',
+    'MANUAL CHECK: CRACKED SURFACE MARKED',
+    'GROUND POUND',
+    'DOUBLE JUMP',
+    'NO INPUT REQUIRED',
+    'Bart keeps walking. The corridor hums. Another door unlocks.',
+    'PRESS ANY KEY TO SKIP AFTER 2s',
+    'PART 1: BART EXITS THE FACILITY. INTERCEPT LINES DIM.',
+    'PRESS ANY KEY TO SKIP',
+    'PART 3: WORLD MAP REVEAL',
+    'WORLD RECONSTRUCTION PRIORITY LAYER',
+    'DEBRIEF // THE LIVING MAP',
+    'Part 1: Bart exits the facility. The lights dim behind him.',
+    'INTERCEPT',
+    'No intercept available.',
+    'PART 3: THE LIVING MAP',
+    'LEFT/RIGHT: CHOOSE  ENTER: CONFIRM',
+    'RECLAIM THE NETWORK',
+    'PRESS ENTER',
+    'CONTINUE',
+    'NEW RUN',
+    'SETTINGS',
+    'BARTS RULES',
+    '> ',
+    GAME_TITLE,
+    'ENDING // THE HUMAN COST',
+    'ENTER: WORLD MAP   ESC: TITLE',
+    'The network reboots. The names stay protected.',
+    'The network reboots. The archive stays open.',
+    'The core goes dark. The names remain private.',
+    'The core goes dark. The record survives.',
     'WORLD 1',
     'WORLD 2',
     'WORLD 3',
     'WORLD 4',
     'WORLD 5',
-    'WORLD MAP',
-    'ARROWS: SELECT',
-    'DEPLOYED TO PROD',
-    'DEPLOYED TO PROD!',
-    '429: TOO MANY REQUESTS',
-    'AGI ACHIEVED!',
-    'JUST KIDDING. BUT THE BENCHMARKS LOOK GREAT.',
-    'BENCHMARK IN PROGRESS',
-    'PAUSED',
-    'SETTINGS',
-    'MUTED',
-    'PENDING REVIEW',
-    'CONTEXT WINDOW EXCEEDED',
-    'SEGFAULT',
-    'SAVED TO BLOB STORAGE',
-    'WORKS ON MY MACHINE',
-    'MICROSERVICES DEPLOYED',
-    'DEBT CALLED',
-    'COPILOT ENGAGED',
-    'AGENT ONLINE',
-    'AGENT TIMED OUT',
-    'INFERENCE HIT',
-    'BENCHMARKS IMPROVED',
+    'WORLD 6',
+    'WORLD 7',
+    '7 REGIONS • 28 STAGES • HUMAN COST',
+    GAME_TITLE_PREMIUM,
   ],
   patterns: [
-    { id: 'HUD_WORLD', regex: '^WORLD [1-5]-[1-9]$' },
-    { id: 'HUD_WORLD_LABEL', regex: '^WORLD [1-5]$' },
+    { id: 'HUD_WORLD', regex: '^WORLD [1-7]-[1-4]$' },
+    { id: 'HUD_WORLD_LABEL', regex: '^WORLD [1-7]$' },
     { id: 'HUD_TIME', regex: '^TIME \\d{3}$' },
     { id: 'HUD_BART', regex: '^BART x\\d{1,3}$' },
     { id: 'HUD_COUNTER_EVAL', regex: '^✦\\d{3,}$' },
     { id: 'HUD_COUNTER_TOKEN', regex: '^◎\\d{3,}$' },
-    { id: 'LEVEL_COMPLETE_STATS', regex: '^Latency: \\d+s\\nTokens: \\d+\\nEvals: \\d+\\nRollbacks: \\d+$' },
-    { id: 'FINAL_VICTORY_STATS', regex: '^Tokens: \\d+\\nEvals: \\d+\\nRollbacks: \\d+\\nLatency: \\d+s$' },
-    { id: 'STATS_LABEL', regex: '^(Latency|Tokens|Evals|Rollbacks): \\d+(?:s)?$' },
-    { id: 'PAUSE_HINT', regex: '^ESC \\/ P: RESUME\\s+L: SERVICE MAP\\s+T: LOGIN SCREEN$' },
-    { id: 'TITLE_HINT', regex: '^N: NEW DEPLOYMENT\\s+L: SERVICE MAP\\s+S: SETTINGS$' },
-    { id: 'LEVEL_COMPLETE_HINT', regex: '^ENTER: NEXT DEPLOY\\s+ESC: SERVICE MAP$' },
-    { id: 'GAME_OVER_HINT', regex: '^R: RESTART\\s+ESC: TITLE$' },
-    { id: 'VICTORY_HINT', regex: '^ENTER: SERVICE MAP\\s+R: RESET DEPLOYMENT\\s+ESC: TITLE$' },
-    { id: 'SETTINGS_HINT', regex: '^ARROWS: SELECT\\s+ENTER: PLAY\\s+ESC: TITLE\\s+S: SETTINGS$' },
+    { id: 'LEVEL_COMPLETE_STATS', regex: '^Time: \\d+s\\nPackets: \\d+\\nShards: \\d+\\nKnockdowns: \\d+$' },
+    { id: 'FINAL_VICTORY_STATS', regex: '^Packets: \\d+\\nShards: \\d+\\nKnockdowns: \\d+\\nTime: \\d+s$' },
     { id: 'SETTINGS_VALUE', regex: '^(MASTER|MUSIC VOL|SFX VOL) \\[[A-Z/]+\\]: [0-9]{1,3}%$' },
     { id: 'TOGGLE_VALUE', regex: '^(MUSIC MUTE \\[M\\]|SFX MUTE \\[X\\]|SCREEN SHAKE \\[H\\]): (ON|OFF)$' },
     { id: 'BACK_HINT', regex: '^Esc: Back \\(.+\\)$' },
-    { id: 'WORLD_MAP_HINT', regex: '^ARROWS: SELECT\\s+ENTER: PLAY\\s+ESC: TITLE\\s+S: SETTINGS$' },
-    { id: 'PROGRESSIVE_POPUP', regex: '^[A-Z ]+ CORRECTED$' },
+    { id: 'HUD_TOAST_SCORE', regex: '^\\+\\d+ (DATA PACKET|OVERRIDE SHARD|CORRECTED)$' },
+    { id: 'HUD_TOAST_PERSONNEL_FILE', regex: '^PERSONNEL FILE (?:[1-9]|[12]\\d|2[0-2])/22$' },
+    { id: 'INTERLUDE_TITLE', regex: '^INTERLUDE [1-7]-[1-4]$' },
+    { id: 'INTERLUDE_DEBRIEF_TITLE', regex: '^DEBRIEF // WORLD [1-7]$' },
+    { id: 'DEBRIEF_MAP_BODY', regex: '^World [1-7] stabilizes\\. The next route glows amber\\.\\nPeople return to reclaimed nodes\\.$' },
+    { id: 'CREDITS_PERSONNEL', regex: '^Personnel Files Recovered: (?:[0-9]|[12]\\d|2[0-2])/22$' },
   ],
 };
 
@@ -508,13 +539,8 @@ export const ASSET_POLICY: AssetPolicy = {
 };
 
 export const WORLD_CHUNK_FAMILY_NAMES: ChunkFamily[] = Object.values(WORLD_CHUNK_FAMILIES).flat();
-
-export const COLLECTIBLE_IDENTIFIER_SET = new Set(
-  COLLECTIBLES.flatMap((entry) => [entry.id, ...entry.aliases]),
-);
-
+export const COLLECTIBLE_IDENTIFIER_SET = new Set(COLLECTIBLES.flatMap((entry) => [entry.id, ...entry.aliases]));
 export const ENEMY_IDENTIFIER_SET = new Set(ENEMIES.flatMap((entry) => [entry.id, ...entry.aliases]));
-
 export const CONTENT_WORLD_NAME_SET = new Set(Object.values(WORLD_NAMES));
 
 export const MANIFEST_SUMMARY: ManifestSummary = {

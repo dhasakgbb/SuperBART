@@ -1,6 +1,20 @@
 import type { ChunkFamily as CanonicalChunkFamily, WorldPhysicsMultipliers, WorldTheme } from '../content/contentManifest';
 
-export type ThemeName = 'azure' | 'pipeline' | 'enterprise' | 'gpu' | 'benchmark' | 'bonus';
+export type ThemeName =
+  | 'city'
+  | 'cryo_tundra'
+  | 'quantum_void'
+  | 'deep_web_catacombs'
+  | 'digital_graveyard'
+  | 'singularity_core'
+  | 'bonus';
+
+export type SetPieceMode = 'avalanche-alley' | 'collapse' | 'approach';
+
+export interface SetPieceSpec {
+  mode: SetPieceMode;
+  description: string;
+}
 export type PacingPhase = 'INTRO' | 'PRACTICE' | 'VARIATION' | 'CHALLENGE' | 'COOLDOWN' | 'FINALE';
 export type ChunkTag =
   | 'FLAT'
@@ -103,6 +117,7 @@ export type EnemyType =
   | 'shell'
   | 'flying'
   | 'spitter'
+  | 'boss'
   | 'hallucination'
   | 'legacy_system'
   | 'hot_take'
@@ -110,7 +125,16 @@ export type EnemyType =
   | 'compliance_officer'
   | 'compliance'
   | 'technical_debt'
-  | 'tethered_debt';
+  | 'tethered_debt'
+  | 'snowman_sentry'
+  | 'cryo_drone'
+  | 'qubit_swarm'
+  | 'crawler'
+  | 'glitch_phantom'
+  | 'fungal_node'
+  | 'ghost_process'
+  | 'tape_wraith'
+  | 'resume_bot';
 
 export type EntityType =
   | 'spawn'
@@ -119,11 +143,17 @@ export type EntityType =
   | CanonicalCollectibleId
   | LegacyCollectibleAliasExtended
   | 'question_block'
+  | 'diagnostic_node'
+  | 'monitor'
+  | 'poster'
+  | 'personal_effect'
+  | 'personnel_file'
   | 'checkpoint'
   | 'walker'
   | 'shell'
   | 'flying'
   | 'spitter'
+  | 'boss'
   | 'hallucination'
   | 'legacy_system'
   | 'hot_take'
@@ -131,6 +161,15 @@ export type EntityType =
   | 'compliance_officer'
   | 'technical_debt'
   | 'tethered_debt'
+  | 'snowman_sentry'
+  | 'cryo_drone'
+  | 'qubit_swarm'
+  | 'crawler'
+  | 'glitch_phantom'
+  | 'fungal_node'
+  | 'ghost_process'
+  | 'tape_wraith'
+  | 'resume_bot'
   | 'spike'
   | 'thwomp'
   | 'spring'
@@ -150,6 +189,7 @@ export interface LevelSpec {
   sequence: PacingSegment[];
   hardRules: LevelHardRules;
   notes?: string;
+  setPiece?: SetPieceSpec;
 }
 
 export interface CampaignArtifact {
@@ -194,6 +234,7 @@ export interface GeneratedLevel {
     chunksUsed: string[];
     pacing: PacingPhase[];
     seed: number;
+    setPiece?: SetPieceSpec;
     benchmarkAutoScroll?: Array<{
       speedPxPerSec: number;
       durationMs: number;

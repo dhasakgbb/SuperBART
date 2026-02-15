@@ -13,12 +13,12 @@ describe('renderer config', () => {
   test('createGameConfig enforces WebGL-friendly render settings', () => {
     const config = createGameConfig([]);
 
-    // gameConfig uses Phaser.CANVAS (1) for broadest compatibility
+    // Renderer should resolve dynamically: WebGL first, Canvas fallback.
     expect([1, 2, 0].includes(Number(config.type))).toBe(true);
     expect(config.render?.antialias).toBe(false);
     expect(config.render?.pixelArt).toBe(true);
     expect(config.render?.roundPixels).toBe(true);
     expect(config.render?.batchSize).toBe(8192);
-    expect(config.render?.maxLights).toBe(0);
+    expect(config.render?.maxLights).toBe(10);
   });
 });

@@ -3,19 +3,14 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { readPng, getPixel } from './lib/pixel';
 
-const ARTIFACTS_DIR = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6';
-// Find the latest generated tileset in artifacts
-const files = fs.readdirSync(ARTIFACTS_DIR)
-  .filter(f => f.startsWith('tileset_w1_gen') && f.endsWith('.png'));
-const latest = files.map(f => ({
-  name: f,
-  time: fs.statSync(path.join(ARTIFACTS_DIR, f)).mtime.getTime()
-})).sort((a, b) => b.time - a.time)[0];
+const args = process.argv.slice(2);
+if (args.length < 1) {
+    console.error('Usage: tsx tools/debug_tile.ts <sourcePng>');
+    process.exit(1);
+}
 
-// const SRC_PATH = path.join(ARTIFACTS_DIR, latest.name);
 const TILE_PATH = 'public/assets/tiles/tile_ground_w1_top.png';
-
-const SRC_PATH = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6/enemy_sprites_gen_1771044428200.png';
+const SRC_PATH = args[0]!;
 
 console.log(`Checking Enemy Sprites: ${SRC_PATH}`);
 try {

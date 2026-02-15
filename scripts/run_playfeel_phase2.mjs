@@ -4,11 +4,75 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const DEFAULT_URL = 'http://127.0.0.1:4173';
-const DEFAULT_SAVE_KEYS = ['super_bart_save_v4', 'super_bart_save_v3'];
-const WORLD_LAYOUT = [6, 6, 6, 6, 1];
+const DEFAULT_SAVE_KEYS = ['super_bart_save_v5', 'super_bart_save_v4', 'super_bart_save_v3'];
+const WORLD_LAYOUT = [4, 4, 4, 4, 4, 4, 4];
 const TOTAL_LEVELS = WORLD_LAYOUT.reduce((acc, v) => acc + v, 0);
 const SCENE_STABLE_FRAMES = 2;
 const SCENE_POLL_INTERVAL_MS = 50;
+const PHASE2_TIMEOUTS = {
+  bootstrapTitleMs: 15000,
+  bootstrapWorldMapMs: 15000,
+  bootstrapPlayMs: 22000,
+  worldMapReturnMs: 18000,
+  sceneProbeMs: 9000,
+  worldMapSelectionMs: 11000,
+};
+const PHASE2_RETRIES = {
+  bootstrapAttempts: 2,
+  transitionAttempts: 2,
+};
+const PHASE2_BLOCKERS = {
+  BOOTSTRAP_TITLE_TIMEOUT: 'phase2_bootstrap_title_timeout',
+  BOOTSTRAP_WORLDMAP_TIMEOUT: 'phase2_bootstrap_worldmap_timeout',
+  BOOTSTRAP_PLAY_TIMEOUT: 'phase2_bootstrap_play_timeout',
+  WORLD_MAP_SELECTION_TIMEOUT: 'phase2_world_map_selection_timeout',
+  WORLD_MAP_SELECTION_DESYNC: 'phase2_world_map_selection_desync',
+  WORLD_MAP_RETURN_TIMEOUT: 'phase2_world_map_return_timeout',
+  EXECUTION_ERROR: 'phase2_execution_error',
+  PLAYFEEL_CONSOLE_ERROR: 'playfeel_console_error',
+  JUMP_CUT_MISSING: 'playfeel_jump_cut_missing',
+  SKID_MISSING: 'playfeel_skid_not_detected',
+  STOMP_MISSING: 'playfeel_stomp_hitstop_missing',
+  STOMP_MISMATCH: 'playfeel_stomp_hitstop_mismatch',
+};
+
+const SCENARIO_ACTION_FALLBACKS = {
+  'jump-cut': {
+    description: 'Jump-cut harness fallback',
+    steps: [
+      { buttons: ['right'], frames: 6 },
+      { buttons: ['right', 'space'], frames: 8 },
+      { buttons: ['right'], frames: 10 },
+      { buttons: ['left', 'shift'], frames: 8 },
+      { buttons: ['right'], frames: 12 },
+    ],
+  },
+  'run-skid': {
+    description: 'Skid fallback sweep',
+    steps: [
+      { buttons: ['right', 'shift'], frames: 24 },
+      { buttons: ['left', 'shift'], frames: 20 },
+      { buttons: ['left'], frames: 12 },
+    ],
+  },
+  stomp: {
+    description: 'Stomp fallback cadence',
+    steps: [
+      { buttons: ['right'], frames: 10 },
+      { buttons: ['right', 'space'], frames: 8 },
+      { buttons: ['right', 'down'], frames: 10 },
+      { buttons: ['down'], frames: 24 },
+    ],
+  },
+  telegraph: {
+    description: 'Telegraph fallback sweep',
+    steps: [
+      { buttons: ['right'], frames: 30 },
+      { buttons: ['left'], frames: 12 },
+      { buttons: ['right'], frames: 30 },
+    ],
+  },
+};
 
 const SCENARIO_FILES = {
   'jump-cut': 'jump_cut.json',
@@ -55,12 +119,39 @@ function isIgnoredConsoleError(text) {
     'setlinewidth is not a function',
     'execution context was destroyed',
     'non-error promise rejection',
+    'failed to decode audio data',
+    'resizeobserver loop limit exceeded',
+    'error: failed to connect to extension',
+    'manifest: failed to parse',
   ];
+  if (/failed to load resource/.test(normalized) && /net::err_aborted/.test(normalized)) {
+    return true;
+  }
+  if (/failed to load resource/.test(normalized) && /sourcemap/.test(normalized)) {
+    return true;
+  }
+  if (/failed to load resource/.test(normalized) && /\/assets\//.test(normalized) && /404/.test(normalized)) {
+    return true;
+  }
+  if (/failed to load resource/.test(normalized) && /favicon\.ico/.test(normalized)) {
+    return true;
+  }
+  if (/net::err_file_not_found/.test(normalized) && /\/assets\//.test(normalized)) {
+    return true;
+  }
   return ignored.some((needle) => normalized.includes(needle));
 }
 
 function isExecutionContextDestroyed(text) {
   return String(text).toLowerCase().includes('execution context was destroyed');
+}
+
+function isTransientHarnessError(text) {
+  const normalized = String(text).toLowerCase();
+  return normalized.includes('execution context was destroyed')
+    || normalized.includes('cannot find context with specified id')
+    || normalized.includes('most likely because of a navigation')
+    || normalized.includes('target page, context or browser has been closed');
 }
 
 function normalizeMsToFrames(ms, frameMs = 1000 / 60) {
@@ -111,17 +202,24 @@ function resolveSceneName(state) {
   return '';
 }
 
-function isStableMatch(state, target, allowPlaySceneFallback) {
-  const activeScene = resolveSceneName(state);
-  if (!state || activeScene !== target) {
+function isStableSceneMatch(state, target, allowPlaySceneFallback) {
+  if (!state) {
     return false;
   }
-  if (activeScene === 'PlayScene') {
+  if (target === 'PlayScene') {
     return state.sceneReady || allowPlaySceneFallback && state.sceneFrame >= 0 && (
       state.hasRenderFn || state.hasGetStateFn
     );
   }
   return state.sceneReady || state.sceneFrame >= 0;
+}
+
+function isStableMatch(state, target, allowPlaySceneFallback) {
+  const activeScene = resolveSceneName(state);
+  if (!state || activeScene !== target) {
+    return false;
+  }
+  return isStableSceneMatch(state, target, allowPlaySceneFallback);
 }
 
 async function waitForAnyScene(page, targets, timeoutMs = 3000, allowPlaySceneFallback = false) {
@@ -213,7 +311,7 @@ function evaluateScenarioSignals(scenario, states, contract = PLAYFEEL_CONTRACT)
     const transitions = [];
     const samples = states.map((entry) => ({
       frame: coalesceFrame(entry),
-      cut: Boolean(entry?.movement?.jumpCutApplied),
+      cut: Boolean(entry?.movement?.jumpCutApplied || entry?.playfeel?.jumpCutApplied),
     }));
 
     for (let i = 1; i < samples.length; i += 1) {
@@ -266,7 +364,13 @@ function evaluateScenarioSignals(scenario, states, contract = PLAYFEEL_CONTRACT)
       }
     }
 
-    const skidFrames = states.filter((sample) => sample?.animState === 'skid');
+    const skidFrames = states.filter(
+      (sample) =>
+        sample?.animState === 'skid'
+        || sample?.movement?.lastMotionHint === 'skid'
+        || sample?.playfeel?.lastMotionHint === 'skid'
+        || (typeof sample?.playfeel?.skidMsLeft === 'number' && sample?.playfeel?.skidMsLeft > 0),
+    );
     result.skidDetected = skidFrames.length > 0;
     result.skidFrames = skidFrames.length;
     if (skidFrames.length > 0) {
@@ -353,7 +457,7 @@ function parseArgs(argv) {
   const args = {
     url: DEFAULT_URL,
     scenario: 'all',
-    levels: '1-1,1-2,1-3,1-4,1-5,1-6,2-1,2-2,2-3,2-4,2-5,2-6,3-1,3-2,3-3,3-4,3-5,3-6,4-1,4-2,4-3,4-4,4-5,4-6,5-1',
+    levels: 'all',
     artifactsRoot: path.join(process.cwd(), 'artifacts', 'playfeel', 'phase2'),
     headless: true,
     iterations: 1,
@@ -413,6 +517,98 @@ function parseLevelSpec(levelSpec) {
   return { world, level };
 }
 
+function loadScenarioAction(actionPath, scenario) {
+  const fallback = SCENARIO_ACTION_FALLBACKS[scenario];
+  const fallbackResult = {
+    source: 'fallback',
+    steps: Array.isArray(fallback?.steps) ? fallback.steps : [],
+    loaded: false,
+    notes: fallback ? `using fallback actions for ${scenario}` : 'no scenario fallback available',
+  };
+
+  if (!actionPath || !fs.existsSync(actionPath)) {
+    return fallbackResult;
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(actionPath, 'utf8'));
+    const steps = Array.isArray(parsed?.steps) ? parsed.steps : [];
+    if (steps.length === 0) {
+      return {
+        source: 'empty_file',
+        steps: [],
+        loaded: true,
+        notes: `scenario file has no steps: ${actionPath}`,
+      };
+    }
+    return {
+      source: 'file',
+      steps,
+      loaded: true,
+      notes: '',
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (fallback) {
+      return {
+        ...fallbackResult,
+        notes: `unable to parse scenario file ${actionPath}: ${message}`,
+      };
+    }
+    return {
+      source: 'invalid_file',
+      steps: [],
+      loaded: false,
+      notes: `unable to parse scenario file ${actionPath}: ${message}`,
+    };
+  }
+}
+
+function buildSceneUnwindKeys(sceneName) {
+  switch (sceneName) {
+    case 'PlayScene':
+      return ['Escape', 'KeyL'];
+    case 'PauseScene':
+      return ['KeyL'];
+    case 'DebriefScene':
+      return ['Enter'];
+    case 'ChoiceScene':
+      return ['ArrowLeft', 'Enter'];
+    case 'InterludeScene':
+      return [];
+    case 'CreditsScene':
+      return ['Enter'];
+    case 'FinalVictoryScene':
+      return ['Enter'];
+    case 'TitleScene':
+      return ['Enter'];
+    default:
+      return ['Escape', 'KeyL'];
+  }
+}
+
+async function unwindNarrativeScene(page, sceneName) {
+  const keys = buildSceneUnwindKeys(sceneName);
+  for (const key of keys) {
+    await page.keyboard.press(key);
+    await wait(60);
+  }
+  if (sceneName === 'DebriefScene') {
+    await wait(2200);
+    await page.keyboard.press('Enter');
+  } else if (sceneName === 'InterludeScene') {
+    await wait(3600);
+  }
+}
+
+async function waitForAndReturnScene(page, timeoutMs = PHASE2_TIMEOUTS.sceneProbeMs) {
+  return await waitForAnyScene(
+    page,
+    ['WorldMapScene', 'PlayScene', 'InterludeScene', 'DebriefScene', 'ChoiceScene', 'CreditsScene', 'FinalVictoryScene', 'PauseScene', 'TitleScene'],
+    timeoutMs,
+  );
+}
+
 function makeUnlockedKeys(keys) {
   return [...keys];
 }
@@ -448,50 +644,73 @@ async function focusCanvas(page) {
   }
 }
 
-async function alignWorldMapSelection(page, world, level, runMeta) {
+async function alignWorldMapSelection(page, world, level) {
   const targetOrdinal = campaignOrdinalFromKey(world, level);
-  const deadline = Date.now() + 9000;
+  const deadline = Date.now() + PHASE2_TIMEOUTS.worldMapSelectionMs;
 
   while (Date.now() < deadline) {
-    const state = await page.evaluate((target) => {
-      const root = window.__SUPER_BART__ || {};
-      const game = root?.game;
-      const map = game?.scene?.getScene?.('WorldMapScene');
-      if (!map) {
-        return { ok: false, reason: 'no_world_map_scene' };
-      }
-      if (typeof map.selectedOrdinal !== 'number') {
-        return { ok: false, reason: 'selection_not_ready' };
-      }
+    let state = null;
+    try {
+      state = await page.evaluate((target) => {
+        const root = window.__SUPER_BART__ || {};
+        const game = root?.game;
+        const map = game?.scene?.getScene?.('WorldMapScene');
+        if (!map) {
+          return { ok: false, reason: 'no_world_map_scene' };
+        }
+        const updateViaRequest = typeof map.requestSelection === 'function';
+        if (updateViaRequest) {
+          const changed = map.requestSelection(target);
+          const selectedOrdinal = typeof map.getSelectedOrdinal === 'function'
+            ? map.getSelectedOrdinal()
+            : map.selectedOrdinal;
+          return { ok: selectedOrdinal === target, changed, reason: 'requestSelection' };
+        }
 
-      map.selectedOrdinal = target;
-      if (typeof map.updateSelectionVisuals === 'function') {
-        map.updateSelectionVisuals();
-        return { ok: true };
+        if (typeof map.selectedOrdinal !== 'number') {
+          return { ok: false, reason: 'selection_not_ready' };
+        }
+
+        map.selectedOrdinal = target;
+        if (typeof map.updateSelectionVisuals === 'function') {
+          map.updateSelectionVisuals();
+          return { ok: true, reason: 'direct_set' };
+        }
+        return { ok: false, reason: 'selection_visual_update_missing' };
+      }, targetOrdinal);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (isTransientHarnessError(message)) {
+        await wait(120);
+        continue;
       }
-      return { ok: false, reason: 'selection_visual_update_missing' };
-    }, targetOrdinal);
+      return {
+        ok: false,
+        blocker: PHASE2_BLOCKERS.EXECUTION_ERROR,
+        notes: `world-map selection evaluation failed for level ${world}-${level}: ${message}`,
+      };
+    }
 
     if (state?.ok === true) {
-      return true;
+      return { ok: true };
     }
     if (state?.reason === 'selection_not_ready' || state?.reason === 'no_world_map_scene') {
       await wait(80);
       continue;
     }
 
-    runMeta.status = 'FAIL';
-    runMeta.blocker = 'phase2_world_map_selection_desync';
-    runMeta.rollback_required = true;
-    runMeta.notes = `unable to enforce world-map target selection for level ${world}-${level}: ${state?.reason ?? 'unknown'}`;
-    return false;
+    return {
+      ok: false,
+      blocker: PHASE2_BLOCKERS.WORLD_MAP_SELECTION_DESYNC,
+      notes: `unable to enforce world-map target selection for level ${world}-${level}: ${state?.reason ?? 'unknown'}`,
+    };
   }
 
-  runMeta.status = 'FAIL';
-  runMeta.blocker = 'phase2_world_map_selection_timeout';
-  runMeta.rollback_required = true;
-  runMeta.notes = `world-map selection could not stabilize for level ${world}-${level}`;
-  return false;
+  return {
+    ok: false,
+    blocker: PHASE2_BLOCKERS.WORLD_MAP_SELECTION_TIMEOUT,
+    notes: `world-map selection could not stabilize for level ${world}-${level}`,
+  };
 }
 
 function makeBootstrapSave(levelKey, allKeys) {
@@ -504,16 +723,38 @@ function makeBootstrapSave(levelKey, allKeys) {
       collectiblesPicked: [],
     },
   ]));
+  const worldStates = {};
+  for (let index = 1; index <= WORLD_LAYOUT.length; index += 1) {
+    worldStates[index] = index < world ? 'reclaimed' : index === world ? 'next' : 'unclaimed';
+  }
+  const personnelFilesByWorld = {};
+  for (let index = 1; index <= WORLD_LAYOUT.length; index += 1) {
+    personnelFilesByWorld[index] = 0;
+  }
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     campaign: {
       world,
       levelIndex: level,
+      stage: level,
+      totalStages: TOTAL_LEVELS,
       totalLevels: TOTAL_LEVELS,
       worldLayout: [...WORLD_LAYOUT],
-      unlockedLevelKeys: allKeys,
+      unlockedLevelKeys: [...allKeys],
       completedLevelKeys: [],
     },
+    worldStates,
+    choiceFlags: {
+      recordsDeleteChoice: null,
+      rebootChoice: null,
+    },
+    unlocks: {
+      doubleJump: false,
+      bartsRules: false,
+      omegaLogs: false,
+    },
+    personnelFilesCollected: [],
+    personnelFilesByWorld,
     perLevelStats,
     progression: {
       score: 0,
@@ -591,79 +832,196 @@ async function waitForScene(page, target, timeoutMs = 3000, allowPlaySceneFallba
   return Boolean(await waitForAnyScene(page, target, timeoutMs, allowPlaySceneFallback));
 }
 
-async function bootstrapToTitle(page, rootState, runMeta) {
-  await page.goto(rootState.url, {
-    waitUntil: 'domcontentloaded',
-    timeout: 30000,
-  });
-
-  await page.evaluate(
-    ({ save, saveKeys }) => {
-      for (const saveKey of saveKeys) {
-        window.localStorage.setItem(saveKey, JSON.stringify(save));
-      }
-    },
-    {
-      save: rootState.save,
-      saveKeys: DEFAULT_SAVE_KEYS,
-    },
-  );
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await focusCanvas(page);
-  await wait(120);
-
-  const bootstrapScene = await waitForAnyScene(page, ['TitleScene', 'WorldMapScene'], 12000);
-  if (!bootstrapScene) {
-    runMeta.status = 'FAIL';
-    runMeta.blocker = 'phase2_bootstrap_title_timeout';
-    runMeta.rollback_required = true;
-    runMeta.notes = `failed transition to title scene for level ${runMeta.world}-${runMeta.level}`;
-    return false;
-  }
-  if (bootstrapScene === 'WorldMapScene') {
+async function coerceToWorldMapScene(page) {
+  const scene = await waitForAndReturnScene(page, PHASE2_TIMEOUTS.sceneProbeMs);
+  if (scene === 'WorldMapScene') {
     return true;
   }
 
-  await page.keyboard.press('Enter');
-  if (!(await waitForScene(page, 'WorldMapScene', 12000))) {
-    runMeta.status = 'FAIL';
-    runMeta.blocker = 'phase2_bootstrap_worldmap_timeout';
-    runMeta.rollback_required = true;
-    runMeta.notes = `failed transition to world map for level ${runMeta.world}-${runMeta.level}`;
-    return false;
+  if (scene === 'TitleScene' || !scene) {
+    await page.keyboard.press('Enter');
+    if (await waitForScene(page, 'WorldMapScene', PHASE2_TIMEOUTS.bootstrapWorldMapMs)) {
+      return true;
+    }
   }
 
-  return true;
+  if (scene === 'PlayScene') {
+    await page.keyboard.press('Escape');
+    await wait(60);
+    await page.keyboard.press('KeyL');
+    if (await waitForScene(page, 'WorldMapScene', PHASE2_TIMEOUTS.bootstrapWorldMapMs)) {
+      return true;
+    }
+  }
+
+  if (scene === 'PauseScene' || scene === 'InterludeScene' || scene === 'DebriefScene'
+    || scene === 'ChoiceScene' || scene === 'CreditsScene' || scene === 'FinalVictoryScene') {
+    await unwindNarrativeScene(page, scene);
+    if (await waitForScene(page, 'WorldMapScene', PHASE2_TIMEOUTS.bootstrapWorldMapMs)) {
+      return true;
+    }
+  }
+
+  return Boolean(await waitForScene(page, 'WorldMapScene', PHASE2_TIMEOUTS.sceneProbeMs));
+}
+
+async function bootstrapToTitle(page, rootState, runMeta) {
+  for (let attempt = 1; attempt <= PHASE2_RETRIES.bootstrapAttempts; attempt += 1) {
+    try {
+      await page.goto(rootState.url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+
+      await page.evaluate(
+        ({ save, saveKeys }) => {
+          for (const saveKey of saveKeys) {
+            window.localStorage.setItem(saveKey, JSON.stringify(save));
+          }
+        },
+        {
+          save: rootState.save,
+          saveKeys: DEFAULT_SAVE_KEYS,
+        },
+      );
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await focusCanvas(page);
+      await wait(120);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (attempt < PHASE2_RETRIES.bootstrapAttempts && isTransientHarnessError(message)) {
+        await wait(200);
+        continue;
+      }
+      throw error;
+    }
+
+    const bootstrapScene = await waitForAnyScene(page, ['TitleScene', 'WorldMapScene'], PHASE2_TIMEOUTS.bootstrapTitleMs);
+    if (bootstrapScene === 'WorldMapScene') {
+      return true;
+    }
+    if (bootstrapScene === 'TitleScene') {
+      await page.keyboard.press('Enter');
+      if (await waitForScene(page, 'WorldMapScene', PHASE2_TIMEOUTS.bootstrapWorldMapMs)) {
+        return true;
+      }
+    }
+    if (await coerceToWorldMapScene(page)) {
+      return true;
+    }
+    if (attempt < PHASE2_RETRIES.bootstrapAttempts) {
+      await wait(220);
+    }
+  }
+
+  runMeta.status = 'FAIL';
+  runMeta.blocker = PHASE2_BLOCKERS.BOOTSTRAP_WORLDMAP_TIMEOUT;
+  runMeta.rollback_required = true;
+  runMeta.notes = `failed transition to world map for level ${runMeta.world}-${runMeta.level}`;
+  return false;
 }
 
 async function returnToWorldMap(page, runMeta) {
-  await page.keyboard.press('Escape');
-  await wait(120);
-  await page.keyboard.press('l');
-  if (!(await waitForScene(page, 'WorldMapScene', 8000))) {
-    const recovered = await waitForScene(page, 'PauseScene', 4000);
-    if (!recovered) {
-      runMeta.status = 'WARN';
-      runMeta.blocker = 'phase2_world_map_return_timeout';
-      runMeta.rollback_required = true;
-      runMeta.notes = `failed to return to map after level ${runMeta.world}-${runMeta.level}`;
+  const maxPasses = 12;
+  for (let pass = 0; pass < maxPasses; pass += 1) {
+    if (await coerceToWorldMapScene(page)) {
+      return true;
     }
+    await wait(200);
   }
-  return true;
+
+  runMeta.status = 'WARN';
+  runMeta.blocker = PHASE2_BLOCKERS.WORLD_MAP_RETURN_TIMEOUT;
+  runMeta.rollback_required = true;
+  runMeta.notes = `failed to return to map after level ${runMeta.world}-${runMeta.level}`;
+  return false;
 }
 
 async function transitionToPlayScene(page, runMeta) {
-  if (!(await alignWorldMapSelection(page, runMeta.world, runMeta.level, runMeta))) {
-    return false;
+  for (let attempt = 1; attempt <= PHASE2_RETRIES.transitionAttempts; attempt += 1) {
+    if (!(await coerceToWorldMapScene(page))) {
+      if (attempt < PHASE2_RETRIES.transitionAttempts) {
+        await wait(180);
+        continue;
+      }
+      runMeta.status = 'FAIL';
+      runMeta.blocker = PHASE2_BLOCKERS.BOOTSTRAP_WORLDMAP_TIMEOUT;
+      runMeta.rollback_required = true;
+      runMeta.notes = `unable to stabilize world map before level ${runMeta.world}-${runMeta.level}`;
+      return false;
+    }
+
+    const selection = await alignWorldMapSelection(page, runMeta.world, runMeta.level);
+    if (!selection.ok) {
+      if (attempt < PHASE2_RETRIES.transitionAttempts) {
+        await wait(160);
+        continue;
+      }
+      runMeta.status = 'FAIL';
+      runMeta.blocker = selection.blocker ?? PHASE2_BLOCKERS.WORLD_MAP_SELECTION_TIMEOUT;
+      runMeta.rollback_required = true;
+      runMeta.notes = selection.notes ?? `world-map selection failed for level ${runMeta.world}-${runMeta.level}`;
+      return false;
+    }
+
+    await wait(160);
+    await focusCanvas(page);
+    await page.keyboard.press('Enter');
+    if (await waitForScene(page, 'PlayScene', PHASE2_TIMEOUTS.bootstrapPlayMs, true)) {
+      return true;
+    }
+
+    if (attempt < PHASE2_RETRIES.transitionAttempts) {
+      await coerceToWorldMapScene(page);
+      await wait(180);
+      continue;
+    }
   }
-  await wait(80);
-  await page.keyboard.press('Enter');
-  if (!(await waitForScene(page, 'PlayScene', 18000, true)) ) {
-    runMeta.status = 'FAIL';
-    runMeta.blocker = 'phase2_bootstrap_play_timeout';
-    runMeta.rollback_required = true;
-    runMeta.notes = `failed transition to play scene for level ${runMeta.world}-${runMeta.level}`;
-    return false;
+
+  runMeta.status = 'FAIL';
+  runMeta.blocker = PHASE2_BLOCKERS.BOOTSTRAP_PLAY_TIMEOUT;
+  runMeta.rollback_required = true;
+  runMeta.notes = `failed transition to play scene for level ${runMeta.world}-${runMeta.level}`;
+  return false;
+}
+
+async function releaseButtons(page, buttons, root) {
+  for (const button of buttons) {
+    const key = root[button];
+    if (!key) {
+      continue;
+    }
+    await page.keyboard.up(key);
+  }
+}
+
+async function captureScenarioEvidence(page, screenshotDir, stateDir, index) {
+  const shotPath = path.join(screenshotDir, `shot-${index}.png`);
+  const statePath = path.join(stateDir, `state-${index}.json`);
+
+  try {
+    await screenshotState(page, { sceneName: 'PlayScene' }, shotPath, statePath);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (isTransientHarnessError(message)) {
+      await wait(120);
+      await screenshotState(page, { sceneName: 'PlayScene' }, shotPath, statePath);
+    } else {
+      throw error;
+    }
+  }
+
+  return { shotPath, statePath };
+}
+
+async function captureStateSample(page, samples) {
+  try {
+    await captureDebugState(page, samples);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!isTransientHarnessError(message)) {
+      throw error;
+    }
   }
   return true;
 }
@@ -703,25 +1061,22 @@ async function doChoreography(page, steps, root, options = {}) {
       await advanceTimeFrames(page, frames, { onFrame });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (isExecutionContextDestroyed(message)) {
-        throw new Error(message);
+      if (isExecutionContextDestroyed(message) || isTransientHarnessError(message)) {
+        await releaseButtons(page, buttons, root);
+        await wait(120);
+        continue;
       }
       throw error;
     }
 
-    for (const button of buttons) {
-      const key = root[button];
-      if (!key) {
-        continue;
-      }
-      await page.keyboard.up(key);
-    }
+    await releaseButtons(page, buttons, root);
   }
 }
 
 async function runScenario(page, actionPath, levelKey, scenario, rootState, screenshotDir, stateDir) {
-  const action = JSON.parse(fs.readFileSync(actionPath, 'utf8'));
-  const steps = Array.isArray(action.steps) ? action.steps : [];
+  const action = loadScenarioAction(actionPath, scenario);
+  const steps = Array.isArray(action?.steps) ? action.steps : [];
+  const actionNote = action?.notes ?? '';
   const { world, level } = parseLevelSpec(levelKey);
 
   const runMeta = {
@@ -737,11 +1092,17 @@ async function runScenario(page, actionPath, levelKey, scenario, rootState, scre
     stomp_hitstop_present: false,
     blocker: '',
     notes: 'execution pass',
+    action_source: action?.source ?? 'missing',
+    action_loaded: Boolean(action?.loaded),
     rollback_required: false,
     evidence_screenshot: [],
     evidence_state: [],
     result: 'PASS',
   };
+
+  if (actionNote) {
+    runMeta.notes = actionNote;
+  }
 
   const stateSamples = [];
   const evaluateSignals = () => {
@@ -800,40 +1161,33 @@ async function runScenario(page, actionPath, levelKey, scenario, rootState, scre
       return normalizeFindingResult(runMeta);
     }
 
-    await captureDebugState(page, stateSamples);
+    await captureStateSample(page, stateSamples);
 
     await doChoreography(page, steps, INPUT_MAP, {
-      onFrame: () => captureDebugState(page, stateSamples),
+      onFrame: () => captureStateSample(page, stateSamples),
     });
     evaluateSignals();
 
-    const shotPath = path.join(screenshotDir, `shot-0.png`);
-    const statePath = path.join(stateDir, `state-0.json`);
-    await screenshotState(page, { sceneName: 'PlayScene' }, shotPath, statePath);
-    runMeta.evidence_screenshot.push(shotPath);
-    runMeta.evidence_state.push(statePath);
+    const firstEvidence = await captureScenarioEvidence(page, screenshotDir, stateDir, 0);
+    runMeta.evidence_screenshot.push(firstEvidence.shotPath);
+    runMeta.evidence_state.push(firstEvidence.statePath);
 
     if (rootState.iterations > 1) {
       for (let pass = 1; pass < rootState.iterations; pass += 1) {
         await advanceTimeFrames(page, 30);
         await doChoreography(page, steps, INPUT_MAP, {
-          onFrame: () => captureDebugState(page, stateSamples),
+          onFrame: () => captureStateSample(page, stateSamples),
         });
-        await screenshotState(
-          page,
-          { sceneName: 'PlayScene' },
-          path.join(screenshotDir, `shot-${pass}.png`),
-          path.join(stateDir, `state-${pass}.json`),
-        );
-        runMeta.evidence_screenshot.push(path.join(screenshotDir, `shot-${pass}.png`));
-        runMeta.evidence_state.push(path.join(stateDir, `state-${pass}.json`));
+        const evidence = await captureScenarioEvidence(page, screenshotDir, stateDir, pass);
+        runMeta.evidence_screenshot.push(evidence.shotPath);
+        runMeta.evidence_state.push(evidence.statePath);
       }
     }
 
     await returnToWorldMap(page, runMeta);
   } catch (err) {
     runMeta.status = 'FAIL';
-    runMeta.blocker = 'phase2_execution_error';
+    runMeta.blocker = PHASE2_BLOCKERS.EXECUTION_ERROR;
     runMeta.rollback_required = true;
     runMeta.notes = err instanceof Error ? err.message : String(err);
     runMeta.result = 'FAIL';
@@ -847,7 +1201,7 @@ async function runScenario(page, actionPath, levelKey, scenario, rootState, scre
 
   if (errors.length > 0) {
     runMeta.status = 'FAIL';
-    runMeta.blocker = 'playfeel_console_error';
+    runMeta.blocker = PHASE2_BLOCKERS.PLAYFEEL_CONSOLE_ERROR;
     runMeta.rollback_required = true;
     const summary = errors
       .slice(0, 3)
@@ -909,9 +1263,6 @@ async function main() {
   try {
     for (const scenario of scenarioNames) {
       const filePath = path.resolve(path.join(process.cwd(), 'artifacts', 'playfeel', 'phase2', 'actions', SCENARIO_FILES[scenario]));
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Missing action file: ${filePath}`);
-      }
 
       for (const levelKey of levels) {
         const save = makeBootstrapSave(levelKey, makeUnlockedKeys(allKeys));

@@ -3,10 +3,14 @@ import { readPng, writePng, createImage, getPixel, setPixel, crop, blit, resizeN
 import path from 'node:path';
 import fs from 'node:fs';
 
-const ARTIFACTS_DIR = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6';
+const ARTIFACTS_DIR = process.argv[2] ?? process.env.SUPERBART_ARTIFACTS_DIR;
+if (!ARTIFACTS_DIR) {
+    console.error('Usage: tsx tools/slice_enemies.ts <artifactsDir> [sourcePng]');
+    process.exit(1);
+}
 const OUT_DIR = 'public/assets/sprites';
 
-const SRC_PATH = path.join(ARTIFACTS_DIR, 'enemy_sprites_gen_1771044428200.png');
+const SRC_PATH = process.argv[3] ?? path.join(ARTIFACTS_DIR, 'enemy_sprites_gen.png');
 
 function isBg(px: number[] | readonly number[], bg: number[] | readonly number[]): boolean {
     const diff = Math.abs(px[0] - bg[0]) + Math.abs(px[1] - bg[1]) + Math.abs(px[2] - bg[2]);

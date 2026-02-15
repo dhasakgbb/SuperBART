@@ -1,4 +1,4 @@
-import { HUD_CONTRACT, SCENE_TEXT } from '../content/contentManifest';
+import { GAME_TITLE, HUD_CONTRACT, SCENE_TEXT } from '../content/contentManifest';
 
 export type StyleReferenceTargetRole = 'primary' | 'secondary' | 'supplemental';
 export type StyleReferenceTarget = {
@@ -328,18 +328,21 @@ export const styleConfig = {
         letterSpacingPx: 1,
         text: SCENE_TEXT.worldMap.hints,
       },
+    // World labels for 7-world campaign [4,4,4,4,4,4,4]
     worldLabels: [
-      { world: 1, x: 72, y: 108 },
-      { world: 2, x: 72, y: 184 },
-      { world: 3, x: 72, y: 260 },
-      { world: 4, x: 72, y: 336 },
-      { world: 5, x: 72, y: 412 },
+      { world: 1, x: 120, y: 380 },
+      { world: 2, x: 100, y: 180 },
+      { world: 3, x: 260, y: 60 },
+      { world: 4, x: 480, y: 350 },
+      { world: 5, x: 740, y: 280 },
+      { world: 6, x: 780, y: 100 },
+      { world: 7, x: 900, y: 60 },
     ],
     mapPath: {
       textureKey: 'map_path_dot',
-      scale: 1.3,
-      spacingPx: 18,
-      alpha: 0.88,
+      scale: 1.0,
+      spacingPx: 12, // Tighter spacing for paths
+      alpha: 0.6,
     },
     nodeSpriteKeys: {
       open: 'map_node_open',
@@ -348,66 +351,90 @@ export const styleConfig = {
       selected: 'map_node_selected',
     },
     nodeScale: {
-      base: 1.9,
-      selected: 2.2,
+      base: 1.6,
+      selected: 2.0,
     },
     selectionBob: {
       distancePx: 6,
       durationMs: 420,
     },
     nodes: [
-      { key: '1-1', x: 156, y: 140 }, { key: '1-2', x: 268, y: 140 }, { key: '1-3', x: 380, y: 140 },
-      { key: '1-4', x: 492, y: 140 }, { key: '1-5', x: 604, y: 140 }, { key: '1-6', x: 716, y: 140 },
-      { key: '2-1', x: 716, y: 216 }, { key: '2-2', x: 604, y: 216 }, { key: '2-3', x: 492, y: 216 },
-      { key: '2-4', x: 380, y: 216 }, { key: '2-5', x: 268, y: 216 }, { key: '2-6', x: 156, y: 216 },
-      { key: '3-1', x: 156, y: 292 }, { key: '3-2', x: 268, y: 292 }, { key: '3-3', x: 380, y: 292 },
-      { key: '3-4', x: 492, y: 292 }, { key: '3-5', x: 604, y: 292 }, { key: '3-6', x: 716, y: 292 },
-      { key: '4-1', x: 716, y: 368 }, { key: '4-2', x: 604, y: 368 }, { key: '4-3', x: 492, y: 368 },
-      { key: '4-4', x: 380, y: 368 }, { key: '4-5', x: 268, y: 368 }, { key: '4-6', x: 156, y: 368 },
-      { key: '5-1', x: 436, y: 444 },
+      // W1: The City (Prologue) - Bottom Left [4 stages]
+      { key: '1-1', x: 140, y: 460 },
+      { key: '1-2', x: 180, y: 440 },
+      { key: '1-3', x: 220, y: 420 },
+      { key: '1-4', x: 260, y: 400 },
+
+      // W2: Cryo-Server Tundra - Mid Left [4 stages]
+      { key: '2-1', x: 140, y: 280 }, { key: '2-2', x: 180, y: 260 }, { key: '2-3', x: 140, y: 220 }, { key: '2-4', x: 180, y: 200 },
+
+      // W3: Quantum Void - Top Left [4 stages]
+      { key: '3-1', x: 280, y: 160 }, { key: '3-2', x: 320, y: 140 }, { key: '3-3', x: 360, y: 120 }, { key: '3-4', x: 400, y: 100 },
+
+      // W4: Deep Web Catacombs - Center Bottom [4 stages]
+      { key: '4-1', x: 440, y: 460 }, { key: '4-2', x: 480, y: 440 }, { key: '4-3', x: 520, y: 460 }, { key: '4-4', x: 560, y: 440 },
+
+      // W5: Digital Graveyard - Mid Right [4 stages]
+      { key: '5-1', x: 680, y: 340 }, { key: '5-2', x: 720, y: 320 }, { key: '5-3', x: 760, y: 340 }, { key: '5-4', x: 800, y: 320 },
+
+      // W6: Singularity Core - Top Right [4 stages]
+      { key: '6-1', x: 760, y: 160 }, { key: '6-2', x: 800, y: 130 }, { key: '6-3', x: 840, y: 100 }, { key: '6-4', x: 880, y: 70 },
+
+      // W7: Singularity Apex - Top Right Edge [4 stages]
+      { key: '7-1', x: 800, y: 200 }, { key: '7-2', x: 840, y: 170 }, { key: '7-3', x: 880, y: 140 }, { key: '7-4', x: 920, y: 110 },
     ],
   },
   titleLayout: {
     viewport: { width: 960, height: 540 },
+    titleMode: 'full',
     wordmark: {
       x: 480,
-      y: 28,
+      y: 40,
       anchor: 'top-center',
       textureKey: 'title_logo',
-      scale: 1,
-      copy: 'SUPER BART',
+      scale: 1.15,
+      copy: GAME_TITLE,
     },
     portrait: {
-      x: 744,
-      y: 78,
+      x: 780,
+      y: 260,
       anchor: 'top-left',
       textureKey: 'bart_portrait_96',
-      scale: 0.62,
+      scale: 0.82,
     },
     subtitle: {
       x: 480,
-      y: 230,
+      y: 170,
       anchor: 'top-center',
-      fontSizePx: 20,
-      letterSpacingPx: 2,
+      fontSizePx: 16,
+      letterSpacingPx: 3,
       text: SCENE_TEXT.title.subtitle,
     },
     prompt: {
       x: 480,
-      y: 386,
+      y: 470,
       anchor: 'top-center',
-      fontSizePx: 28,
+      fontSizePx: 14,
       letterSpacingPx: 2,
       text: SCENE_TEXT.title.prompt,
-      blinkMs: 420,
+      blinkMs: 520,
     },
     hints: {
       x: 480,
-      y: 432,
+      y: 500,
       anchor: 'top-center',
       fontSizePx: 14,
       letterSpacingPx: 1,
       text: SCENE_TEXT.title.hints,
+    },
+    menu: {
+      x: 480,
+      startY: 290,
+      spacingPx: 36,
+      fontSizePx: 20,
+      letterSpacingPx: 3,
+      cursorGlyph: '> ',
+      items: ['CONTINUE', 'NEW RUN', 'SETTINGS', 'BARTS RULES'],
     },
     attract: {
       worldWidthPx: 1440,

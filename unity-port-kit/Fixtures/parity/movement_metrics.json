@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-15T05:03:55.818Z",
+  "source": {
+    "model": "src/player/movement.ts",
+    "helper": "tests/helpers/movementAcceptance.ts",
+    "contract": "scripts/playfeel_contract.json"
+  },
+  "tolerances": {
+    "scalarPct": 0.03,
+    "frameCount": 1,
+    "booleanExact": true
+  },
+  "metrics": {
+    "runTransitionFrames": 8,
+    "runToWalkSpeedRatio": 9.84074074074074,
+    "airGroundAccelRatio": 0.7,
+    "jumpBufferLandingSuccess": true,
+    "jumpCutOneShotCount": 1,
+    "jumpCutFirstFrame": 0,
+    "jumpCutSecondFrame": null,
+    "skidFirstFrame": 0,
+    "skidDurationFrames": 6,
+    "skidDurationMs": 96
+  }
+}

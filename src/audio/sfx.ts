@@ -25,7 +25,20 @@ export type SfxKey =
   | 'victory_fanfare'
   | 'boss_hurt'
   | 'boss_die'
-  | 'fire_spit';
+  | 'fire_spit'
+  | 'freeze_beam'
+  | 'ice_shatter'
+  | 'qubit_shift'
+  | 'crawler_emerge'
+  | 'phantom_phase'
+  | 'spore_cloud'
+  | 'ghost_wail'
+  | 'tape_reel'
+  | 'paper_puff'
+  | 'ping_glow'
+  | 'gravity_zone_enter'
+  | 'override_chip'
+  | 'fog_crack';
 
 export interface SfxDefinition {
   wave: OscillatorType;
@@ -85,7 +98,20 @@ export const REQUIRED_SFX_KEYS: SfxKey[] = [
   'victory_fanfare',
   'boss_hurt',
   'boss_die',
-  'fire_spit'
+  'fire_spit',
+  'freeze_beam',
+  'ice_shatter',
+  'qubit_shift',
+  'crawler_emerge',
+  'phantom_phase',
+  'spore_cloud',
+  'ghost_wail',
+  'tape_reel',
+  'paper_puff',
+  'ping_glow',
+  'gravity_zone_enter',
+  'override_chip',
+  'fog_crack'
 ];
 
 export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
@@ -364,7 +390,7 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     decaySec: 0.1,
     sustain: 0.1,
     releaseSec: 0.1,
-    gain: 0.4
+    gain: 0.3
   },
   boss_die: {
     wave: 'sawtooth',
@@ -375,7 +401,7 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     decaySec: 0.3,
     sustain: 0.2,
     releaseSec: 0.4,
-    gain: 0.35
+    gain: 0.3
   },
   fire_spit: {
     wave: 'square',
@@ -387,6 +413,149 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
     sustain: 0.1,
     releaseSec: 0.05,
     gain: 0.25
+  },
+  freeze_beam: {
+    wave: 'sine',
+    startHz: 1200,
+    endHz: 400,
+    durationSec: 0.15,
+    attackSec: 0.002,
+    decaySec: 0.05,
+    sustain: 0.3,
+    releaseSec: 0.04,
+    gain: 0.18
+  },
+  ice_shatter: {
+    wave: 'square',
+    startHz: 800,
+    endHz: 200,
+    durationSec: 0.12,
+    attackSec: 0.001,
+    decaySec: 0.04,
+    sustain: 0.2,
+    releaseSec: 0.03,
+    gain: 0.2
+  },
+  qubit_shift: {
+    wave: 'triangle',
+    startHz: 600,
+    endHz: 900,
+    durationSec: 0.08,
+    attackSec: 0.001,
+    decaySec: 0.025,
+    sustain: 0.4,
+    releaseSec: 0.02,
+    gain: 0.14
+  },
+  crawler_emerge: {
+    wave: 'sawtooth',
+    startHz: 100,
+    endHz: 300,
+    durationSec: 0.2,
+    attackSec: 0.003,
+    decaySec: 0.08,
+    sustain: 0.25,
+    releaseSec: 0.06,
+    gain: 0.16
+  },
+  phantom_phase: {
+    wave: 'sine',
+    startHz: 440,
+    endHz: 880,
+    durationSec: 0.1,
+    attackSec: 0.004,
+    decaySec: 0.03,
+    sustain: 0.35,
+    releaseSec: 0.03,
+    gain: 0.12
+  },
+  spore_cloud: {
+    wave: 'triangle',
+    startHz: 200,
+    endHz: 100,
+    durationSec: 0.25,
+    attackSec: 0.01,
+    decaySec: 0.1,
+    sustain: 0.15,
+    releaseSec: 0.08,
+    gain: 0.1
+  },
+  ghost_wail: {
+    wave: 'sawtooth',
+    startHz: 300,
+    endHz: 500,
+    durationSec: 0.18,
+    attackSec: 0.005,
+    decaySec: 0.06,
+    sustain: 0.3,
+    releaseSec: 0.05,
+    gain: 0.15
+  },
+  tape_reel: {
+    wave: 'square',
+    startHz: 150,
+    endHz: 250,
+    durationSec: 0.2,
+    attackSec: 0.002,
+    decaySec: 0.05,
+    sustain: 0.25,
+    releaseSec: 0.06,
+    gain: 0.14
+  },
+  paper_puff: {
+    wave: 'triangle',
+    startHz: 800,
+    endHz: 200,
+    durationSec: 0.06,
+    attackSec: 0.001,
+    decaySec: 0.02,
+    sustain: 0.1,
+    releaseSec: 0.02,
+    gain: 0.08
+  },
+  ping_glow: {
+    wave: 'sine',
+    startHz: 880,
+    endHz: 1100,
+    durationSec: 0.12,
+    attackSec: 0.002,
+    decaySec: 0.03,
+    sustain: 0.25,
+    releaseSec: 0.03,
+    gain: 0.1
+  },
+  gravity_zone_enter: {
+    wave: 'triangle',
+    startHz: 300,
+    endHz: 600,
+    durationSec: 0.15,
+    attackSec: 0.003,
+    decaySec: 0.04,
+    sustain: 0.35,
+    releaseSec: 0.03,
+    gain: 0.12
+  },
+  override_chip: {
+    wave: 'sine',
+    startHz: 440,
+    endHz: 440,
+    durationSec: 1.5,
+    attackSec: 0.01,
+    decaySec: 0.2,
+    sustain: 0.7,
+    releaseSec: 0.3,
+    gain: 0.2
+  },
+  fog_crack: {
+    wave: 'sawtooth',
+    startHz: 600,
+    endHz: 100,
+    durationSec: 0.4,
+    attackSec: 0.004,
+    decaySec: 0.1,
+    sustain: 0.3,
+    releaseSec: 0.15,
+    gain: 0.15
   }
 };
 

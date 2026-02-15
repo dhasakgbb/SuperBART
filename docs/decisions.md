@@ -1,17 +1,28 @@
-# Decisions
+# SuperBART V3 Decisions (Locked)
 
-- Phaser 3 Arcade Physics remains the gameplay engine for deterministic 2D collision behavior.
-- Visual lock is contract-based (`styleConfig` + validators), not literal pixel-by-pixel frame matching.
-- Campaign topology is fixed to `[6,6,6,6,1]` (4 worlds x 6 levels + final castle) for exactly 25 levels.
-- Save format is upgraded from `SaveGameV2` to `SaveGameV3` with local migration and normalized unlock/completion lists.
-- Final castle is implemented as `World 5, Level 1`; clearing it routes to Final Victory.
-- No external art/audio packs are allowed; all runtime assets are generated/authored in repo.
-- Bart head/portrait assets are generated prebuild from `public/assets/target_look.png` only.
-- HUD uses generated bitmap font + top-left portrait/counters and top-right world/time anchors.
-- Bloom/glow uses style-config numeric controls with additive sprite layers as deterministic fallback.
-- Legacy JS compatibility files are retained where existing tests still reference them; gameplay runtime path is TypeScript-first.
-- Perf baseline target is 60 FPS on mid-tier integrated-graphics laptop browsers.
-- World-space labels over gameplay entities are forbidden by contract; only HUD and menu UI may render persistent text.
-- Gameplay popups are restricted to headless HUD toasts (`duration` 800–1200ms) and brief enemy-hit feedback (`CORRECTED`).
-- `public/assets/inspiration_ai_reskin.png` is treated as the concept source for reskin motifs (GPU flower, legacy shell, etc.), while all sprites are custom-authored/no-label variants.
-- Golden visual regression contract now enforces `docs/screenshots/*_expected.md` and `public/assets/target_look.png` alignment through `tools/visual_regress.ts`.
+## Product Canon
+
+- `SCRIPT.md` is source-of-truth.
+- Legacy 25-level/5-world enterprise satire flow is deprecated for active runtime.
+
+## Campaign / Save
+
+- Campaign layout is `7 x 4` nodes.
+- Save schema is V5.
+- Migration preserves settings and aggregate progression, archives old campaign in `legacySnapshot`, and resets route to `1-1`.
+
+## Flow
+
+- Stage completion routes through interludes.
+- Boss completion routes through debrief beats.
+- World 6-2 records choice and world 7 ending choice persist in save.
+
+## Rendering / Visual
+
+- Renderer is WebGL-first with automatic Canvas fallback.
+- Pixel rules remain locked (`pixelArt`, `antialias=false`, `roundPixels=true`).
+
+## Scope Safety
+
+- Gameplay tuning constants are not changed by visual/art batches.
+- Boss gameplay depth remains data-driven and can be expanded without changing flow contracts.

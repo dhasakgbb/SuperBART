@@ -1,0 +1,752 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-15T05:25:38.297Z",
+  "outputDir": "unity-port-kit/Assets/SuperbartAssets",
+  "profile": "m1",
+  "includeAudio": true,
+  "assetCount": 106,
+  "assets": [
+    {
+      "source": "assets/BART_ANIMATED.png",
+      "destination": "assets/BART_ANIMATED.png",
+      "category": "spritesheet:bart_map_animated",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_far_w1.png",
+      "destination": "assets/bg/hill_far_w1.png",
+      "category": "image:hill_far_w1",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_far_w2.png",
+      "destination": "assets/bg/hill_far_w2.png",
+      "category": "image:hill_far_w2",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_far_w3.png",
+      "destination": "assets/bg/hill_far_w3.png",
+      "category": "image:hill_far_w3",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_far_w4.png",
+      "destination": "assets/bg/hill_far_w4.png",
+      "category": "image:hill_far_w4",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_far_w5.png",
+      "destination": "assets/bg/hill_far_w5.png",
+      "category": "image:hill_far_w5",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_near_w1.png",
+      "destination": "assets/bg/hill_near_w1.png",
+      "category": "image:hill_near_w1",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_near_w2.png",
+      "destination": "assets/bg/hill_near_w2.png",
+      "category": "image:hill_near_w2",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_near_w3.png",
+      "destination": "assets/bg/hill_near_w3.png",
+      "category": "image:hill_near_w3",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_near_w4.png",
+      "destination": "assets/bg/hill_near_w4.png",
+      "category": "image:hill_near_w4",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/hill_near_w5.png",
+      "destination": "assets/bg/hill_near_w5.png",
+      "category": "image:hill_near_w5",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_catacombs.png",
+      "destination": "assets/bg/title/title_bg_catacombs.png",
+      "category": "image:title_bg_catacombs",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_city.png",
+      "destination": "assets/bg/title/title_bg_city.png",
+      "category": "image:title_bg_city",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_graveyard.png",
+      "destination": "assets/bg/title/title_bg_graveyard.png",
+      "category": "image:title_bg_graveyard",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_singularity.png",
+      "destination": "assets/bg/title/title_bg_singularity.png",
+      "category": "image:title_bg_singularity",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_tundra.png",
+      "destination": "assets/bg/title/title_bg_tundra.png",
+      "category": "image:title_bg_tundra",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/bg/title/title_bg_void.png",
+      "destination": "assets/bg/title/title_bg_void.png",
+      "category": "image:title_bg_void",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/fonts/bitmap_font.fnt",
+      "destination": "assets/fonts/bitmap_font.fnt",
+      "category": "fontData:hud",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/fonts/bitmap_font.png",
+      "destination": "assets/fonts/bitmap_font.png",
+      "category": "fontTexture:hud",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_body_big_fire.png",
+      "destination": "assets/sprites/bart_body_big_fire.png",
+      "category": "spritesheet:bart_body_big_fire",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_body_big.png",
+      "destination": "assets/sprites/bart_body_big.png",
+      "category": "spritesheet:bart_body_big",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_body_small_fire.png",
+      "destination": "assets/sprites/bart_body_small_fire.png",
+      "category": "spritesheet:bart_body_small_fire",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_body_small.png",
+      "destination": "assets/sprites/bart_body_small.png",
+      "category": "spritesheet:bart_body_small",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_head_32.png",
+      "destination": "assets/sprites/bart_head_32.png",
+      "category": "image:bart_head_32",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_head_48.png",
+      "destination": "assets/sprites/bart_head_48.png",
+      "category": "image:bart_head_48",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_head_64.png",
+      "destination": "assets/sprites/bart_head_64.png",
+      "category": "image:bart_head_64",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/bart_portrait_96.png",
+      "destination": "assets/sprites/bart_portrait_96.png",
+      "category": "image:bart_portrait_96",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/boss_health_bg.png",
+      "destination": "assets/sprites/boss_health_bg.png",
+      "category": "image:boss_health_bg",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/boss_health_fill.png",
+      "destination": "assets/sprites/boss_health_fill.png",
+      "category": "image:boss_health_fill",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/boss_sheet.png",
+      "destination": "assets/sprites/boss_sheet.png",
+      "category": "spritesheet:boss_sheet",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/checkpoint.png",
+      "destination": "assets/sprites/checkpoint.png",
+      "category": "image:checkpoint",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/cloud_1.png",
+      "destination": "assets/sprites/cloud_1.png",
+      "category": "image:cloud_1",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/cloud_2.png",
+      "destination": "assets/sprites/cloud_2.png",
+      "category": "image:cloud_2",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/dust_puff.png",
+      "destination": "assets/sprites/dust_puff.png",
+      "category": "image:dust_puff",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_bug_w1.png",
+      "destination": "assets/sprites/enemy_bug_w1.png",
+      "category": "spritesheet:enemy_bug",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_compliance.png",
+      "destination": "assets/sprites/enemy_compliance.png",
+      "category": "spritesheet:enemy_compliance",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_cryo_drone.png",
+      "destination": "assets/sprites/enemy_cryo_drone.png",
+      "category": "spritesheet:enemy_cryo_drone",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_cryo_sentry.png",
+      "destination": "assets/sprites/enemy_cryo_sentry.png",
+      "category": "spritesheet:enemy_cryo_sentry",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_microservice.png",
+      "destination": "assets/sprites/enemy_microservice.png",
+      "category": "image:enemy_microservice",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_shell_retracted.png",
+      "destination": "assets/sprites/enemy_shell_retracted.png",
+      "category": "image:enemy_shell_retracted",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_snake_w1.png",
+      "destination": "assets/sprites/enemy_snake_w1.png",
+      "category": "spritesheet:enemy_snake",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_spitter.png",
+      "destination": "assets/sprites/enemy_spitter.png",
+      "category": "spritesheet:enemy_spitter",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_techdebt.png",
+      "destination": "assets/sprites/enemy_techdebt.png",
+      "category": "spritesheet:enemy_techdebt",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/enemy_walker.png",
+      "destination": "assets/sprites/enemy_walker.png",
+      "category": "spritesheet:enemy_walker",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/flag.png",
+      "destination": "assets/sprites/flag.png",
+      "category": "image:flag",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/hill_far.png",
+      "destination": "assets/sprites/hill_far.png",
+      "category": "image:hill_far",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/hill_near.png",
+      "destination": "assets/sprites/hill_near.png",
+      "category": "image:hill_near",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/map_node_done.png",
+      "destination": "assets/sprites/map_node_done.png",
+      "category": "image:map_node_done",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/map_node_locked.png",
+      "destination": "assets/sprites/map_node_locked.png",
+      "category": "image:map_node_locked",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/map_node_open.png",
+      "destination": "assets/sprites/map_node_open.png",
+      "category": "image:map_node_open",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/map_node_selected.png",
+      "destination": "assets/sprites/map_node_selected.png",
+      "category": "image:map_node_selected",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/map_path_dot.png",
+      "destination": "assets/sprites/map_path_dot.png",
+      "category": "image:map_path_dot",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/moving_platform.png",
+      "destination": "assets/sprites/moving_platform.png",
+      "category": "image:moving_platform",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/particle_chain.png",
+      "destination": "assets/sprites/particle_chain.png",
+      "category": "image:particle_chain",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/particle_spark.png",
+      "destination": "assets/sprites/particle_spark.png",
+      "category": "image:particle_spark",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_copilot_mode.png",
+      "destination": "assets/sprites/pickup_copilot_mode.png",
+      "category": "image:pickup_copilot_mode",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_data_cube.png",
+      "destination": "assets/sprites/pickup_data_cube.png",
+      "category": "image:pickup_token",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_deploy_to_prod.png",
+      "destination": "assets/sprites/pickup_deploy_to_prod.png",
+      "category": "image:pickup_deploy_to_prod",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_eval.png",
+      "destination": "assets/sprites/pickup_eval.png",
+      "category": "image:pickup_eval",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_gpu_allocation.png",
+      "destination": "assets/sprites/pickup_gpu_allocation.png",
+      "category": "image:pickup_gpu_allocation",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_semantic_kernel.png",
+      "destination": "assets/sprites/pickup_semantic_kernel.png",
+      "category": "image:pickup_semantic_kernel",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/pickup_works_on_my_machine.png",
+      "destination": "assets/sprites/pickup_works_on_my_machine.png",
+      "category": "image:pickup_works_on_my_machine",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/projectile.png",
+      "destination": "assets/sprites/projectile.png",
+      "category": "image:projectile",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/question_block_used.png",
+      "destination": "assets/sprites/question_block_used.png",
+      "category": "image:question_block_used",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/question_block.png",
+      "destination": "assets/sprites/question_block.png",
+      "category": "image:question_block",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/spike.png",
+      "destination": "assets/sprites/spike.png",
+      "category": "image:spike",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/spring.png",
+      "destination": "assets/sprites/spring.png",
+      "category": "image:spring",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/thwomp.png",
+      "destination": "assets/sprites/thwomp.png",
+      "category": "image:thwomp",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/sprites/title_logo.png",
+      "destination": "assets/sprites/title_logo.png",
+      "category": "image:title_logo",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w1_bot.png",
+      "destination": "assets/tiles/tile_ground_w1_bot.png",
+      "category": "image:tile_ground_w1_bot",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w1_mid.png",
+      "destination": "assets/tiles/tile_ground_w1_mid.png",
+      "category": "image:tile_ground_w1_mid",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w1_top.png",
+      "destination": "assets/tiles/tile_ground_w1_top.png",
+      "category": "image:tile_ground_w1_top",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w2_mid.png",
+      "destination": "assets/tiles/tile_ground_w2_mid.png",
+      "category": "image:tile_ground_w2_mid",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w2_top.png",
+      "destination": "assets/tiles/tile_ground_w2_top.png",
+      "category": "image:tile_ground_w2_top",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w3_bot.png",
+      "destination": "assets/tiles/tile_ground_w3_bot.png",
+      "category": "image:tile_ground_w3_bot",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w3_mid.png",
+      "destination": "assets/tiles/tile_ground_w3_mid.png",
+      "category": "image:tile_ground_w3_mid",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w3_top.png",
+      "destination": "assets/tiles/tile_ground_w3_top.png",
+      "category": "image:tile_ground_w3_top",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w4_bot.png",
+      "destination": "assets/tiles/tile_ground_w4_bot.png",
+      "category": "image:tile_ground_w4_bot",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w4_mid.png",
+      "destination": "assets/tiles/tile_ground_w4_mid.png",
+      "category": "image:tile_ground_w4_mid",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w4_top.png",
+      "destination": "assets/tiles/tile_ground_w4_top.png",
+      "category": "image:tile_ground_w4_top",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w5_bot.png",
+      "destination": "assets/tiles/tile_ground_w5_bot.png",
+      "category": "image:tile_ground_w5_bot",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w5_mid.png",
+      "destination": "assets/tiles/tile_ground_w5_mid.png",
+      "category": "image:tile_ground_w5_mid",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground_w5_top.png",
+      "destination": "assets/tiles/tile_ground_w5_top.png",
+      "category": "image:tile_ground_w5_top",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_ground.png",
+      "destination": "assets/tiles/tile_ground.png",
+      "category": "image:tile_ground",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway_w1.png",
+      "destination": "assets/tiles/tile_oneway_w1.png",
+      "category": "image:tile_oneway_w1",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway_w2.png",
+      "destination": "assets/tiles/tile_oneway_w2.png",
+      "category": "image:tile_oneway_w2",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway_w3.png",
+      "destination": "assets/tiles/tile_oneway_w3.png",
+      "category": "image:tile_oneway_w3",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway_w4.png",
+      "destination": "assets/tiles/tile_oneway_w4.png",
+      "category": "image:tile_oneway_w4",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway_w5.png",
+      "destination": "assets/tiles/tile_oneway_w5.png",
+      "category": "image:tile_oneway_w5",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/tiles/tile_oneway.png",
+      "destination": "assets/tiles/tile_oneway.png",
+      "category": "image:tile_oneway",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/world_map_pixel.png",
+      "destination": "assets/world_map_pixel.png",
+      "category": "image:world_map_pixel",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "assets/world_map_premium.png",
+      "destination": "assets/world_map_premium.png",
+      "category": "image:world_map_premium",
+      "required": true,
+      "bucket": "runtime"
+    },
+    {
+      "source": "music/ai/boss-1.flac",
+      "destination": "music/ai/boss-1.flac",
+      "category": "audio:boss-1",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/boss-2.flac",
+      "destination": "music/ai/boss-2.flac",
+      "category": "audio:boss-2",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/boss-3.flac",
+      "destination": "music/ai/boss-3.flac",
+      "category": "audio:boss-3",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/boss-4.flac",
+      "destination": "music/ai/boss-4.flac",
+      "category": "audio:boss-4",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/boss-5.flac",
+      "destination": "music/ai/boss-5.flac",
+      "category": "audio:boss-5",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/boss-6.flac",
+      "destination": "music/ai/boss-6.flac",
+      "category": "audio:boss-6",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/title.flac",
+      "destination": "music/ai/title.flac",
+      "category": "audio:title",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-1.flac",
+      "destination": "music/ai/world-1.flac",
+      "category": "audio:world-1",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-2.flac",
+      "destination": "music/ai/world-2.flac",
+      "category": "audio:world-2",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-3.flac",
+      "destination": "music/ai/world-3.flac",
+      "category": "audio:world-3",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-4.flac",
+      "destination": "music/ai/world-4.flac",
+      "category": "audio:world-4",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-5.flac",
+      "destination": "music/ai/world-5.flac",
+      "category": "audio:world-5",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-6.flac",
+      "destination": "music/ai/world-6.flac",
+      "category": "audio:world-6",
+      "required": false,
+      "bucket": "audio"
+    },
+    {
+      "source": "music/ai/world-map.flac",
+      "destination": "music/ai/world-map.flac",
+      "category": "audio:world-map",
+      "required": false,
+      "bucket": "audio"
+    }
+  ]
+}

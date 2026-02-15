@@ -327,7 +327,10 @@ async function main(): Promise<number> {
   }
 
   for (const scene of Object.values(baseline) as BaselineMeta[]) {
-    const dims = imageDimensions(scene.targetFile);
+    const goldenFile = path.isAbsolute(scene.targetFile)
+      ? scene.targetFile
+      : path.resolve(path.dirname(GOLDEN_META_PATH), scene.targetFile);
+    const dims = imageDimensions(goldenFile);
     if (dims.width !== scene.width || dims.height !== scene.height) {
       throw new Error(
         `Golden metadata dimensions mismatch for ${scene.scene}: metadata ${scene.width}x${scene.height}, file ${dims.width}x${dims.height}.`,

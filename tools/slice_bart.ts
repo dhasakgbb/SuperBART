@@ -3,7 +3,11 @@ import { readPng, writePng, createImage, getPixel, setPixel, crop, blit, resizeN
 import path from 'node:path';
 import fs from 'node:fs';
 
-const ARTIFACTS_DIR = '/Users/damian/.gemini/antigravity/brain/759ccdf6-979e-4751-a5e4-7fd4b8efe2d6';
+const ARTIFACTS_DIR = process.argv[2] ?? process.env.SUPERBART_ARTIFACTS_DIR;
+if (!ARTIFACTS_DIR) {
+    console.error('Usage: tsx tools/slice_bart.ts <artifactsDir>');
+    process.exit(1);
+}
 const OUT_DIR = 'public/assets/sprites';
 
 const SRC_PATH = path.join(ARTIFACTS_DIR, 'bart_ref.png');

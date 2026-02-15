@@ -1,8 +1,12 @@
 # V2 TODO and Risk Log
 
+## Canonical Campaign Scope
+- [x] Campaign scope is canonicalized to 28 levels (`[4,4,4,4,4,4,4]`) in runtime.
+- [x] `campaign_25_levels.json` is retained as historical reference only; avoid using it as active source-of-truth.
+
 ## High Priority
-- Add explicit bonus-level scene routing for all 3 unlockable micro-level IDs.
-- Add bounded shell chain-kill invariant test to prevent runaway interactions.
+- [x] Add explicit bonus-level scene routing for all 3 unlockable micro-level IDs.
+- [x] Add bounded shell chain-kill invariant test to prevent runaway interactions.
 - Add deterministic replay fixture for checkpoint edge cases around moving platforms.
 
 ## Medium Priority
