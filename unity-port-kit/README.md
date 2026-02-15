@@ -13,6 +13,8 @@ It contains Unity-ready scripts (drop into `Assets/`) that:
 - Load a `GeneratedLevel` JSON and build a Tilemap + spawn entity prefabs
 - Auto-configure pixel-art texture import settings for anything under `Assets/SuperbartAssets/`
 
+Unity is the only shipping runtime for this project branch. Phaser references remain for parity, fixture reference, and historical behavior comparison only.
+
 For the first-playable milestone workflow and full command runbook, use:
 
 - `docs/unity_port.md` (authoritative M1 workflow)
@@ -25,3 +27,10 @@ For the first-playable milestone workflow and full command runbook, use:
 To sync just art/audio/media assets without regenerating fixtures:
 
 - `npm run unity:media:sync`
+
+Release candidate flow (WebGL shipping target):
+
+- `npm run unity:ship:sync`
+- `npm run unity:ship:smoke`
+- `npm run unity:ship:build`
+- `npm run qa:unity:ship`

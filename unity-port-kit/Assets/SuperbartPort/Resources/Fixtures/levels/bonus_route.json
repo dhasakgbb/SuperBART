@@ -1,0 +1,103 @@
+{
+  "tileSize": 16,
+  "width": 16,
+  "height": 8,
+  "tileGrid": [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+  ],
+  "oneWayPlatforms": [
+    {
+      "x": 2,
+      "y": 5,
+      "w": 3
+    }
+  ],
+  "movingPlatforms": [],
+  "entities": [
+    {
+      "id": "spawn_bonus_1",
+      "type": "spawn",
+      "x": 48,
+      "y": 176
+    },
+    {
+      "id": "coin_bonus_2",
+      "type": "coin",
+      "x": 112,
+      "y": 112,
+      "data": {
+        "collectableId": "coin_bonus_route"
+      }
+    },
+    {
+      "id": "eval_bonus_3",
+      "type": "eval",
+      "x": 128,
+      "y": 112,
+      "data": {
+        "collectableId": "eval_bonus_route"
+      }
+    },
+    {
+      "id": "question_bonus_4",
+      "type": "question_block",
+      "x": 144,
+      "y": 112,
+      "data": {
+        "collectableId": "question_bonus_route"
+      }
+    },
+    {
+      "id": "bonus_route_portal",
+      "type": "checkpoint",
+      "x": 192,
+      "y": 128,
+      "data": {
+        "checkpointId": "bonus-route-checkpoint-1"
+      }
+    },
+    {
+      "id": "goal_bonus_6",
+      "type": "goal",
+      "x": 512,
+      "y": 112,
+      "data": {
+        "bonusRouteId": "bonus-omega"
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "checkpoint_bonus",
+      "x": 192,
+      "y": 128
+    }
+  ],
+  "goal": {
+    "x": 512,
+    "y": 112
+  },
+  "metadata": {
+    "world": 1,
+    "levelIndex": 6,
+    "theme": "city",
+    "difficultyTier": 3,
+    "chunksUsed": ["start", "bonus_route", "coins", "finish"],
+    "pacing": ["INTRO", "PRACTICE", "CHALLENGE", "FINALE"],
+    "seed": 424242,
+    "flags": {
+      "maintenanceRoute": false,
+      "bonusRoute": true,
+      "bonusRouteId": "bonus-omega",
+      "worldThemeAlias": "city",
+      "checkpointStyle": "compact"
+    }
+  }
+}

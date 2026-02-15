@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 import { PLAYER_CONSTANTS } from '../src/core/constants';
@@ -33,10 +34,35 @@ export interface UnityMovementMetrics {
 export interface UnityMovementMetricsArtifact {
   version: number;
   generatedAt: string;
+  sourceCommit: string;
+  dtMs: number;
   source: {
     model: string;
     helper: string;
     contract: string;
+  };
+  scenarios: {
+    walk: { dtMs: number; inputX: number; onGround: boolean; runHeld: boolean; maxFrames: number };
+    run: { dtMs: number; inputX: number; onGround: boolean; runHeld: boolean; maxFrames: number };
+    accel: { dtMs: number; inputX: number; onGround: boolean; runHeld: boolean; jumpHeld: boolean };
+    jumpCut: {
+      dtMs: number;
+      inputX: number;
+      holdForFrames: number;
+      firstReleaseFrames: number;
+      rePressFrames: number;
+      secondReleaseFrames: number;
+    };
+    skid: {
+      dtMs: number;
+      inputX: number;
+      runHeld: boolean;
+      onGround: boolean;
+      maxFrames: number;
+      reversalFrames: number;
+      reverseInput: number;
+    };
+    jumpBuffer: { firstStepDtMs: number; secondStepDtMs: number };
   };
   tolerances: UnityMovementMetricTolerances;
   metrics: UnityMovementMetrics;
@@ -56,6 +82,20 @@ const DEFAULT_OUT_PATH = path.resolve(
   'parity',
   'movement_metrics.json'
 );
+
+const NOMINAL_DT_MS = 16;
+
+function resolveSourceCommit(): string {
+  const envCommit = process.env.GITHUB_SHA || process.env.SUPERBART_SOURCE_COMMIT;
+  if (envCommit && envCommit.trim()) {
+    return envCommit.trim();
+  }
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 function readPlayfeelContract(): Record<string, number | boolean> {
   const contractPath = path.resolve(process.cwd(), 'scripts', 'playfeel_contract.json');
@@ -95,7 +135,7 @@ function computeJumpBufferLandingSuccess(): boolean {
 
 export function computeUnityMovementMetrics(): UnityMovementMetrics {
   const walk = runChargeFramesToRunState({
-    dtMs: 16,
+    dtMs: NOMINAL_DT_MS,
     inputX: 1,
     onGround: true,
     runHeld: false,
@@ -103,7 +143,7 @@ export function computeUnityMovementMetrics(): UnityMovementMetrics {
   });
 
   const run = runChargeFramesToRunState({
-    dtMs: 16,
+    dtMs: NOMINAL_DT_MS,
     inputX: 1,
     onGround: true,
     runHeld: true,
@@ -111,7 +151,7 @@ export function computeUnityMovementMetrics(): UnityMovementMetrics {
   });
 
   const accel = measureAirVsGroundAccel({
-    dtMs: 16,
+    dtMs: NOMINAL_DT_MS,
     inputX: 1,
     onGround: true,
     runHeld: false,
@@ -119,7 +159,7 @@ export function computeUnityMovementMetrics(): UnityMovementMetrics {
   });
 
   const jumpCut = measureJumpCutReapplication({
-    dtMs: 16,
+    dtMs: NOMINAL_DT_MS,
     inputX: 0,
     holdForFrames: 1,
     firstReleaseFrames: 3,
@@ -128,7 +168,7 @@ export function computeUnityMovementMetrics(): UnityMovementMetrics {
   });
 
   const skid = measureSkidFrameSpan({
-    dtMs: 16,
+    dtMs: NOMINAL_DT_MS,
     inputX: 1,
     runHeld: true,
     onGround: true,
@@ -147,7 +187,7 @@ export function computeUnityMovementMetrics(): UnityMovementMetrics {
     jumpCutSecondFrame: jumpCut.secondCutFrame,
     skidFirstFrame: skid.firstSkidFrame,
     skidDurationFrames: skid.skidSpanFrames,
-    skidDurationMs: skid.skidSpanFrames * 16,
+    skidDurationMs: skid.skidSpanFrames * NOMINAL_DT_MS,
   };
 }
 
@@ -155,10 +195,35 @@ export function buildUnityMovementMetricsArtifact(): UnityMovementMetricsArtifac
   return {
     version: 1,
     generatedAt: new Date().toISOString(),
+    sourceCommit: resolveSourceCommit(),
+    dtMs: NOMINAL_DT_MS,
     source: {
       model: 'src/player/movement.ts',
       helper: 'tests/helpers/movementAcceptance.ts',
       contract: 'scripts/playfeel_contract.json',
+    },
+    scenarios: {
+      walk: { dtMs: NOMINAL_DT_MS, inputX: 1, onGround: true, runHeld: false, maxFrames: 1 },
+      run: { dtMs: NOMINAL_DT_MS, inputX: 1, onGround: true, runHeld: true, maxFrames: 20 },
+      accel: { dtMs: NOMINAL_DT_MS, inputX: 1, onGround: true, runHeld: false, jumpHeld: true },
+      jumpCut: {
+        dtMs: NOMINAL_DT_MS,
+        inputX: 0,
+        holdForFrames: 1,
+        firstReleaseFrames: 3,
+        rePressFrames: 2,
+        secondReleaseFrames: 4,
+      },
+      skid: {
+        dtMs: NOMINAL_DT_MS,
+        inputX: 1,
+        runHeld: true,
+        onGround: true,
+        maxFrames: 12,
+        reversalFrames: 16,
+        reverseInput: -1,
+      },
+      jumpBuffer: { firstStepDtMs: NOMINAL_DT_MS, secondStepDtMs: 50 },
     },
     tolerances: {
       scalarPct: 0.03,

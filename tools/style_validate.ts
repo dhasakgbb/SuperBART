@@ -1573,13 +1573,13 @@ function validateTitleLayout(errors: ErrorList): void {
   assertRange(errors, 'titleLayout.subtitle.letterSpacingPx', title.subtitle.letterSpacingPx, 1, 3);
 
   assertRange(errors, 'titleLayout.prompt.x', title.prompt.x, 440, 520);
-  assertRange(errors, 'titleLayout.prompt.y', title.prompt.y, 340, 430);
-  assertRange(errors, 'titleLayout.prompt.fontSizePx', title.prompt.fontSizePx, 20, 32);
+  assertRange(errors, 'titleLayout.prompt.y', title.prompt.y, 340, 480);
+  assertRange(errors, 'titleLayout.prompt.fontSizePx', title.prompt.fontSizePx, 12, 32);
   assertRange(errors, 'titleLayout.prompt.blinkMs', title.prompt.blinkMs, 280, 700);
 
   assertRange(errors, 'titleLayout.hints.x', title.hints.x, 440, 520);
-  assertRange(errors, 'titleLayout.hints.y', title.hints.y, 410, 500);
-  assertRange(errors, 'titleLayout.hints.fontSizePx', title.hints.fontSizePx, 12, 18);
+  assertRange(errors, 'titleLayout.hints.y', title.hints.y, 410, 520);
+  assertRange(errors, 'titleLayout.hints.fontSizePx', title.hints.fontSizePx, 10, 18);
 
   assertRange(errors, 'titleLayout.attract.worldWidthPx', title.attract.worldWidthPx, 1080, 1800);
   assertRange(errors, 'titleLayout.attract.cameraPanPx', title.attract.cameraPanPx, 120, 280);

@@ -201,13 +201,13 @@ const WORLD_THEME_BY_INDEX: Record<WorldIndex, WorldTheme> = {
 };
 
 const WORLD_PALETTES: Record<WorldIndex, { skyTop: number; skyBottom: number; accent: number }> = {
-  1: { skyTop: 0x2a1f0a, skyBottom: 0x6b4f2c, accent: 0xd4a24a },
-  2: { skyTop: 0x4e6da8, skyBottom: 0x97c9ff, accent: 0xbfe8ff },
-  3: { skyTop: 0x1a0a2e, skyBottom: 0x4a2d73, accent: 0xb388ff },
-  4: { skyTop: 0x1f2119, skyBottom: 0x4f5a31, accent: 0x9abf62 },
-  5: { skyTop: 0x17181f, skyBottom: 0x4a4d59, accent: 0x9ea4ba },
-  6: { skyTop: 0x050505, skyBottom: 0x2b2b2b, accent: 0xe3c66f },
-  7: { skyTop: 0x050505, skyBottom: 0x1f1f1f, accent: 0xf0d68f },
+  1: { skyTop: 0x000000, skyBottom: 0x6b8cff, accent: 0xd4a24a }, // City: Deep Sky to Blue
+  2: { skyTop: 0x32535F, skyBottom: 0x74C0D4, accent: 0xB7E9F7 }, // Tundra: Deep Ice to Mid Ice, Light Accent
+  3: { skyTop: 0x1A0B2E, skyBottom: 0xD45698, accent: 0x4DEEEA }, // Void: Dark to Pink, Cyan Accent
+  4: { skyTop: 0x1A1A1A, skyBottom: 0x203820, accent: 0x68F046 }, // Catacombs: Mud to Slime, Toxic Accent
+  5: { skyTop: 0x0C0C14, skyBottom: 0x505050, accent: 0x74F6D9 }, // Graveyard: Midnight to Fog Grey, Teal Accent
+  6: { skyTop: 0x221111, skyBottom: 0xFF4D00, accent: 0xFFD500 }, // Core: Charcoal to Magma, Yellow Accent
+  7: { skyTop: 0x050505, skyBottom: 0x1f1f1f, accent: 0xf0d68f }, // Apex (Keep original or tune later)
 };
 
 export const CONTENT_WORLD_MAP: Array<WorldContract> = SCRIPT_WORLD_DEFINITIONS.map((world) => {
@@ -448,6 +448,8 @@ export const SCENE_TEXT: SceneText = {
 export const APPROVED_UI_TEXT: ApprovedUiTextRule = {
   exact: [
     ...SCENE_TEXT.boot.loadingHints,
+    SCENE_TEXT.title.subtitle,
+    SCENE_TEXT.title.prompt,
     SCENE_TEXT.levelComplete.heading,
     SCENE_TEXT.levelComplete.hint,
     SCENE_TEXT.gameOver.heading,
@@ -465,6 +467,12 @@ export const APPROVED_UI_TEXT: ApprovedUiTextRule = {
     SCENE_TEXT.gameplay.checkpointSaved,
     SCENE_TEXT.gameplay.contextWindowExceeded,
     SCENE_TEXT.gameplay.correctedSuffix,
+    'PRESS ENTER',
+    'W/S NAVIGATE  -  ENTER SELECT',
+    'CONTINUE',
+    'NEW RUN',
+    'SETTINGS',
+    'BARTS RULES',
     'CHARGED RACK PULSE',
     'RACK PULSE',
     'NO DIAGNOSTIC NODE IN RANGE',

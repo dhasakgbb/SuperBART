@@ -3,9 +3,14 @@
 **Date**: 2026-02-15  
 **Status**: ✅ COMPLETE
 
+## Shipping Boundary
+
+- Unity is now the canonical shipping runtime.
+- Legacy web runtime paths remain parity-only references for determinism and evidence.
+
 ## Summary
 
-The SuperBART Unity M1 (first-playable) milestone has been successfully implemented. All infrastructure, tooling, fixtures, tests, and documentation are in place to support dual-track development with Phaser as the primary shipping runtime and Unity as a parallel first-playable track.
+The SuperBART Unity M1 (first-playable) milestone has been successfully implemented. The project has moved from dual-track to **Unity-canonical** execution, with Phaser retained as a parity/reference implementation.
 
 ## Delivered Components
 
@@ -27,7 +32,7 @@ unity-port-kit/
 │   │   ├── PlayMode/            # Movement parity + platform tests
 │   │   └── Resources/           # Unity-loadable fixtures (Resources.Load)
 │   │       └── Fixtures/
-│   │           ├── levels/      # w1_l2.json + synthetic_moving_platform.json
+│   │           ├── levels/      # campaign level fixtures + synthetic_moving_platform.json
 │   │           └── parity/      # movement_metrics.json
 │   └── Editor/                  # Pixel art import postprocessor
 └── Docs/
@@ -41,7 +46,7 @@ unity-port-kit/
 - Exports levels from the existing `generateLevel()` function
 - Validates using `validateGeneratedLevel()` before writing
 - Default export: World 1, Level 2, Seed 120707
-- Rejects `--bonus=true` in M1 due to known legacy generator issue
+- Exports `w1_l2` by default, and supports `--all`/`--bonus` for matrix and bonus runs
 
 **Command**:
 ```bash
@@ -49,8 +54,8 @@ npm run unity:export:single
 ```
 
 **Artifacts**:
-- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/w1_l2.json`
-- `artifacts/unity/levels/w1_l2.json`
+- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/` (all campaign fixtures)
+- `artifacts/unity/levels/` (all campaign fixtures)
 
 ### 3. Synthetic Moving-Platform Fixture ✅
 
@@ -118,7 +123,7 @@ npm run unity:fixtures:build
 ```
 
 Orchestrates full fixture refresh workflow:
-1. Exports `w1_l2.json` to canonical and artifact locations
+1. Exports full campaign fixtures (including `w1_l2.json`) to canonical and artifact locations
 2. Exports movement metrics
 3. Syncs media assets via `npx tsx scripts/export_unity_media.ts --out unity-port-kit/Assets/SuperbartAssets --audio true --manifest true`
 4. Syncs fixtures into Unity test resources
@@ -126,9 +131,9 @@ Orchestrates full fixture refresh workflow:
 
 **Output**:
 ```
-unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/w1_l2.json
-unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/w1_l2.json
-artifacts/unity/levels/w1_l2.json
+unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/ (all campaign fixtures)
+unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/ (all campaign fixtures)
+artifacts/unity/levels/ (all campaign fixtures)
 unity-port-kit/MediaSyncManifest.json
 unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/parity/movement_metrics.json
 unity-port-kit/Assets/SuperbartPort/Tests/Resources/parity/movement_metrics.json
@@ -226,7 +231,7 @@ npm run unity:kit:zip         # SUCCESS
 ```
 
 ### Artifacts Generated ✅
-- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/w1_l2.json` (seed=120707)
+- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/` (campaign set; includes `w1_l2.json` seeded 120707)
 - `unity-port-kit/MediaSyncManifest.json` (runtime media set for Unity sync)
 - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/parity/movement_metrics.json` (version=1)
 - `artifacts/superbart-unity-port-kit.zip`
@@ -283,20 +288,20 @@ The `--bonus=true` export path is now functional. The M1 error guard has been re
 ## Repository Integrity
 
 ### No Breaking Changes ✅
-- Phaser runtime unchanged
-- Existing tests pass
-- No modifications to core game logic
+- Legacy Phaser parity runtime remains for comparison and verification scripts.
+- Existing automated checks continue to pass.
+- Core gameplay contracts remain source-of-truth in generation/fixture logic.
 
-### Dual-Track Strategy Validated ✅
-- Phaser remains primary shipping path
-- Unity tracked as parallel first-playable
-- Clear separation of concerns
-- Reproducible build process
+### Unity-Canonical Strategy Validated ✅
+- Unity is now the shipping runtime target.
+- Phaser remains as a legacy parity/validation companion.
+- Deterministic fixture and media workflows are in place for Unity.
+- Reproducible build process maintained across Unity and legacy outputs.
 
 ## Sign-Off
 
 **M1 Milestone**: ✅ COMPLETE  
-**Platform Strategy**: Dual-track validated  
+**Platform Strategy**: Unity-canonical migration in progress  
 **Artifact Strategy**: Tracked source confirmed  
 **Parity Strategy**: Metric-based tolerances established  
 **Test Coverage**: EditMode + PlayMode harness in place  

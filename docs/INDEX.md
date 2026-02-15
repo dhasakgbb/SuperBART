@@ -8,6 +8,7 @@ This index is the entry point for Super BART project documentation. It explains 
 2. `docs/GDD.md` - gameplay scope and acceptance criteria.
 3. `docs/architecture.md` - code boundaries and integration flow.
 4. `docs/TODO.md` - outstanding work before and after publish.
+5. `docs/legacy_web/README.md` - legacy Phaser/TS shipping-reference notes and boundary.
 
 ## Core Documents
 - `docs/decisions.md`
@@ -21,7 +22,13 @@ This index is the entry point for Super BART project documentation. It explains 
 - `docs/unity_media_curation.md`
   Unity media asset curation strategy for M1 baseline versus deferred profiles.
 - `docs/unity_port.md`
-  Unity dual-track runbook and first-playable workflow.
+  Unity-first runbook for canonical runtime migration and first-playable workflow.
+- `docs/unity_cutover_plan.md`
+  Concrete bucket-by-bucket plan for moving feature and production responsibilities to Unity.
+- `docs/legacy_runtime_reference.md` (canonical boundary note)
+  Canonical documentation of what Phaser still means now that Unity is shipping-only.
+- `unity-port-kit/Docs/UNITY_PORT_README.md`
+  Quickstart playbook for the tracked Unity kit source.
 - `docs/unity_m1_status.md`
   Progress and contract status for the current Unity M1 milestone.
 - `docs/qa_repro_playbook.md`

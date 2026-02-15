@@ -82,16 +82,12 @@ npm run unity:fixtures:build -- --media-profile full
 ```
 
 That refreshes:
-- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/w1_l2.json` (deterministic campaign smoke level)
+- `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/` (all campaign JSON fixtures, including `w1_l2.json`)
 - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/parity/movement_metrics.json`
 - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/synthetic_moving_platform.json` fixture
 - Mirrored copies under:
-  - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/w1_l2.json`
+  - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/`
   - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/parity/movement_metrics.json`
-
-A legacy helper script is still included for historical context:
-
-`unity-port-kit/Tools/export_levels_for_unity.ts` is kept as reference only; it is not part of the canonical workflow.
 
 ## Media curation
 
@@ -136,7 +132,7 @@ npm run unity:media:backlog:ui
 npm run unity:media:backlog:full
 ```
 
-> Note: M1 intentionally does not support bonus (`--bonus=true`) exports due a known legacy-generator issue.
+> Note: Bonus route exports (`--bonus=true`) are supported in current script behavior.
 
 ### Media profile notes
 

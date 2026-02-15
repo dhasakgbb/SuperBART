@@ -41,14 +41,33 @@ describe('unity level exporter', () => {
     });
   });
 
-  test('blocks bonus export in M1 with explicit error', () => {
-    expect(() =>
-      exportLevelsForUnity({
-        outDir: path.resolve(process.cwd(), 'artifacts', 'unity', 'levels'),
-        world: 1,
-        levels: [2],
-        bonus: true,
-      })
-    ).toThrow(/temporarily unsupported/i);
+  test('exports all campaign levels with --all flag', () => {
+    withTempDir((outDir) => {
+      const result = exportLevelsForUnity({
+        outDir,
+        all: true,
+      });
+
+      // 7 worlds x 4 levels = 28 total campaign levels
+      expect(result).toHaveLength(28);
+
+      // Verify each world has 4 levels
+      for (let w = 1; w <= 7; w++) {
+        const worldLevels = result.filter((r) => r.world === w);
+        expect(worldLevels).toHaveLength(4);
+      }
+
+      // Verify all files exist and have valid structure
+      for (const item of result) {
+        expect(fs.existsSync(item.filePath)).toBe(true);
+        const parsed = JSON.parse(fs.readFileSync(item.filePath, 'utf8')) as GeneratedLevel;
+        expect(parsed.tileGrid).toBeDefined();
+        expect(parsed.entities.some((e) => e.type === 'spawn')).toBe(true);
+      }
+
+      // Verify all seeds are unique
+      const seeds = result.map((r) => r.seed);
+      expect(new Set(seeds).size).toBe(28);
+    });
   });
 });

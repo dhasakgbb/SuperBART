@@ -104,6 +104,31 @@ const COLORS = {
   mapOpenLight: parseHex('#86c5ff'),
   outline: STYLE_OUTLINE_WORLD,
   outlineUi: STYLE_OUTLINE_UI,
+
+  // Biome: Tundra (W2)
+  iceDeep: swatchColor('iceDeep'),
+  iceMid: swatchColor('iceMid'),
+  iceLight: swatchColor('iceLight'),
+  
+  // Biome: Void (W3)
+  voidDark: swatchColor('voidDark'),
+  nebulaPink: swatchColor('nebulaPink'),
+  crystalCyan: swatchColor('crystalCyan'),
+  
+  // Biome: Catacombs (W4)
+  toxicGreen: swatchColor('toxicGreen'),
+  darkSlime: swatchColor('darkSlime'),
+  mudShadow: swatchColor('mudShadow'),
+  
+  // Biome: Graveyard (W5)
+  ghostTeal: swatchColor('ghostTeal'),
+  boneGrey: swatchColor('boneGrey'),
+  shadowMidnight: swatchColor('shadowMidnight'),
+  
+  // Biome: Core (W6)
+  coreMagma: swatchColor('coreMagma'),
+  heatYellow: swatchColor('heatYellow'),
+  charcoal: swatchColor('charcoal'),
 };
 
 const TILE_SIZE = 16;
@@ -226,124 +251,119 @@ function drawGroundTileW1(tile: PixelImage): void {
 }
 
 function drawGroundTileW2(tile: PixelImage): void {
-  // W2 Pipeline: Volumetric copper/bronze industrial plating
-  const copper1 = [255, 160, 60, 255] as const;
-  const copper2 = [182, 86, 14, 255] as const;
-  const copper3 = [90, 40, 0, 255] as const;
-  const highlight = [255, 220, 160, 255] as const;
+  // W2 Tundra: Overclocked Cooling Ice
+  const base = COLORS.iceMid;
+  const light = COLORS.iceLight;
+  const deep = COLORS.iceDeep;
   const ink = COLORS.inkDark;
 
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, copper2);
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, base);
   
-  // Plating Bevel
-  fillRect(tile, 0, 0, TILE_SIZE, 1, highlight);
-  fillRect(tile, 0, 0, 1, TILE_SIZE, highlight);
-  fillRect(tile, 0, TILE_SIZE - 1, TILE_SIZE, 1, copper3);
-  fillRect(tile, TILE_SIZE - 1, 0, 1, TILE_SIZE, copper3);
-
-  // Oxidized Texture
-  for (let y = 1; y < TILE_SIZE - 1; y++) {
-    for (let x = 1; x < TILE_SIZE - 1; x++) {
-      if ((x ^ y) % 3 === 0) setPixel(tile, x, y, copper1);
-      if ((x * y) % 7 === 0) setPixel(tile, x, y, copper3);
+  // Ice Cap
+  fillRect(tile, 0, 0, TILE_SIZE, 3, light);
+  
+  // Translucent depth check pattern
+  for (let y = 3; y < TILE_SIZE; y++) {
+    for (let x = 0; x < TILE_SIZE; x++) {
+      if ((x + y) % 4 === 0) setPixel(tile, x, y, deep);
     }
   }
 
-  // Rivets with luster
-  const rivets = [[3, 3], [12, 3], [3, 12], [12, 12]];
-  rivets.forEach(([rx, ry]) => {
-    setPixel(tile, rx, ry, ink);
-    setPixel(tile, rx - 1, ry - 1, highlight);
-  });
+  // Frozen Bubbles / Cracks
+  setPixel(tile, 3, 6, light);
+  setPixel(tile, 12, 10, light);
+  drawLine(tile, 8, 4, 8, 12, deep);
 
   strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW3(tile: PixelImage): void {
-  // W3 Enterprise: Premium corporate concrete/glass
-  const gray1 = [160, 168, 179, 255] as const;
-  const gray2 = [100, 110, 124, 255] as const;
-  const blue = [30, 78, 163, 255] as const;
-  const blueLight = [120, 180, 255, 255] as const;
+  // W3 Void: Floating geometry with neon grid
+  const base = COLORS.voidDark;
+  const grid = COLORS.nebulaPink;
+  const node = COLORS.crystalCyan;
   const ink = COLORS.inkDark;
 
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, gray1);
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, base);
   
-  // Texture shading
-  for (let y = 0; y < TILE_SIZE; y++) {
-    for (let x = 0; x < TILE_SIZE; x++) {
-      if ((x + y * 11) % 5 === 0) setPixel(tile, x, y, gray2);
-    }
-  }
+  // Neon Grid
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, grid);
+  drawLine(tile, 0, 0, TILE_SIZE, TILE_SIZE, [grid[0], grid[1], grid[2], 100]); // Faint crossing
 
-  // Modern Grid
-  for (let i = 0; i < TILE_SIZE; i += 8) {
-    drawLine(tile, i, 0, i, TILE_SIZE, [80, 90, 100, 255]);
-    drawLine(tile, 0, i, TILE_SIZE, i, [80, 90, 100, 255]);
-  }
+  // Floating Quantum Nodes
+  fillRect(tile, 6, 6, 4, 4, node);
+  setPixel(tile, 7, 7, [255, 255, 255, 255]); // Sparkle
 
-  // Corporate Glass Trim
-  fillRect(tile, 1, 1, TILE_SIZE - 2, 3, blue);
-  fillRect(tile, 1, 1, TILE_SIZE - 2, 1, blueLight);
-  
-  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink); // Strict outline
 }
 
 function drawGroundTileW4(tile: PixelImage): void {
-  // W4 GPU: Volcanic basalt + glowing energy veins
-  const basalt1 = [43, 40, 36, 255] as const;
-  const basalt2 = [20, 18, 16, 255] as const;
-  const energy = [118, 185, 0, 255] as const; // NVIDIA Green
-  const energyGlow = [180, 255, 60, 255] as const;
-  const lava = [207, 81, 81, 255] as const;
+  // W4 Catacombs: Tangled cables and data-rot
+  const base = COLORS.mudShadow;
+  const vine = COLORS.darkSlime;
+  const toxic = COLORS.toxicGreen;
   const ink = COLORS.inkDark;
 
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, basalt2);
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, base);
   
-  // Basalt texture
-  for (let y = 0; y < TILE_SIZE; y++) {
-    for (let x = 0; x < TILE_SIZE; x++) {
-      if ((x ^ y) % 4 === 0) setPixel(tile, x, y, basalt1);
-    }
-  }
-
-  // Energy Veins
-  drawLine(tile, 3, 3, 12, 12, energy);
-  drawLine(tile, 12, 3, 3, 12, energy);
-  setPixel(tile, 8, 8, energyGlow);
-
-  // Lava base heat
-  fillRect(tile, 0, TILE_SIZE - 2, TILE_SIZE, 1, lava);
-  for (let x = 0; x < TILE_SIZE; x += 2) setPixel(tile, x, TILE_SIZE - 3, lava);
+  // Tangled Vines/Cables
+  drawLine(tile, 2, 0, 2, 16, vine);
+  drawLine(tile, 6, 0, 6, 16, vine);
+  drawLine(tile, 12, 0, 10, 16, vine);
   
+  // Horizontal Weave
+  drawLine(tile, 0, 4, 16, 5, vine);
+  drawLine(tile, 0, 10, 16, 9, vine);
+
+  // Toxic Seepage
+  setPixel(tile, 3, 5, toxic);
+  setPixel(tile, 12, 10, toxic);
+  setPixel(tile, 7, 14, toxic);
+
   strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
 
 function drawGroundTileW5(tile: PixelImage): void {
-  // W5 Benchmark: Deep red digital circuit board
-  const core = [29, 29, 29, 255] as const;
-  const trace = [255, 82, 82, 255] as const;
-  const traceDim = [120, 40, 40, 255] as const;
-  const node = [242, 253, 253, 255] as const;
+  // W5 Graveyard: Deprecated hardware
+  const base = COLORS.shadowMidnight;
+  const bone = COLORS.boneGrey;
+  const ghost = COLORS.ghostTeal;
   const ink = COLORS.inkDark;
 
-  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, core);
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, base);
   
-  // Logic Grids
-  for (let i = 0; i < TILE_SIZE; i += 4) {
-    drawLine(tile, i, 0, i, TILE_SIZE, [43, 43, 48, 255]);
-    drawLine(tile, 0, i, TILE_SIZE, i, [43, 43, 48, 255]);
+  // Cracked Stone/Plastic Texture
+  for(let i=0; i<4; i++) {
+      fillRect(tile, i*4, 0, 3, 16, bone);
+      // Crack
+      setPixel(tile, i*4 + 1, 8, base);
+      setPixel(tile, i*4 + 2, 9, base);
   }
 
-  // Circuit Traces
-  drawLine(tile, 8, 2, 8, 14, traceDim);
-  drawLine(tile, 2, 8, 14, 8, traceDim);
-  drawLine(tile, 8, 4, 8, 12, trace);
-  drawLine(tile, 4, 8, 12, 8, trace);
+  // Ghostly Moss
+  setPixel(tile, 2, 2, ghost);
+  setPixel(tile, 3, 2, ghost);
+  setPixel(tile, 14, 14, ghost);
+
+  strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
+}
+
+function drawGroundTileW6(tile: PixelImage): void {
+  // W6 Core: Molten Silicon
+  const base = COLORS.charcoal;
+  const magma = COLORS.coreMagma;
+  const heat = COLORS.heatYellow;
+  const ink = COLORS.inkDark;
+
+  fillRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, base);
   
-  // Digital Node
-  fillRect(tile, 7, 7, 3, 3, trace);
-  setPixel(tile, 8, 8, node);
+  // Magma Veins
+  drawLine(tile, 0, 8, 16, 8, magma);
+  drawLine(tile, 8, 0, 8, 16, magma);
+  
+  // Hot Spots
+  fillRect(tile, 6, 6, 4, 4, heat);
+  setPixel(tile, 7, 7, [255, 255, 255, 255]);
 
   strokeRect(tile, 0, 0, TILE_SIZE, TILE_SIZE, ink);
 }
@@ -490,6 +510,7 @@ function makeTileGround(): void {
     { fn: drawGroundTileW3, file: 'tileset_w3.png' },
     { fn: drawGroundTileW4, file: 'tileset_w4.png' },
     { fn: drawGroundTileW5, file: 'tileset_w5.png' },
+    { fn: drawGroundTileW6, file: 'tileset_w6.png' },
   ];
 
   variants.forEach((v) => {

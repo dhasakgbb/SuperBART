@@ -1,0 +1,77 @@
+{
+  "tileSize": 16,
+  "width": 20,
+  "height": 10,
+  "tileGrid": [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+  ],
+  "oneWayPlatforms": [
+    {
+      "x": 5,
+      "y": 6,
+      "w": 4,
+      "vanish": {
+        "visibleMs": 900,
+        "hiddenMs": 600,
+        "phaseOffsetMs": 100
+      }
+    }
+  ],
+  "movingPlatforms": [
+    {
+      "id": "hazard-platform-1",
+      "x": 160,
+      "y": 112,
+      "minX": 128,
+      "maxX": 224,
+      "speed": 120
+    }
+  ],
+  "entities": [
+    {"id": "spawn_hazard_1", "type": "spawn", "x": 32, "y": 176},
+    {"id": "checkpoint_hazard_2", "type": "checkpoint", "x": 256, "y": 112, "data": {"checkpointId": "hz-cp-1"}},
+    {"id": "spike_h1", "type": "spike", "x": 128, "y": 160},
+    {"id": "spring_h2", "type": "spring", "x": 176, "y": 160},
+    {"id": "thwomp_h3", "type": "thwomp", "x": 224, "y": 160, "data": {"moveSpeedPxPerSec": 24}},
+    {"id": "walker_h4", "type": "walker", "x": 272, "y": 160, "data": {"patrol": 7, "world": "1", "stage": "hazard"}},
+    {"id": "shell_h5", "type": "shell", "x": 320, "y": 160},
+    {"id": "flying_h6", "type": "flying", "x": 368, "y": 96, "data": {"amp": 16}},
+    {"id": "spitter_h7", "type": "spitter", "x": 416, "y": 160},
+    {"id": "boss_h8", "type": "boss", "x": 480, "y": 112, "data": {"behaviorBias": 1.5}},
+    {"id": "coin_h9", "type": "coin", "x": 64, "y": 144},
+    {"id": "star_h10", "type": "star", "x": 80, "y": 144},
+    {"id": "goal_h11", "type": "goal", "x": 560, "y": 128}
+  ],
+  "checkpoints": [
+    {"id": "cp_hazard", "x": 256, "y": 112}
+  ],
+  "goal": {
+    "x": 560,
+    "y": 128
+  },
+  "metadata": {
+    "world": 2,
+    "levelIndex": 4,
+    "theme": "tech",
+    "difficultyTier": 4,
+    "chunksUsed": ["start", "platform", "hazard", "enemy_wave", "finish"],
+    "pacing": ["INTRO", "PRACTICE", "VARIATION", "CHALLENGE", "FINALE"],
+    "seed": 777007,
+    "flags": {
+      "maintenanceRoute": false,
+      "bonusRoute": false,
+      "bonusRouteId": "",
+      "worldThemeAlias": "tech",
+      "checkpointStyle": "dense"
+    }
+  }
+}

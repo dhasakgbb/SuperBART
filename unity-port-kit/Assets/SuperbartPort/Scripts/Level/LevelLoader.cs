@@ -1,11 +1,16 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Tilemaps;
 using Superbart.Core;
+using Superbart.Gameplay;
+using Superbart.Runtime;
+using Superbart.Save;
 
 namespace Superbart.Level
 {
@@ -26,9 +31,22 @@ namespace Superbart.Level
         [Header("Optional References")]
         [Tooltip("If set, a 'spawn' entity will teleport this transform instead of instantiating a prefab.")]
         public Transform playerTransform;
+        [Tooltip("Optional scene-level service registry for spawn effects and audio/hud hooks.")]
+        public RuntimeRegistry runtimeRegistry;
 
         [Header("Runtime Options")]
         public bool clearBeforeBuild = true;
+        [Tooltip("If false, unknown entity types fail-open and continue.")]
+        public bool strictUnknownEntityType = false;
+
+        public event Action<string, LevelEntity> OnUnknownEntity;
+
+        private readonly HashSet<string> observedUnknownTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private void Awake()
+        {
+            observedUnknownTypes.Clear();
+        }
 
         private void Start()
         {
@@ -94,10 +112,18 @@ namespace Superbart.Level
                 Debug.LogError("Level JSON parsed, but tileGrid is null.");
                 return;
             }
+            if (prefabRegistry == null)
+            {
+                Debug.LogError("LevelLoader: prefabRegistry is not assigned. Entity fallback will still attempt hardcoded behavior.");
+            }
 
             if (clearBeforeBuild)
             {
                 solidTilemap.ClearAllTiles();
+                foreach (Transform child in transform)
+                {
+                    Destroy(child.gameObject);
+                }
             }
 
             BuildSolidTiles(level);
@@ -130,25 +156,167 @@ namespace Superbart.Level
 
         private void SpawnEntities(GeneratedLevel level)
         {
-            if (prefabRegistry == null || level.entities == null) return;
+            if (level.entities == null) return;
+
+            var sessionContext = SceneRouter.ActiveContext;
+            var activeLevelKey = sessionContext != null ? sessionContext.LevelKey : "w1_l1";
+            var activeWorldKey = sessionContext != null ? $"w{sessionContext.world}" : "w1";
+            var activeRouteId = sessionContext != null ? sessionContext.bonusRouteId : string.Empty;
 
             foreach (var e in level.entities)
             {
                 if (e == null) continue;
 
-                // Special-case: move an existing player to the spawn point.
-                if (playerTransform != null && string.Equals(e.type, "spawn", StringComparison.OrdinalIgnoreCase))
+                string entityType = (e.type ?? string.Empty).Trim().ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(entityType))
                 {
-                    Vector2 spawnPos = GameConstants.PhaserPxToUnity(e.x, e.y);
-                    playerTransform.position = new Vector3(spawnPos.x, spawnPos.y, playerTransform.position.z);
                     continue;
                 }
 
-                GameObject prefab = prefabRegistry.Get(e.type);
-                if (prefab == null) continue;
-
                 Vector2 pos = GameConstants.PhaserPxToUnity(e.x, e.y);
-                Instantiate(prefab, new Vector3(pos.x, pos.y, 0), Quaternion.identity);
+                string resolvedRouteId = ResolveRouteId(e, activeRouteId);
+
+                switch (entityType)
+                {
+                    case "spawn":
+                        SpawnAtPlayerTransform(e, pos);
+                        continue;
+                    case "goal":
+                        var goal = SpawnSimpleEntity(e, pos, "goal");
+                        AddGoalTrigger(goal, e, activeLevelKey, activeWorldKey, resolvedRouteId);
+                        continue;
+                    case "checkpoint":
+                        var checkpoint = SpawnSimpleEntity(e, pos, "checkpoint");
+                        AddCheckpointTrigger(checkpoint, e, activeLevelKey, activeWorldKey, resolvedRouteId);
+                        continue;
+                    case "coin":
+                    case "token":
+                    case "star":
+                    case "eval":
+                    case "question_block":
+                    case "gpu_allocation":
+                    case "copilot_mode":
+                    case "semantic_kernel":
+                    case "deploy_to_prod":
+                    case "works_on_my_machine":
+                        SpawnCollectible(e, pos);
+                        continue;
+                    case "spike":
+                    case "spring":
+                    case "thwomp":
+                    case "walker":
+                    case "shell":
+                    case "flying":
+                    case "spitter":
+                    case "boss":
+                    case "technical_debt":
+                    case "compliance_officer":
+                    case "compliance":
+                    case "hallucination":
+                    case "legacy_system":
+                    case "hot_take":
+                    case "analyst":
+                    case "tethered_debt":
+                    case "snowman_sentry":
+                    case "cryo_drone":
+                    case "qubit_swarm":
+                    case "crawler":
+                    case "glitch_phantom":
+                    case "fungal_node":
+                    case "ghost_process":
+                    case "tape_wraith":
+                    case "resume_bot":
+                        var enemyOrHazard = SpawnSimpleEntity(e, pos, entityType);
+                        AddHazardTriggerIfNeeded(entityType, enemyOrHazard, e, activeLevelKey, activeWorldKey, resolvedRouteId);
+                        continue;
+                    default:
+                        SpawnUnknownOrFallback(e, pos, entityType);
+                        continue;
+                }
+            }
+        }
+
+        private GameObject SpawnSimpleEntity(LevelEntity e, in Vector2 pos, in string entityType)
+        {
+            var prefab = prefabRegistry != null ? prefabRegistry.Get(entityType) : null;
+            if (prefab == null)
+            {
+                EmitUnknownEntity(entityType, e, $"No prefab mapping for entity '{entityType}'.");
+                return null;
+            }
+
+            var instance = Instantiate(prefab, new Vector3(pos.x, pos.y, 0), Quaternion.identity);
+            return instance;
+        }
+
+        private void SpawnCollectible(LevelEntity e, in Vector2 pos)
+        {
+            string collectibleType = (e.type ?? string.Empty).Trim().ToLowerInvariant();
+            var prefab = prefabRegistry != null ? prefabRegistry.Get(collectibleType) : null;
+            if (prefab == null)
+            {
+                EmitUnknownEntity(collectibleType, e, "Collectible prefab mapping missing.");
+                return;
+            }
+
+            var instance = Instantiate(prefab, new Vector3(pos.x, pos.y, 0), Quaternion.identity);
+            if (runtimeRegistry != null && runtimeRegistry.CollectibleEffect != null)
+            {
+                runtimeRegistry.CollectibleEffect.OnCollectibleSpawned(collectibleType, instance);
+            }
+
+            var sessionContext = SceneRouter.ActiveContext;
+            var activeLevelKey = sessionContext != null ? sessionContext.LevelKey : "w1_l1";
+            var activeWorldKey = sessionContext != null ? $"w{sessionContext.world}" : "w1";
+            var activeRouteId = sessionContext != null ? sessionContext.bonusRouteId : string.Empty;
+            AddCollectibleTrigger(instance, e, activeLevelKey, activeWorldKey, ResolveRouteId(e, activeRouteId));
+        }
+
+        private void SpawnAtPlayerTransform(LevelEntity e, in Vector2 pos)
+        {
+            if (playerTransform == null)
+            {
+                Debug.LogWarning("LevelLoader: playerTransform is not assigned; spawn will be dropped.");
+                EmitUnknownEntity("spawn", e, "Spawn requires playerTransform reference.");
+                return;
+            }
+
+            float z = playerTransform.position.z;
+            playerTransform.position = new Vector3(pos.x, pos.y, z);
+        }
+
+        private void SpawnUnknownOrFallback(LevelEntity e, in Vector2 pos, in string entityType)
+        {
+            var sessionContext = SceneRouter.ActiveContext;
+            var activeLevelKey = sessionContext != null ? sessionContext.LevelKey : "w1_l1";
+            var activeWorldKey = sessionContext != null ? $"w{sessionContext.world}" : "w1";
+            var activeRouteId = sessionContext != null ? sessionContext.bonusRouteId : string.Empty;
+
+            if (prefabRegistry != null)
+            {
+                var prefab = prefabRegistry.Get(entityType);
+                if (prefab != null)
+                {
+                    var fallback = Instantiate(prefab, new Vector3(pos.x, pos.y, 0), Quaternion.identity);
+                    AttachInteractionMarker(entityType, fallback, e, activeLevelKey, activeWorldKey, ResolveRouteId(e, activeRouteId));
+                    return;
+                }
+            }
+
+            EmitUnknownEntity(entityType, e, "Unknown entity type and no fallback prefab.");
+            if (strictUnknownEntityType)
+            {
+                throw new InvalidOperationException($"Unknown entity type '{entityType}' and strictUnknownEntityType is enabled.");
+            }
+        }
+
+        private void EmitUnknownEntity(string entityType, LevelEntity entity, string message)
+        {
+            if (!observedUnknownTypes.Contains(entityType))
+            {
+                observedUnknownTypes.Add(entityType);
+                Debug.LogWarning($"LevelLoader: {message} ({entityType})\nEntityId={entity?.id ?? \"<missing>\"}");
+                OnUnknownEntity?.Invoke(message, entity);
             }
         }
 
@@ -224,6 +392,135 @@ namespace Superbart.Level
                 motor.maxXPx = mp.maxX;
                 motor.speedPxPerSec = mp.speed;
             }
+        }
+
+        private void AddGoalTrigger(GameObject goalInstance, LevelEntity source, string levelKey, string worldKey, string routeId)
+        {
+            if (goalInstance == null || source == null)
+            {
+                return;
+            }
+
+            var marker = goalInstance.GetComponent<GoalTriggerVolume>() ?? goalInstance.AddComponent<GoalTriggerVolume>();
+            marker.Configure(source.type, source.id, levelKey, ResolveWorldKey(source, worldKey), routeId);
+        }
+
+        private void AddCheckpointTrigger(GameObject checkpointInstance, LevelEntity source, string levelKey, string worldKey, string routeId)
+        {
+            if (checkpointInstance == null || source == null)
+            {
+                return;
+            }
+
+            var marker = checkpointInstance.GetComponent<CheckpointTriggerVolume>() ?? checkpointInstance.AddComponent<CheckpointTriggerVolume>();
+            marker.Configure(source.type, source.id, levelKey, ResolveWorldKey(source, worldKey), routeId);
+        }
+
+        private void AddCollectibleTrigger(GameObject collectibleInstance, LevelEntity source, string levelKey, string worldKey, string routeId)
+        {
+            if (collectibleInstance == null || source == null)
+            {
+                return;
+            }
+
+            int reward = 1;
+            if (source.data != null && source.data.score != null)
+            {
+                reward = Mathf.Max(1, Mathf.RoundToInt(source.data.score.Value));
+            }
+            else if (source.data != null && source.data.value != null)
+            {
+                reward = Mathf.Max(1, Mathf.RoundToInt(source.data.value.Value));
+            }
+
+            var marker = collectibleInstance.GetComponent<CollectibleTriggerVolume>() ?? collectibleInstance.AddComponent<CollectibleTriggerVolume>();
+            marker.Configure(source.type, source.id, levelKey, ResolveWorldKey(source, worldKey), routeId, reward);
+        }
+
+        private void AddHazardTriggerIfNeeded(string entityType, GameObject hazardInstance, LevelEntity source, string levelKey, string worldKey, string routeId)
+        {
+            if (hazardInstance == null || source == null)
+            {
+                return;
+            }
+
+            var marker = hazardInstance.GetComponent<HazardTriggerVolume>() ?? hazardInstance.AddComponent<HazardTriggerVolume>();
+            marker.Configure(source.type, source.id, levelKey, ResolveWorldKey(source, worldKey), routeId);
+
+            if (source?.data != null)
+            {
+                int damage = 1;
+                if (source.data.damage != null)
+                {
+                    damage = Mathf.Max(1, Mathf.RoundToInt(source.data.damage.Value));
+                }
+
+                bool oneShot = string.Equals(entityType, "spike", System.StringComparison.OrdinalIgnoreCase);
+                if (source.data.singleUse != null)
+                {
+                    oneShot = source.data.singleUse.Value;
+                }
+
+                marker.SetHazardMode(damage, oneShot);
+            }
+        }
+
+        private void AttachInteractionMarker(string entityType, GameObject instance, LevelEntity source, string levelKey, string worldKey, string routeId)
+        {
+            if (instance == null || source == null)
+            {
+                return;
+            }
+
+            switch (entityType)
+            {
+                case "goal":
+                    AddGoalTrigger(instance, source, levelKey, worldKey, routeId);
+                    return;
+                case "checkpoint":
+                    AddCheckpointTrigger(instance, source, levelKey, worldKey, routeId);
+                    return;
+                case "coin":
+                case "token":
+                case "star":
+                case "eval":
+                case "question_block":
+                case "gpu_allocation":
+                case "copilot_mode":
+                case "semantic_kernel":
+                case "deploy_to_prod":
+                case "works_on_my_machine":
+                    AddCollectibleTrigger(instance, source, levelKey, worldKey, routeId);
+                    return;
+                default:
+                    AddHazardTriggerIfNeeded(entityType, instance, source, levelKey, worldKey, routeId);
+                    return;
+            }
+        }
+
+        private string ResolveWorldKey(LevelEntity source, string fallbackWorldKey)
+        {
+            if (source?.data?.world != null && !string.IsNullOrWhiteSpace(source.data.world))
+            {
+                return source.data.world;
+            }
+
+            if (!string.IsNullOrWhiteSpace(source.world))
+            {
+                return source.world;
+            }
+
+            return fallbackWorldKey;
+        }
+
+        private static string ResolveRouteId(LevelEntity source, string fallbackRouteId)
+        {
+            if (source != null && !string.IsNullOrWhiteSpace(source.routeId))
+            {
+                return source.routeId;
+            }
+
+            return fallbackRouteId;
         }
     }
 }

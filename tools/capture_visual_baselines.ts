@@ -169,6 +169,12 @@ function assertCapturedFrameLooksRendered(imagePath: string, scene: string): voi
 function writeGoldenMetadata(outputDir: string, title: string, map: string, play: string): void {
   const now = new Date().toISOString();
   const layoutVersion = styleConfig.contractVersion;
+  const rel = (filePath: string): string => {
+    const normalized = path.resolve(filePath);
+    const base = path.resolve(outputDir);
+    const relative = path.relative(base, normalized);
+    return relative.split(path.sep).join('/');
+  };
   const meta = {
     schema: 'visual-regression-v1',
     generatedAt: now,
@@ -177,7 +183,7 @@ function writeGoldenMetadata(outputDir: string, title: string, map: string, play
       {
         scene: 'title',
         sourceScene: 'TitleScene',
-        targetFile: path.resolve(title),
+        targetFile: rel(title),
         captureHash: hashFile(title),
         width: imageDimensions(title).width,
         height: imageDimensions(title).height,
@@ -187,7 +193,7 @@ function writeGoldenMetadata(outputDir: string, title: string, map: string, play
       {
         scene: 'map',
         sourceScene: 'WorldMapScene',
-        targetFile: path.resolve(map),
+        targetFile: rel(map),
         captureHash: hashFile(map),
         width: imageDimensions(map).width,
         height: imageDimensions(map).height,
@@ -197,7 +203,7 @@ function writeGoldenMetadata(outputDir: string, title: string, map: string, play
       {
         scene: 'play',
         sourceScene: 'PlayScene',
-        targetFile: path.resolve(play),
+        targetFile: rel(play),
         captureHash: hashFile(play),
         width: imageDimensions(play).width,
         height: imageDimensions(play).height,
@@ -283,6 +289,19 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
     try {
       const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
       await page.addInitScript(() => {
+        (globalThis as any).__name =
+          (globalThis as any).__name ||
+          ((target: any, value: any) => {
+            try {
+              if (target && typeof target === 'function' && typeof value === 'string') {
+                Object.defineProperty(target, 'name', { value, configurable: true });
+              }
+            } catch {
+              // ignore: best-effort shim for esbuild helper
+            }
+            return target;
+          });
+
         try {
           localStorage.removeItem('super_bart_save_v5');
           localStorage.removeItem('super_bart_save_v4');
@@ -303,7 +322,7 @@ export async function captureVisualBaselines(outputDir: string): Promise<Capture
         (window as any).__SUPER_BART__ = { forceSeed: 1337 };
       });
       page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-      page.on('pageerror', err => console.log('PAGE ERROR:', err));
+      page.on('pageerror', err => console.log('PAGE ERROR:', err?.message ?? String(err), err?.stack ?? ''));
       await page.goto(DEV_URL, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('canvas');
       await waitForSceneReadyMarker(page, 'TitleScene', expectedVersion);

@@ -61,7 +61,12 @@ namespace Superbart.Level
         // NOTE: in your TS generator, these are PIXELS (centered)
         public float x;
         public float y;
-        public Dictionary<string, object> data;
+        public string world;
+        public string[] tags;
+        public string variant;
+        public string routeId;
+        public LevelEntityData data;
+        public Dictionary<string, object> fallback;
     }
 
     [Serializable]
@@ -78,6 +83,9 @@ namespace Superbart.Level
         // NOTE: generator uses PIXELS (top-left-ish), not centered.
         public float x;
         public float y;
+        public string variant;
+        public string routeId;
+        public string world;
     }
 
     [Serializable]
@@ -91,7 +99,53 @@ namespace Superbart.Level
         public string[] pacing;
         public int seed;
         public SetPieceSpec setPiece;
+        public LevelMetadataFlags flags;
         public BenchmarkAutoScroll[] benchmarkAutoScroll;
+    }
+
+    [Serializable]
+    public sealed class LevelMetadataFlags
+    {
+        public bool maintenanceRoute;
+        public bool bonusRoute;
+        public string bonusRouteId;
+        public string worldThemeAlias;
+        public string checkpointStyle;
+        public bool cinematicIntro;
+        public bool worldHasBoss;
+        public string progressionHint;
+    }
+
+    [Serializable]
+    public sealed class LevelEntityData
+    {
+        public float? score;
+        public float? value;
+        public float? damage;
+        public float? patrol;
+        public float? amp;
+        public float? topY;
+        public float? bottomY;
+        public float? behaviorBias;
+        public string spawnReason;
+        public string checkpointId;
+        public string fileId;
+        public string world;
+        public string stage;
+        public string channel;
+
+        // Enemy/collectible behavior extension hooks
+        public float? moveSpeedPxPerSec;
+        public float? gravityScale;
+        public float? jumpBoostPxPerSec;
+        public string variant;
+        public bool? singleUse;
+        public bool? required;
+        public string collectableId;
+        public bool? maintenanceRoute;
+        public bool? bonusRoute;
+        public string worldId;
+        public string stageId;
     }
 
     [Serializable]

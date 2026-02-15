@@ -20,7 +20,7 @@ const WORLD_TRACK_DURATION_SECONDS = 68;
 const BOSS_TRACK_DURATION_SECONDS = 62;
 const TITLE_TRACK_DURATION_SECONDS = 46;
 const WORLD_MAP_TRACK_DURATION_SECONDS = 58;
-const AI_MUSIC_WORLD_FILE_COUNT = 6;
+const AI_MUSIC_WORLD_FILE_COUNT = 7;
 
 function worldTrackId(worldId: ScriptWorldId): AiMusicTrackKey {
   return `world-${worldId}` as AiMusicTrackKey;

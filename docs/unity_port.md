@@ -2,14 +2,16 @@
 
 ## Overview
 
-SuperBART uses a **dual-track** approach: Phaser remains the primary shipping web runtime, while Unity is being developed in parallel as a first-playable milestone. This document covers the M1 milestone scope, setup, and validation workflow.
+SuperBART is now using **Unity as the canonical runtime**. Phaser remains in-repo as a reproducible parity/reference implementation while Unity carries shipping execution responsibility. This document covers the Unity-first workflow, bootstrap, and validation for the first-playable track.
+
+Unity is the **only shipping runtime target**. Any Phaser/legacy runtime command is for parity checks and must not be treated as a production deliverable path.
 
 ## M1 Milestone Scope
 
 ### ✅ In Scope
 - Unity player motor parity (coyote, jump buffer, jump-cut, run charge, skid)
 - Unity level loading from `GeneratedLevel` JSON contract
-- Single deterministic campaign level export for smoke testing (World 1, Level 2, Seed 120707)
+- Full campaign fixture export via `--all` (all 28 levels), with `w1_l2` retained as the deterministic smoke sample (World 1, Level 2, Seed 120707)
 - Synthetic fixture for moving-platform runtime validation
 - Metric-based movement parity gates (not frame-exact)
 - Basic documentation and reproducible packaging commands
@@ -34,7 +36,7 @@ SuperBART uses a **dual-track** approach: Phaser remains the primary shipping we
       PlayMode/                     # Movement parity + platform tests
     Resources/                      # Unity-loadable fixtures (Resources.Load)
       Fixtures/
-        levels/                     # w1_l2.json + synthetic_moving_platform.json
+        levels/                     # campaign level JSON fixtures + synthetic_moving_platform.json
         parity/                     # movement_metrics.json
     Editor/                         # Pixel art import postprocessor
   Docs/
@@ -86,13 +88,13 @@ npm run unity:fixtures:build:full
 ```
 
 This command:
-1. Exports World 1, Level 2 (`w1_l2.json`, seed `120707`) to:
-  - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/w1_l2.json`
-  - `artifacts/unity/levels/w1_l2.json`
+1. Exports campaign levels (`--all`) to:
+  - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/levels/` (all campaign fixtures, including `w1_l2.json` seeded `120707`)
+  - `artifacts/unity/levels/` (all campaign fixtures, including `w1_l2.json` seeded `120707`)
 2. Exports movement metrics to:
   - `unity-port-kit/Assets/SuperbartPort/Resources/Fixtures/parity/movement_metrics.json`
 3. Mirrors fixtures into:
-   - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/w1_l2.json`
+   - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/levels/` (all campaign fixtures)
    - `unity-port-kit/Assets/SuperbartPort/Tests/Resources/parity/movement_metrics.json`
 4. Syncs curated media assets into:
    - `unity-port-kit/Assets/SuperbartAssets/`
@@ -124,7 +126,7 @@ Unity M1 intentionally ships a curated media set so parity checks stay determini
    - AI music tracks from `src/audio/aiMusic.ts` (`/music/ai/*.flac`) when `--audio true` (default)
    - Destination: `unity-port-kit/Assets/SuperbartAssets/`
 2. **Style references (UI profile)**  
-   - `target_bart*`, `title_bg_*`, `title_logo*`, `world_map_premium`, and related menu assets are included with `--profile ui`
+   - `target_look*`, `title_bg_*`, `title_logo*`, `world_map_premium`, and related menu assets are included with `--profile ui`
    - `npm run unity:media:sync:ui` and `npm run unity:media:sync:full` expand as needed
 3. **Everything else (post-M1 backlog)**  
    - Menus/cutscenes beyond curated profile lists
@@ -214,6 +216,11 @@ CSV header is `group,count,file`, and each row is a deferred asset in its folder
 ```bash
 # From repository root
 npm run unity:kit:zip
+
+npm run unity:ship:sync
+npm run unity:ship:smoke
+npm run unity:ship:build
+npm run qa:unity:ship
 ```
 
 Creates `artifacts/superbart-unity-port-kit.zip` from the tracked `unity-port-kit/` source folder.
@@ -335,6 +342,13 @@ The `movement_metrics.json` artifact is versioned and stable. It contains:
 npm run unity:export:single
 # Equivalent to:
 npx tsx scripts/export_levels_for_unity.ts --out artifacts/unity/levels --world 1 --levels 2
+```
+
+### Export Full Campaign Levels
+```bash
+npm run unity:export:all
+# Equivalent to:
+npx tsx scripts/export_levels_for_unity.ts --out artifacts/unity/levels --all
 ```
 
 ### Export Movement Metrics

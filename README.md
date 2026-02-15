@@ -1,13 +1,13 @@
 # Super BART
 
-Mario-style web platformer built with Phaser 3 + TypeScript + Vite.
+Unity-first platformer project targeting **Unity 2022+/2023 LTS** as the canonical runtime, with Phaser + TypeScript + Vite retained as an internal parity/verification runtime.
 
 ## Campaign
 - 25-level campaign layout: `World 1-4 => 6 levels each`, `World 5 => final castle`.
 - Deterministic chunk+seed generation for each world/level pair.
 - Local save progression with unlocked/completed level tracking (schema v3).
 
-## Install and Run
+## Legacy Web Runtime (Phaser Reference)
 ```bash
 cd SuperBART
 npm install
@@ -50,8 +50,32 @@ npm run ci:gates:log
 - Playfeel validation test: `npm run test -- tests/quality.playfeel.test.ts`
 - Status log: `docs/clone_readiness_status.md`
 
-## Unity First-Playable (Dual Track)
-Phaser remains the shipping web runtime while Unity is developed as a parallel first-playable track.
+## Unity First-Playable (Canonical Runtime)
+Unity is the canonical runtime track from now on. Phaser stays as a deterministic reference implementation for parity checks, fixture generation, and regression scripts.
+
+## Shipping Mode
+
+**Unity-only shipping is active.**
+- `phaser` scripts remain reference-only and are never valid production launch paths.
+- Unity ship flow is now controlled through `unity:ship:*` and `qa:unity:ship`.
+
+### Canonical Runbook
+- Open `unity-port-kit/` in Unity Hub.
+- Install required packages in Unity (see `docs/unity_port.md`).
+- Follow `docs/unity_port.md` for full engine bootstrap, fixture refresh, and playability checks.
+- Use `npm run unity:fixtures:build` before opening Unity to sync deterministic level and media artifacts.
+- Use `npm run unity:kit:zip` to snapshot and share the tracked Unity kit state.
+
+### Legacy Commands (Phaser)
+- `npm run dev`, `npm run build`, and `npm run preview` are preserved as legacy compatibility entrypoints.
+- Prefer explicit legacy commands when running parity checks:
+  - `npm run phaser:dev`
+  - `npm run phaser:build`
+  - `npm run phaser:preview`
+- Explicit legacy aliases are also available:
+  - `npm run legacy:dev`
+  - `npm run legacy:build`
+  - `npm run legacy:preview`
 
 - Tracked Unity kit source: `unity-port-kit/`
 - Unity runbook: `docs/unity_port.md`
@@ -98,11 +122,20 @@ npm run unity:media:backlog:full        # artifacts/unity/media-backlog-full.jso
 # Export one deterministic campaign smoke level to artifacts
 npm run unity:export:single
 
+# Export all campaign levels (28 total)
+npm run unity:export:all
+
 # Re-export movement parity metrics
 npm run unity:metrics:export
 
 # Package tracked unity-port-kit/ into artifacts/superbart-unity-port-kit.zip
 npm run unity:kit:zip
+
+# Unity ship command surface
+npm run unity:ship:sync
+npm run unity:ship:smoke
+npm run unity:ship:build
+npm run qa:unity:ship
 ```
 
 Media curation note: default Unity sync includes `ASSET_MANIFEST` runtime media + optional AI music from `AI_MUSIC_TRACKS`. 

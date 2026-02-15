@@ -32,6 +32,7 @@ import type { BonusRouteId, PlayerForm, SuperBartRuntimeState } from '../types/g
 import { createHud, renderHud, updateHudPosition, type HudRefs } from '../ui/hud';
 import { isBossStage } from '../content/scriptCampaign';
 import { SCENE_TEXT } from '../content/contentManifest';
+import { showScorePopup, showComboPopup, showPickupPopup, showPopupText } from '../ui/popupText';
 import { transitionToScene } from './sceneFlow';
 import {
   createStorytellingState,
@@ -132,8 +133,12 @@ export class PlayScene extends Phaser.Scene {
   private readonly maxStompHitstopHistory = 12;
   private lastStompFrame = -1;
   private lastStompHitMs = -Number.MAX_SAFE_INTEGER;
+  private stompCombo = 0;
+  private stompComboResetMs = 0;
+  private runTrailCounter = 0;
 
   private playerHead!: Phaser.GameObjects.Sprite;
+  private playerShadow!: Phaser.GameObjects.Ellipse;
   private animator!: PlayerAnimator;
   private effects!: EffectManager;
   private dustPuff!: DustPuffEmitter;
@@ -508,6 +513,10 @@ export class PlayScene extends Phaser.Scene {
     const bodyH = this.playerForm === 'big' ? 30 : 22;
     this.player.body?.setSize(12, bodyH).setOffset(10, 1);
 
+    // Drop shadow beneath the player for ground readability
+    this.playerShadow = this.add.ellipse(spawn.x, spawn.y + 14, 20, 6, 0x000000, 0.3);
+    this.playerShadow.setDepth(this.player.depth - 1);
+
     // Head sprite (visual overlay, no physics)
     const headKey = this.playerForm === 'big' ? 'bart_head_64' : 'bart_head_48';
     const headScale = this.playerForm === 'big'
@@ -563,11 +572,11 @@ export class PlayScene extends Phaser.Scene {
       runtimeStore.save.progression.coins += 1;
       runtimeStore.save.progression.score += amount;
       this.renderHud();
-      this.showHudToast(`+${amount} ${DISPLAY_NAMES.coin}`);
+      const coinX = pickup.x;
+      const coinY = pickup.y;
       this.collectItem(pickup);
-      this.dustPuff.emitAt(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 6);
-      // Sparkle effect
-      this.effects.emitSparkle(pickup.x, pickup.y, 0xffd700, 5); // Gold sparkles
+      showScorePopup(this, coinX, coinY, amount);
+      this.effects.emitSparkle(coinX, coinY, 0xffd700, 8);
       this.playSfx('coin');
     });
 
@@ -591,9 +600,15 @@ export class PlayScene extends Phaser.Scene {
       runtimeStore.save.progression.stars += 1;
       runtimeStore.save.progression.score += amount;
       this.renderHud();
-      this.showHudToast(`+${amount} ${DISPLAY_NAMES.star}`);
+      const starX = pickup.x;
+      const starY = pickup.y;
       this.collectItem(pickup);
-      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2, 10);
+      showScorePopup(this, starX, starY, amount);
+      if (powerupType) {
+        showPickupPopup(this, starX, starY - 14, powerupType.toUpperCase().replace(/_/g, ' '));
+      }
+      this.effects.emitSparkle(starX, starY, 0x9cff9c, 10);
+      this.effects.flash(60, 0xffffff);
       this.playSfx('power');
     });
 
@@ -683,12 +698,18 @@ export class PlayScene extends Phaser.Scene {
             p.setVelocityY(-220);
           }
 
+          // Big stomp burst particle effect
+          this.effects.emitStompBurst(target.sprite.x, target.sprite.y, 0xffffff);
           this.effects.emitSparkle(target.sprite.x, target.sprite.y, 0xffffff, 6);
           const isShell = target.kind === 'shell';
           const shellIsMoving = isShell && Math.abs(targetBody.velocity.x) >= 150;
+          const stompKillsEnemy = shouldProcessStomp && (!isShell || targetBody.velocity.x === 0);
           if (shouldProcessStomp && (!isShell || targetBody.velocity.x === 0)) {
             if (target.kind !== 'shell' || target.sprite.texture.key !== 'enemy_shell_retracted') {
               this.squashAndDisableSprite(target.sprite);
+              if (stompKillsEnemy) {
+                this.audio.playSfx('enemy_kill');
+              }
             }
           }
 
@@ -696,6 +717,13 @@ export class PlayScene extends Phaser.Scene {
             runtimeStore.save.progression.score += SCORE_VALUES.stomp;
             this.playSfx('stomp');
             this.triggerStompHitstop();
+
+            // Stomp combo tracking
+            this.stompCombo += 1;
+            this.stompComboResetMs = 1500;
+            showScorePopup(this, target.sprite.x, target.sprite.y, SCORE_VALUES.stomp);
+            showComboPopup(this, target.sprite.x, target.sprite.y - 8, this.stompCombo);
+
             if (shouldBouncePlayer && runtimeStore.save.settings.screenShakeEnabled) {
               this.effects.shake('light');
             }
@@ -1492,9 +1520,13 @@ export class PlayScene extends Phaser.Scene {
       this.invulnMsRemaining = PLAYER_CONSTANTS.invulnMs;
       this.player.setVelocity(this.player.flipX ? PLAYER_CONSTANTS.knockbackX : -PLAYER_CONSTANTS.knockbackX, PLAYER_CONSTANTS.knockbackY);
       this.playSfx('hurt');
+      showPopupText(this, this.player.x, this.player.y - 8, 'OUCH', 'damage');
+      this.effects.emitSparkle(this.player.x, this.player.y, 0xff4444, 8);
       if (runtimeStore.save.settings.screenShakeEnabled) {
         this.effects.shake('medium');
       }
+      // Reset stomp combo on damage
+      this.stompCombo = 0;
       return;
     }
 
@@ -1644,15 +1676,24 @@ export class PlayScene extends Phaser.Scene {
     runtimeStore.save = clearActiveBonusRouteId(runtimeStore.save);
     persistSave(runtimeStore.save);
 
-    // Celebration effects: sparkle burst around goal
+    // Celebration effects: big fireworks-style burst around goal
+    showPopupText(this, this.player.x, this.player.y - 20, 'DEPLOYED!', 'bonus');
+    this.effects.bigMoment();
+
     if (this.goal) {
-      for (let i = 0; i < 3; i++) {
-        this.time.delayedCall(i * 300, () => {
+      const colors = [0xffd700, 0xff6b6b, 0x6bff6b, 0x6b6bff, 0xff6bff];
+      for (let i = 0; i < 5; i++) {
+        this.time.delayedCall(i * 200, () => {
           this.effects.emitSparkle(
+            this.goal.x + (Math.random() - 0.5) * 60,
+            this.goal.y - 10 + (Math.random() - 0.5) * 40,
+            colors[i % colors.length]!,
+            12,
+          );
+          this.effects.emitStompBurst(
             this.goal.x + (Math.random() - 0.5) * 40,
-            this.goal.y - 10 + (Math.random() - 0.5) * 30,
-            0xffd700,
-            8,
+            this.goal.y - 20,
+            colors[(i + 2) % colors.length]!,
           );
         });
       }
@@ -1811,6 +1852,7 @@ export class PlayScene extends Phaser.Scene {
       if (processedTargets.has(pair.targetIndex)) {
         continue;
       }
+      this.audio.playSfx('enemy_kill');
       this.flipAndSlideOffScreen(target.sprite, pair.shellDirX);
       processedTargets.add(pair.targetIndex);
       runtimeStore.save.progression.score += SCORE_VALUES.stomp;
@@ -1953,6 +1995,21 @@ export class PlayScene extends Phaser.Scene {
     );
     this.playerHead.setFlipX(this.player.flipX);
 
+    // Sync drop shadow beneath player feet
+    const groundY = this.player.y + (this.player.height * this.player.scaleY) / 2 + 2;
+    this.playerShadow.setPosition(this.player.x, groundY);
+    // Fade shadow when airborne (the higher off ground, the more transparent & smaller)
+    if (onGround) {
+      this.playerShadow.setAlpha(0.3);
+      this.playerShadow.setScale(1, 1);
+    } else {
+      const airHeight = Math.abs(this.player.body?.velocity.y ?? 0);
+      const airFade = Math.max(0.08, 0.3 - airHeight / 1500);
+      const airShrink = Math.max(0.5, 1 - airHeight / 1200);
+      this.playerShadow.setAlpha(airFade);
+      this.playerShadow.setScale(airShrink, airShrink * 0.7);
+    }
+
     // Update Ping companion
     this.ping?.update(this.player.x, this.player.y, Math.min(40, delta));
     // Check for nearby personnel files to increase Ping brightness
@@ -1970,14 +2027,40 @@ export class PlayScene extends Phaser.Scene {
       this.ping.setBrightness(fileBrightness);
     }
 
-    // Dust puff + SFX on skid/land
+    // Dust puff + SFX on skid/land with enhanced landing impact
+    const feetY = this.player.y + (this.player.height * this.player.scaleY) / 2;
     if (this.animator.justEntered('land')) {
-      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+      const fallSpeed = Math.abs(this.player.body?.velocity.y ?? 0);
+      const intensity = Math.min(2, fallSpeed / 300);
+      this.effects.emitDust(this.player.x, feetY, Math.round(4 + intensity * 4));
+      this.effects.emitLandingImpact(this.player.x, feetY, intensity);
+      if (intensity > 0.8 && runtimeStore.save.settings.screenShakeEnabled) {
+        this.effects.shake('light');
+      }
       this.playSfx('land');
     }
     if (this.animator.justEntered('skid')) {
-      this.effects.emitDust(this.player.x, this.player.y + (this.player.height * this.player.scaleY) / 2);
+      this.effects.emitDust(this.player.x, feetY, 5);
       this.playSfx('skid');
+    }
+
+    // Running dust trail: emit small puffs every few frames while running on ground
+    if (onGround && Math.abs(this.player.body?.velocity.x ?? 0) > 140) {
+      this.runTrailCounter += delta;
+      if (this.runTrailCounter >= 80) {
+        this.runTrailCounter = 0;
+        this.effects.emitRunTrail(this.player.x, feetY);
+      }
+    } else {
+      this.runTrailCounter = 0;
+    }
+
+    // Stomp combo timeout
+    if (this.stompComboResetMs > 0) {
+      this.stompComboResetMs -= delta;
+      if (this.stompComboResetMs <= 0) {
+        this.stompCombo = 0;
+      }
     }
 
     if (pulseHeld && !downHeld && this.isRackPulseEnabled()) {

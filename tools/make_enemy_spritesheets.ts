@@ -72,6 +72,22 @@ const COLORS = {
   debtRed:   parseHex('#9D2C2C'),
   debtLight: parseHex('#3D3D42'),
   chain:     parseHex('#9FA8B3'),
+
+  // New Biome Enemies
+  iceWhite:  parseHex('#F2FDFD'),
+  iceBlue:   parseHex('#B7E9F7'),
+  iceShadow: parseHex('#32535F'),
+  
+  voidPink:  parseHex('#D45698'),
+  voidCyan:  parseHex('#4DEEEA'),
+  voidDark:  parseHex('#1A0B2E'),
+  
+  toxicGreen:parseHex('#68F046'),
+  slimeDark: parseHex('#203820'),
+  
+  ghostTeal: parseHex('#74F6D9'),
+  boneGrey:  parseHex('#BDBDBD'),
+  ghostAlpha:parseHex('#74F6D9', 180),
 };
 
 function buildEnemySheet(frames: PixelImage[]): PixelImage {
@@ -102,39 +118,199 @@ function outline(img: PixelImage, color: Rgba): void {
   }
 }
 
-// Hallucination Blob (Walker)
+// Hallucination Bot (Walker) - Redesigned as AI Robot
 function drawWalkerFrame(f: number): PixelImage {
   const img = createImage(16, 16, [0,0,0,0]);
-  const h = f === 1 ? 11 : 10;
-  const yOff = 15 - h;
-  // Body - Squat rounded
-  drawDisk(img, 8, yOff + h/2, h/2, COLORS.blobMid);
-  // Dithering & Shading
-  for(let y=yOff; y<16; y++) {
-    for(let x=0; x<16; x++) {
-       const [,,,a] = getPixel(img, x, y);
-       if (a > 0) {
-         if ((x+y)%2 === 0 && y < yOff + h*0.4) setPixel(img, x, y, COLORS.blobLight);
-         if (y > yOff + h*0.7) setPixel(img, x, y, COLORS.blobDark);
-       }
-    }
-  }
-  // Eyes - Shiny yellow
-  setPixel(img, 6, yOff + 4, COLORS.eyeYellow);
-  setPixel(img, 10, yOff + 4, COLORS.eyeYellow);
-  if (f === 3) { // Thinking
-    setPixel(img, 6, yOff + 3, COLORS.eyeYellow);
-    setPixel(img, 10, yOff + 3, COLORS.eyeYellow);
-  } else {
-    setPixel(img, 6, yOff + 4, [0,0,0,255]); // Pupil
-    setPixel(img, 10, yOff + 4, [0,0,0,255]);
-  }
-  // Mouth
-  fillRect(img, 6, yOff + 7, 5, 2, COLORS.mouthDark);
-  fillRect(img, 6, yOff + 7, 5, 1, COLORS.mouth);
-  setPixel(img, 7, yOff + 7, COLORS.teeth);
-  setPixel(img, 9, yOff + 7, COLORS.teeth);
+  const bob = f === 1 ? 1 : 0;
+  
+  // Chassis
+  fillRect(img, 4, 4 + bob, 8, 8, COLORS.steel);
+  fillRect(img, 4, 4 + bob, 8, 1, COLORS.steelLight);
+  fillRect(img, 4, 11 + bob, 8, 1, COLORS.steelDark);
+  
+  // Screen/Face
+  fillRect(img, 5, 6 + bob, 6, 4, COLORS.inkDark);
+  // Eyes
+  setPixel(img, 6, 7 + bob, COLORS.eyeYellow);
+  setPixel(img, 9, 7 + bob, COLORS.eyeYellow);
+  
+  // Antenna
+  drawLine(img, 8, 4 + bob, 8, 1 + bob, COLORS.steelDark);
+  setPixel(img, 8, 0 + bob, (f % 2 === 0) ? COLORS.red : COLORS.redDark);
+  
+  // Legs
+  fillRect(img, 4, 12 + bob, 2, 4 - bob, COLORS.steelDark);
+  fillRect(img, 10, 12 + bob, 2, 4 - bob, COLORS.steelDark);
 
+  outline(img, COLORS.inkDark);
+  return img;
+}
+
+// Snowman Sentry
+function drawSnowmanFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const b = f===1 ? 1 : 0;
+  
+  // Body (Bottom)
+  drawDisk(img, 8, 11+b, 4, COLORS.iceWhite);
+  // Body (Top)
+  drawDisk(img, 8, 6+b, 3, COLORS.iceWhite);
+  
+  // Scarf
+  fillRect(img, 5, 8+b, 6, 2, COLORS.voidPink);
+  
+  // Face
+  setPixel(img, 7, 5+b, COLORS.inkDark);
+  setPixel(img, 9, 5+b, COLORS.inkDark);
+  setPixel(img, 8, 6+b, COLORS.orange); // Carrot nose
+  
+  // Hat
+  fillRect(img, 6, 2+b, 4, 2, COLORS.inkSoft);
+  fillRect(img, 5, 4+b, 6, 1, COLORS.inkSoft);
+
+  outline(img, COLORS.iceShadow);
+  return img;
+}
+
+// Cryo Drone
+function drawCryoDroneFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const float = f===1 ? -1 : 0;
+  
+  // Hex body
+  fillRect(img, 4, 4+float, 8, 8, COLORS.iceBlue);
+  fillRect(img, 6, 6+float, 4, 4, COLORS.iceWhite); // Core
+  
+  // Wings/Rotors
+  drawLine(img, 2, 4+float, 0, 2+float, COLORS.iceShadow);
+  drawLine(img, 13, 4+float, 15, 2+float, COLORS.iceShadow);
+  
+  // Beam Emitter
+  setPixel(img, 8, 12+float, COLORS.voidCyan);
+  
+  outline(img, COLORS.iceShadow);
+  return img;
+}
+
+// Qubit Swarm
+function drawQubitFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  
+  // Crystal Shape (Diamond)
+  const cy = 8 + (f===0 ? 0 : (f===1 ? -1 : 1));
+  
+  // Center
+  fillRect(img, 6, cy-2, 4, 4, COLORS.voidPink);
+  
+  // Points
+  drawLine(img, 8, cy-5, 8, cy-2, COLORS.voidCyan);
+  drawLine(img, 8, cy+5, 8, cy+2, COLORS.voidCyan);
+  drawLine(img, 3, cy, 6, cy, COLORS.voidCyan);
+  drawLine(img, 13, cy, 10, cy, COLORS.voidCyan);
+  
+  outline(img, COLORS.voidDark);
+  return img;
+}
+
+// Crawler (Bug)
+function drawCrawlerFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  // Flat body
+  fillRect(img, 3, 10, 10, 4, COLORS.slimeDark);
+  // Spots
+  setPixel(img, 5, 11, COLORS.toxicGreen);
+  setPixel(img, 9, 12, COLORS.toxicGreen);
+  // Legs
+  const leg = (f===0) ? 0 : 1;
+  drawLine(img, 3, 12, 1, 14-leg, COLORS.inkDark);
+  drawLine(img, 12, 12, 14, 14-leg, COLORS.inkDark);
+  
+  outline(img, COLORS.inkDark);
+  return img;
+}
+
+// Glitch Phantom
+function drawGlitchFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const offset = (Math.random() > 0.5) ? 1 : 0;
+  
+  fillRect(img, 4+offset, 4, 8, 10, COLORS.voidDark);
+  // Glitch Lines
+  drawLine(img, 2, 6, 14, 6, COLORS.voidCyan);
+  drawLine(img, 2, 10, 14, 10, COLORS.voidPink);
+  
+  outline(img, COLORS.voidDark);
+  return img;
+}
+
+// Fungal Node
+function drawFungalFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const pulse = f===1 ? 1 : 0;
+  
+  // Stem
+  fillRect(img, 6, 10, 4, 6, COLORS.beige);
+  // Cap
+  drawDisk(img, 8, 7-pulse, 6, COLORS.red);
+  // Spots
+  setPixel(img, 6, 6-pulse, COLORS.white);
+  setPixel(img, 10, 5-pulse, COLORS.white);
+  setPixel(img, 8, 8-pulse, COLORS.white);
+  
+  outline(img, COLORS.inkDark);
+  return img;
+}
+
+// Ghost Process
+function drawGhostFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const wave = f===1 ? 1 : 0;
+  
+  // Sheet body
+  fillRect(img, 4, 4+wave, 8, 8, COLORS.ghostTeal);
+  // Tail
+  setPixel(img, 4, 12+wave, COLORS.ghostTeal);
+  setPixel(img, 11, 12+wave, COLORS.ghostTeal);
+  
+  // Eyes
+  setPixel(img, 6, 6+wave, COLORS.inkDark);
+  setPixel(img, 9, 6+wave, COLORS.inkDark);
+  
+  outline(img, COLORS.ghostAlpha);
+  return img;
+}
+
+// Tape Wraith
+function drawTapeFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const spin = f; 
+  
+  // Reel
+  drawDisk(img, 8, 8, 6, COLORS.steelDark);
+  // Tape
+  drawDisk(img, 8, 8, 3, COLORS.inkDark); // Center hole
+  
+  // Messy tape strands
+  const r = (53 * spin) % 4;
+  drawLine(img, 8, 8, 14, 14-r, COLORS.inkDark);
+  drawLine(img, 8, 8, 2, 14-r, COLORS.inkDark);
+  
+  outline(img, COLORS.inkSoft);
+  return img;
+}
+
+// Resume Bot
+function drawResumeFrame(f: number): PixelImage {
+  const img = createImage(16, 16, [0,0,0,0]);
+  const walk = f===1 ? 1 : 0;
+  
+  // Paper Body
+  fillRect(img, 5, 4+walk, 6, 8, COLORS.white);
+  // Text lines
+  drawLine(img, 6, 6+walk, 9, 6+walk, COLORS.inkSoft);
+  drawLine(img, 6, 8+walk, 9, 8+walk, COLORS.inkSoft);
+  drawLine(img, 6, 10+walk, 8, 10+walk, COLORS.inkSoft);
+  
   outline(img, COLORS.inkDark);
   return img;
 }
@@ -315,6 +491,17 @@ async function main() {
   writeEnemy('spitter', [drawSpitterFrame(0), drawSpitterFrame(1), drawSpitterFrame(0), drawSpitterFrame(3)]);
   writeEnemy('compliance', [drawComplianceFrame(0), drawComplianceFrame(1), drawComplianceFrame(0), drawComplianceFrame(1)]);
   writeEnemy('techdebt', [drawDebtFrame(0), drawDebtFrame(1), drawDebtFrame(0), drawDebtFrame(1)]);
+
+  // New Biome Enemies
+  writeEnemy('snowman_sentry', [drawSnowmanFrame(0), drawSnowmanFrame(1), drawSnowmanFrame(0), drawSnowmanFrame(1)]);
+  writeEnemy('cryo_drone', [drawCryoDroneFrame(0), drawCryoDroneFrame(1), drawCryoDroneFrame(0), drawCryoDroneFrame(1)]);
+  writeEnemy('qubit_swarm', [drawQubitFrame(0), drawQubitFrame(1), drawQubitFrame(2), drawQubitFrame(3)]);
+  writeEnemy('crawler', [drawCrawlerFrame(0), drawCrawlerFrame(1), drawCrawlerFrame(0), drawCrawlerFrame(1)]);
+  writeEnemy('glitch_phantom', [drawGlitchFrame(0), drawGlitchFrame(1), drawGlitchFrame(0), drawGlitchFrame(1)]);
+  writeEnemy('fungal_node', [drawFungalFrame(0), drawFungalFrame(1), drawFungalFrame(0), drawFungalFrame(1)]);
+  writeEnemy('ghost_process', [drawGhostFrame(0), drawGhostFrame(1), drawGhostFrame(0), drawGhostFrame(1)]);
+  writeEnemy('tape_wraith', [drawTapeFrame(0), drawTapeFrame(1), drawTapeFrame(2), drawTapeFrame(3)]);
+  writeEnemy('resume_bot', [drawResumeFrame(0), drawResumeFrame(1), drawResumeFrame(0), drawResumeFrame(1)]);
 
   // Extras
   writePng(path.join(spriteDir, 'enemy_shell_retracted.png'), drawShellFrame(3));

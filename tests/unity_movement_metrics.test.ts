@@ -34,6 +34,8 @@ describe('unity movement metrics artifact', () => {
 
     expect(artifact.version).toBe(1);
     expect(typeof artifact.generatedAt).toBe('string');
+    expect(typeof artifact.sourceCommit).toBe('string');
+    expect(typeof artifact.dtMs).toBe('number');
     expect(artifact.tolerances.scalarPct).toBe(0.03);
     expect(artifact.tolerances.frameCount).toBe(1);
     expect(artifact.tolerances.booleanExact).toBe(true);

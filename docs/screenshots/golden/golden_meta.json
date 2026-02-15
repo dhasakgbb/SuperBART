@@ -1,36 +1,36 @@
 {
   "schema": "visual-regression-v1",
-  "generatedAt": "2026-02-15T03:43:45.279Z",
+  "generatedAt": "2026-02-15T06:05:59.138Z",
   "layoutVersion": "1.0.0",
   "scenes": [
     {
       "scene": "title",
       "sourceScene": "TitleScene",
       "targetFile": "title_scene_golden.png",
-      "captureHash": "b50808e4ea9d609df57a6bd566fb14383a5753313fe875edf61e29f8e39166a5",
+      "captureHash": "22dd4bf5f5a83e0696e52daacb6a1b22a776a38964dc4fd6aceb69f504c39e33",
       "width": 960,
       "height": 540,
-      "createdAt": "2026-02-15T03:43:45.279Z",
+      "createdAt": "2026-02-15T06:05:59.138Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "map",
       "sourceScene": "WorldMapScene",
       "targetFile": "map_scene_golden.png",
-      "captureHash": "03971a0aafa27bfcd86f5dbc8fc56862401bfcf20762b425222c9a4fa9a904ee",
+      "captureHash": "876fc94517668f8082226d5322e080e7042b9d50584e61a9bbc68a4420998eec",
       "width": 960,
       "height": 540,
-      "createdAt": "2026-02-15T03:43:45.279Z",
+      "createdAt": "2026-02-15T06:05:59.138Z",
       "layoutVersion": "1.0.0"
     },
     {
       "scene": "play",
       "sourceScene": "PlayScene",
       "targetFile": "play_scene_golden.png",
-      "captureHash": "30b6ee09815480a5a6f003c89a9fa7c0d811a013483c82777776ecabe8513408",
+      "captureHash": "31f706b5612879101640f7d7640cc138fbd494f39d11b8f8f64a2ddd0908d572",
       "width": 960,
       "height": 540,
-      "createdAt": "2026-02-15T03:43:45.279Z",
+      "createdAt": "2026-02-15T06:05:59.138Z",
       "layoutVersion": "1.0.0"
     }
   ]

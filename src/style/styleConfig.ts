@@ -91,12 +91,43 @@ export const styleConfig = {
       { name: 'hudText', hex: '#FFFFFF' },
       { name: 'hudAccent', hex: '#FFD700' }, // Gold accent
       { name: 'hudPanel', hex: '#1A1A1D' }, // Deep dark grey
+      { name: 'white', hex: '#FFFFFF' },     // Generic White
+      { name: 'charcoal', hex: '#221111' },  // Generic Dark
       { name: 'bloomWarm', hex: '#FFEB9C' },
+
+      // Biome: Cryo-Server Tundra (W2)
+      { name: 'iceDeep', hex: '#32535F' },
+      { name: 'iceMid', hex: '#74C0D4' },
+      { name: 'iceLight', hex: '#B7E9F7' },
+
+      // Biome: Quantum Void (W3)
+      { name: 'voidDark', hex: '#1A0B2E' },
+      { name: 'nebulaPink', hex: '#D45698' },
+      { name: 'crystalCyan', hex: '#4DEEEA' },
+
+      // Biome: Deep Web Catacombs (W4)
+      { name: 'toxicGreen', hex: '#68F046' },
+      { name: 'darkSlime', hex: '#203820' },
+      { name: 'mudShadow', hex: '#1A1A1A' },
+
+      // Biome: Digital Graveyard (W5)
+      { name: 'ghostTeal', hex: '#74F6D9' },
+      { name: 'boneGrey', hex: '#BDBDBD' },
+      { name: 'shadowMidnight', hex: '#0C0C14' },
+
+      // Biome: Singularity Core (W6)
+      { name: 'coreMagma', hex: '#FF4D00' },
+      { name: 'heatYellow', hex: '#FFD500' },
     ],
     ramps: {
       terrain: ['groundShadow', 'groundMid', 'groundWarm', 'grassMid', 'grassTop'],
       ui: ['hudPanel', 'hudText', 'hudAccent'],
       fx: ['bloomWarm', 'coinCore', 'coinEdge'],
+      w2_tundra: ['iceDeep', 'iceMid', 'iceLight', 'white'],
+      w3_void: ['voidDark', 'nebulaPink', 'crystalCyan'],
+      w4_catacombs: ['mudShadow', 'darkSlime', 'toxicGreen'],
+      w5_graveyard: ['shadowMidnight', 'boneGrey', 'ghostTeal'],
+      w6_core: ['charcoal', 'coreMagma', 'heatYellow'],
     },
   },
   outline: {
@@ -386,25 +417,25 @@ export const styleConfig = {
   },
   titleLayout: {
     viewport: { width: 960, height: 540 },
-    titleMode: 'full',
+    titleMode: 'full-ui',
     wordmark: {
       x: 480,
-      y: 40,
+      y: 32,
       anchor: 'top-center',
       textureKey: 'title_logo',
-      scale: 1.15,
+      scale: 1.2,
       copy: GAME_TITLE,
     },
     portrait: {
       x: 780,
-      y: 260,
+      y: 100,
       anchor: 'top-left',
       textureKey: 'bart_portrait_96',
-      scale: 0.82,
+      scale: 0.75,
     },
     subtitle: {
       x: 480,
-      y: 170,
+      y: 210,
       anchor: 'top-center',
       fontSizePx: 16,
       letterSpacingPx: 3,
@@ -412,20 +443,20 @@ export const styleConfig = {
     },
     prompt: {
       x: 480,
-      y: 470,
+      y: 460,
       anchor: 'top-center',
-      fontSizePx: 14,
+      fontSizePx: 16,
       letterSpacingPx: 2,
       text: SCENE_TEXT.title.prompt,
-      blinkMs: 520,
+      blinkMs: 480,
     },
     hints: {
       x: 480,
-      y: 500,
+      y: 510,
       anchor: 'top-center',
       fontSizePx: 14,
       letterSpacingPx: 1,
-      text: SCENE_TEXT.title.hints,
+      text: 'W/S NAVIGATE  -  ENTER SELECT',
     },
     menu: {
       x: 480,

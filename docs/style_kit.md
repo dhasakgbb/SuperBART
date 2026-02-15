@@ -116,3 +116,26 @@ If an exception is approved later, add rows below with the exact columns: `scene
 - Required commands:
   - `npm run lint:style`
   - `npm run lint:visual`
+
+## Design Language & Biome Identities
+
+(Added Feb 2026 - Premium 16-bit Update)
+
+### Visual Pillars
+- **"The Corporate Network Realized"**: Environments blend platformer tropes with IT/Server room reality.
+- **"16-Bit Plus"**: Expanded color depth, biome-specific lighting (bloom), and strict readability (dark contours).
+
+### Biome Definitions
+| World | Theme | Palette Keys | Motif |
+|---|---|---|---|
+| **W1** | **The City (Silicon Forest)** | `grassTop`, `skyBlue` | Clean corporate campus, manicured circuit lawns. |
+| **W2** | **Cryo-Server Tundra** | `iceDeep`, `iceMid`, `iceLight` | Overclocked cooling, glaciers encasing servers, cold blue bloom. |
+| **W3** | **Quantum Void** | `voidDark`, `nebulaPink`, `crystalCyan` | The Cloud, floating geometry, neon crystals, parallax stars. |
+| **W4** | **Deep Web Catacombs** | `toxicGreen`, `darkSlime`, `mudShadow` | Legacy code, tangled cables (roots), toxic abandoned hardware. |
+| **W5** | **Digital Graveyard** | `ghostTeal`, `boneGrey`, `shadowMidnight` | Deprecation zone, cracked CRTs, cobwebs, spooky desaturation. |
+| **W6** | **Singularity Core** | `coreMagma`, `heatYellow`, `charcoal` | Thermal throttling, molten silicon, industrial fans, burning data. |
+
+### UI Refinement
+- **Boss Battles**: Dedicated top-center red health bar with name label. Standard HUD hidden.
+- **HUD**: Compact, icon-driven (no text labels on entities).
+- **Lighting**: "Rule of Emission" - dangerous things glow.

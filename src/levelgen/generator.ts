@@ -826,21 +826,67 @@ export function validateCampaignSpec(levelSpec: LevelSpec): string[] {
 
 function buildGroundProfile(template: ChunkTemplate, baseGroundY: number): number[] {
   const profile = new Array(CHUNK_WIDTH).fill(baseGroundY);
-  if (template.tags.includes('RISE_STEP')) {
-    for (let i = Math.floor(CHUNK_WIDTH / 2); i < CHUNK_WIDTH; i += 1) {
-      profile[i] = Math.max(20, baseGroundY - 1);
+  const tags = new Set(template.tags);
+
+  // Rise step: gradual slope upward across the chunk (not just second half)
+  if (tags.has('RISE_STEP') && !tags.has('DROP_STEP')) {
+    const rise = 2;
+    for (let i = 0; i < CHUNK_WIDTH; i += 1) {
+      const t = i / (CHUNK_WIDTH - 1);
+      // Smooth curve: ease-in-out for natural terrain feel
+      const easedT = t * t * (3 - 2 * t);
+      profile[i] = Math.max(20, Math.round(baseGroundY - easedT * rise));
     }
   }
-  if (template.tags.includes('DROP_STEP')) {
-    for (let i = Math.floor(CHUNK_WIDTH / 2); i < CHUNK_WIDTH; i += 1) {
-      profile[i] = Math.min(28, baseGroundY + 1);
+
+  // Drop step: gradual slope downward
+  if (tags.has('DROP_STEP') && !tags.has('RISE_STEP')) {
+    const drop = 2;
+    for (let i = 0; i < CHUNK_WIDTH; i += 1) {
+      const t = i / (CHUNK_WIDTH - 1);
+      const easedT = t * t * (3 - 2 * t);
+      profile[i] = Math.min(29, Math.round(baseGroundY + easedT * drop));
     }
   }
-  if (template.tags.includes('CLIFF_EDGE')) {
+
+  // Both tags: hill shape (rise then drop)
+  if (tags.has('RISE_STEP') && tags.has('DROP_STEP')) {
+    const height = 2;
+    for (let i = 0; i < CHUNK_WIDTH; i += 1) {
+      const t = i / (CHUNK_WIDTH - 1);
+      // Bell curve: peak in the middle
+      const hill = Math.sin(t * Math.PI);
+      profile[i] = Math.max(20, Math.round(baseGroundY - hill * height));
+    }
+  }
+
+  if (tags.has('CLIFF_EDGE')) {
     for (let i = CHUNK_WIDTH - 4; i < CHUNK_WIDTH; i += 1) {
-      profile[i] = Math.min(28, baseGroundY + 1);
+      profile[i] = Math.min(29, baseGroundY + 2);
     }
   }
+
+  // Platform stacks get a slight valley in the middle (dip for visual interest)
+  if (tags.has('PLATFORM_STACK')) {
+    const dip = 1;
+    for (let i = 6; i < CHUNK_WIDTH - 6; i += 1) {
+      const t = (i - 6) / (CHUNK_WIDTH - 12);
+      const valley = Math.sin(t * Math.PI);
+      profile[i] = Math.min(29, Math.round(baseGroundY + valley * dip));
+    }
+  }
+
+  // Flat chunks still get subtle micro-variation (1-tile bumps)
+  if (tags.has('FLAT') && !tags.has('BENCHMARK_AUTO_SCROLL')) {
+    // Add small 1-tile bumps at fixed positions for visual texture
+    const bumpPositions = [5, 11, 17];
+    for (const pos of bumpPositions) {
+      if (pos < CHUNK_WIDTH && profile[pos] === baseGroundY) {
+        profile[pos] = Math.max(20, baseGroundY - 1);
+      }
+    }
+  }
+
   return profile;
 }
 
@@ -1186,9 +1232,15 @@ function generateLegacyLevel(input: LevelGenerationInput, rules: ReturnType<type
     chunksUsed.push(usedChunkId as ChunkType);
 
     const variance = rng.nextInt(-rules.groundVariance, rules.groundVariance);
-    groundY = Math.max(21, Math.min(28, groundY + variance));
+    groundY = Math.max(21, Math.min(29, groundY + variance));
+    // Per-tile terrain: add rolling height variation within chunks
+    const chunkSeed = input.seed ^ (chunk * 37);
     for (let x = x0; x <= x1; x += 1) {
-      fillColumn(grid, x, groundY);
+      const localX = x - x0;
+      // Simple sine-based rolling hills (2-3 tile wavelength) for terrain texture
+      const microHill = Math.sin((localX + chunkSeed * 0.1) * 0.7) * 0.6;
+      const tileY = Math.max(20, Math.min(29, Math.round(groundY + microHill)));
+      fillColumn(grid, x, tileY);
     }
     if (template === 'benchmark_sprint') {
       parseBenchmarkTriggers({

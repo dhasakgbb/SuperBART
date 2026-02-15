@@ -139,25 +139,25 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
   },
   stomp: {
     wave: 'square',
-    startHz: 200,
-    endHz: 140,
-    durationSec: 0.09,
+    startHz: 280,
+    endHz: 100,
+    durationSec: 0.11,
     attackSec: 0.002,
     decaySec: 0.03,
-    sustain: 0.25,
-    releaseSec: 0.04,
-    gain: 0.24
+    sustain: 0.22,
+    releaseSec: 0.05,
+    gain: 0.26
   },
   hurt: {
     wave: 'sawtooth',
-    startHz: 250,
-    endHz: 110,
-    durationSec: 0.16,
+    startHz: 260,
+    endHz: 90,
+    durationSec: 0.18,
     attackSec: 0.002,
-    decaySec: 0.04,
-    sustain: 0.22,
-    releaseSec: 0.08,
-    gain: 0.2
+    decaySec: 0.06,
+    sustain: 0.2,
+    releaseSec: 0.1,
+    gain: 0.24
   },
   power_up: {
     wave: 'triangle',
@@ -172,14 +172,14 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
   },
   shell_kick: {
     wave: 'square',
-    startHz: 320,
-    endHz: 240,
-    durationSec: 0.11,
+    startHz: 340,
+    endHz: 160,
+    durationSec: 0.13,
     attackSec: 0.002,
-    decaySec: 0.03,
+    decaySec: 0.05,
     sustain: 0.2,
-    releaseSec: 0.05,
-    gain: 0.22
+    releaseSec: 0.06,
+    gain: 0.24
   },
   block_hit: {
     wave: 'square',
@@ -227,14 +227,14 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
   },
   game_over: {
     wave: 'sawtooth',
-    startHz: 220,
-    endHz: 80,
-    durationSec: 0.35,
+    startHz: 260,
+    endHz: 65,
+    durationSec: 0.52,
     attackSec: 0.003,
-    decaySec: 0.06,
+    decaySec: 0.08,
     sustain: 0.18,
-    releaseSec: 0.15,
-    gain: 0.2
+    releaseSec: 0.2,
+    gain: 0.22
   },
   one_up: {
     wave: 'triangle',
@@ -293,14 +293,14 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
   },
   enemy_kill: {
     wave: 'sawtooth',
-    startHz: 150,
-    endHz: 50,
-    durationSec: 0.12,
+    startHz: 240,
+    endHz: 55,
+    durationSec: 0.18,
     attackSec: 0.002,
-    decaySec: 0.04,
-    sustain: 0.2,
-    releaseSec: 0.06,
-    gain: 0.22
+    decaySec: 0.07,
+    sustain: 0.24,
+    releaseSec: 0.1,
+    gain: 0.24
   },
   chain_extend: {
     wave: 'square',
@@ -360,13 +360,13 @@ export const SFX_DEFINITIONS: Record<SfxKey, SfxDefinition> = {
   /** Multi-note death melody: descending minor phrase, ~1.8 seconds total. */
   death_jingle: {
     wave: 'triangle',
-    startHz: 440,
-    endHz: 330,
-    durationSec: 0.3,
+    startHz: 520,
+    endHz: 390,
+    durationSec: 0.42,
     attackSec: 0.005,
     decaySec: 0.06,
     sustain: 0.35,
-    releaseSec: 0.12,
+    releaseSec: 0.14,
     gain: 0.2
   },
   /** Multi-note victory fanfare: ascending major phrase, ~2.5 seconds total. */
@@ -569,6 +569,10 @@ const SFX_LAYERS: Partial<Record<SfxKey, SfxLayer[]>> = {
     // Detuned dissonant layer
     { wave: 'sawtooth', startHz: 265, endHz: 100, delaySec: 0, durationSec: 0.14, attackSec: 0.002, releaseSec: 0.06, gain: 0.08 }
   ],
+  stomp: [
+    { wave: 'triangle', startHz: 100, endHz: 80, delaySec: 0, durationSec: 0.05, attackSec: 0.001, releaseSec: 0.03, gain: 0.1 },
+    { wave: 'square', startHz: 160, endHz: 100, delaySec: 0.03, durationSec: 0.06, attackSec: 0.002, releaseSec: 0.03, gain: 0.08 }
+  ],
   power_up: [
     // Rapid 3-note arpeggio overtone
     { wave: 'triangle', startHz: 550, endHz: 660, delaySec: 0, durationSec: 0.05, attackSec: 0.002, releaseSec: 0.02, gain: 0.1 },
@@ -584,8 +588,13 @@ const SFX_LAYERS: Partial<Record<SfxKey, SfxLayer[]>> = {
   ],
   game_over: [
     // Descending minor 3rd layer for somber feel
-    { wave: 'square', startHz: 180, endHz: 65, delaySec: 0.08, durationSec: 0.25, attackSec: 0.003, releaseSec: 0.1, gain: 0.08 },
-    { wave: 'sawtooth', startHz: 160, endHz: 55, delaySec: 0.16, durationSec: 0.2, attackSec: 0.003, releaseSec: 0.1, gain: 0.06 }
+    { wave: 'square', startHz: 210, endHz: 70, delaySec: 0.08, durationSec: 0.28, attackSec: 0.003, releaseSec: 0.12, gain: 0.1 },
+    { wave: 'sawtooth', startHz: 170, endHz: 55, delaySec: 0.18, durationSec: 0.28, attackSec: 0.003, releaseSec: 0.12, gain: 0.08 },
+    { wave: 'triangle', startHz: 130, endHz: 45, delaySec: 0.25, durationSec: 0.3, attackSec: 0.005, releaseSec: 0.16, gain: 0.06 }
+  ],
+  enemy_kill: [
+    { wave: 'triangle', startHz: 280, endHz: 150, delaySec: 0.03, durationSec: 0.12, attackSec: 0.004, releaseSec: 0.06, gain: 0.12 },
+    { wave: 'square', startHz: 140, endHz: 65, delaySec: 0.07, durationSec: 0.12, attackSec: 0.004, releaseSec: 0.08, gain: 0.1 }
   ],
   one_up: [
     // Bright arpeggio shimmer
@@ -601,8 +610,9 @@ const SFX_LAYERS: Partial<Record<SfxKey, SfxLayer[]>> = {
     { wave: 'square', startHz: 350, endHz: 200, delaySec: 0.01, durationSec: 0.06, attackSec: 0.001, releaseSec: 0.03, gain: 0.06 }
   ],
   death_jingle: [
+    { wave: 'sine', startHz: 175, endHz: 175, delaySec: 0, durationSec: 1.35, attackSec: 0.01, releaseSec: 0.3, gain: 0.11 },
     // Note 2: Eb (311 Hz) - step down
-    { wave: 'triangle', startHz: 311, endHz: 311, delaySec: 0.35, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.18 },
+    { wave: 'triangle', startHz: 311, endHz: 311, delaySec: 0.38, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.18 },
     // Note 3: D (294 Hz) - another step
     { wave: 'triangle', startHz: 294, endHz: 294, delaySec: 0.65, durationSec: 0.25, attackSec: 0.004, releaseSec: 0.1, gain: 0.18 },
     // Note 4: Db (277 Hz) - chromatic descent
@@ -637,12 +647,12 @@ const SFX_LAYERS: Partial<Record<SfxKey, SfxLayer[]>> = {
 
 /** Noise burst configs for percussive SFX. Keyed to SfxKey, absent = no noise. */
 const SFX_NOISE: Partial<Record<SfxKey, NoiseBurst>> = {
-  stomp: { durationSec: 0.04, attackSec: 0.001, releaseSec: 0.03, gain: 0.1, filterHz: 3000 },
+  stomp: { durationSec: 0.06, attackSec: 0.001, releaseSec: 0.04, gain: 0.12, filterHz: 2800 },
   shell_kick: { durationSec: 0.035, attackSec: 0.001, releaseSec: 0.025, gain: 0.08, filterHz: 2500 },
   hurt: { durationSec: 0.05, attackSec: 0.001, releaseSec: 0.04, gain: 0.06, filterHz: 2000 },
   fireball: { durationSec: 0.03, attackSec: 0.001, releaseSec: 0.02, gain: 0.08, filterHz: 4000 },
   game_over: { durationSec: 0.06, attackSec: 0.002, releaseSec: 0.05, gain: 0.05, filterHz: 1500 },
-  enemy_kill: { durationSec: 0.08, attackSec: 0.001, releaseSec: 0.04, gain: 0.1, filterHz: 1200 },
+  enemy_kill: { durationSec: 0.12, attackSec: 0.001, releaseSec: 0.06, gain: 0.13, filterHz: 1400 },
   chain_extend: { durationSec: 0.02, attackSec: 0.001, releaseSec: 0.01, gain: 0.05, filterHz: 3000 },
   land: { durationSec: 0.04, attackSec: 0.001, releaseSec: 0.025, gain: 0.07, filterHz: 1800 },
   skid: { durationSec: 0.06, attackSec: 0.001, releaseSec: 0.035, gain: 0.06, filterHz: 2200 }

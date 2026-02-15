@@ -66,6 +66,7 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
 
   public transitionTo(newState: EnemyState): void {
     if (this.currentState === newState) return;
+    if (!this.body || !this.active) return; // Guard against destroyed enemies
     this.currentState = newState;
     this.stateTime = 0;
     this.onStateEnter(newState);
@@ -76,7 +77,7 @@ export abstract class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   public takeDamage(amount: number = 1, sourceX?: number): void {
-    if (this.isInvulnerable || this.currentState === 'dead') return;
+    if (this.isInvulnerable || this.currentState === 'dead' || !this.body || !this.active) return;
 
     this.hp -= amount;
     if (this.hp <= 0) {

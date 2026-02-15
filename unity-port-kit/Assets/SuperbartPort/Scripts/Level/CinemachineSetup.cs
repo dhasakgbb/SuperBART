@@ -35,6 +35,14 @@ namespace Superbart.Level
         [Tooltip("Vertical screen offset (positive = look ahead downward).")]
         public float screenY = 0.35f;
 
+        [Header("Screen Shake")]
+        [Tooltip("Maximum shake strength in units.")]
+        public float screenShakeStrength = 0.16f;
+        [Tooltip("Maximum random jitter per axis while shaking.")]
+        public float screenShakeJitter = 0.04f;
+        [Tooltip("Shake recovery speed multiplier.")]
+        public float screenShakeRecover = 24f;
+
         [Header("Fallback (no Cinemachine)")]
         [Tooltip("Smooth follow speed when Cinemachine is not installed.")]
         public float fallbackSmoothSpeed = 8f;
@@ -45,6 +53,15 @@ namespace Superbart.Level
 
         private bool usingCinemachine;
         private Camera mainCamera;
+        private float shakeRemaining;
+        private Vector3 shakeOffset;
+
+        public void TriggerShake(float strength, float duration)
+        {
+            screenShakeStrength = Mathf.Max(0.01f, strength);
+            shakeRemaining = Mathf.Max(shakeRemaining, Mathf.Max(0.01f, duration));
+            shakeOffset = Vector3.zero;
+        }
 
         private void Awake()
         {
@@ -116,6 +133,33 @@ namespace Superbart.Level
                 targetPos,
                 fallbackSmoothSpeed * Time.deltaTime
             );
+
+            UpdateShake();
+        }
+
+        private void UpdateShake()
+        {
+            if (shakeRemaining <= 0f)
+            {
+                if (shakeOffset != Vector3.zero)
+                {
+                    mainCamera.transform.position -= shakeOffset;
+                    shakeOffset = Vector3.zero;
+                }
+                return;
+            }
+
+            shakeRemaining -= Time.deltaTime;
+            float t = Mathf.Clamp01(shakeRemaining * screenShakeRecover * 0.1f);
+            Vector3 offset = new Vector3(
+                Random.Range(-screenShakeJitter, screenShakeJitter),
+                Random.Range(-screenShakeJitter, screenShakeJitter),
+                0f
+            ) * (screenShakeStrength * t);
+
+            Vector3 delta = offset - shakeOffset;
+            mainCamera.transform.position += delta;
+            shakeOffset = offset;
         }
     }
 }

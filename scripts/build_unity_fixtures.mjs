@@ -33,6 +33,7 @@ const UNITY_TEST_FIXTURES_LEVELS_DIR = path.resolve(
   'SuperbartPort',
   'Tests',
   'Resources',
+  'Fixtures',
   'levels'
 );
 const UNITY_TEST_FIXTURES_PARITY_DIR = path.resolve(
@@ -42,6 +43,7 @@ const UNITY_TEST_FIXTURES_PARITY_DIR = path.resolve(
   'SuperbartPort',
   'Tests',
   'Resources',
+  'Fixtures',
   'parity'
 );
 

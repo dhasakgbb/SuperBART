@@ -17,12 +17,14 @@ TRACK_IDS = [
     'world-4',
     'world-5',
     'world-6',
+    'world-7',
     'boss-1',
     'boss-2',
     'boss-3',
     'boss-4',
     'boss-5',
     'boss-6',
+    'boss-7',
     'title',
     'world-map'
 ]
